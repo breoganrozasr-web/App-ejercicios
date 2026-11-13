@@ -8,7 +8,7 @@
 - **Motor determinista** v1.0.0 con reglas R1–R17 documentadas en `docs/EVIDENCIA.md`.
 - **Demostraciones**: 84 ejercicios con animación del muñeco (Everkinetic, CC BY-SA 4.0), cada par revisado a mano; manifiesto con origen, licencia, atribución y fecha.
 - **Pruebas**: 52 unitarias/integración + 19 E2E en verde (`docs/PRUEBAS.md`).
-- **Despliegue preparado**: `.github/workflows/deploy-pages.yml` (manual) y build verificado bajo `/App-ejercicios/`.
+- **Publicada** en GitHub Pages con `.github/workflows/deploy-pages.yml` (en cada push a `main` y a mano).
 
 ## Pendientes reales (no ocultos)
 
