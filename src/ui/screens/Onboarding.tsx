@@ -30,7 +30,7 @@ const AGES: { v: AgeBand; t: string }[] = [
 const LOCS: { v: Location; t: string }[] = [
   { v: 'gym', t: 'Gimnasio' }, { v: 'home', t: 'Casa' }, { v: 'outdoor', t: 'Exterior / parque' },
 ]
-const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'hyper_bench', 'chair']
+const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'hyper_bench', 'chair', 'step']
 
 function equipmentFor(locs: Location[], homeBasic: boolean): EquipmentId[] {
   const s = new Set<EquipmentId>()

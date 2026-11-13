@@ -9,7 +9,7 @@ import {
 } from '../../src/data/repo'
 import { getExercise } from '../../src/domain/catalog'
 import { EXERCISES } from '../../src/domain/catalog/exercises'
-import { MEDIA_MANIFEST } from '../../src/domain/catalog/media'
+import { ALL_MEDIA, MEDIA_MANIFEST } from '../../src/domain/catalog/media'
 import { buildFromTemplate, generateRoutine } from '../../src/domain/engine/generator'
 import { historyFor, suggestNext } from '../../src/domain/engine/progression'
 import { alternativesFor } from '../../src/domain/engine/substitution'
@@ -185,34 +185,37 @@ describe('Caso 10 · exportar y restaurar', () => {
   })
 })
 
-describe('Caso 13 · rutinas incluidas con medios de la variante y atribución', () => {
+describe('Caso 13 · rutinas incluidas con medios de la variante y atribuciones', () => {
   const root = resolve(__dirname, '../..')
-  it('cada ejercicio verificado tiene su animación en el manifiesto, con archivos existentes y licencia', () => {
+  it('cada ejercicio verificado tiene su demostración en un manifiesto, con archivos existentes y licencia', () => {
     const verified = EXERCISES.filter((e) => e.demoStatus === 'verificada')
-    expect(verified.length).toBeGreaterThanOrEqual(80)
+    expect(verified.length).toBeGreaterThanOrEqual(90)
     for (const e of verified) {
-      const m = MEDIA_MANIFEST.items.find((x) => x.exerciseId === e.id)
+      const m = ALL_MEDIA.find((x) => x.exerciseId === e.id)
       expect(m, e.id).toBeTruthy()
-      expect(m!.frames!.length).toBeGreaterThanOrEqual(2)
+      expect(m!.frames!.length).toBeGreaterThanOrEqual(1)
       for (const f of m!.frames!) expect(existsSync(resolve(root, 'public', f)), f).toBe(true)
-      expect(m!.license).toBe('CC BY-SA 4.0')
-      expect(m!.attribution).toMatch(/Everkinetic/)
-      expect(m!.sourceFiles!.every((u) => u.startsWith('https://github.com/everkinetic/data/blob/'))).toBe(true)
+      if (m!.frameDurationsMs) expect(m!.frameDurationsMs.length).toBe(m!.frames!.length)
+      expect(['CC BY-SA 4.0', 'Dominio público']).toContain(m!.license)
+      expect(m!.attribution.length).toBeGreaterThan(20)
       expect(m!.checkedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      if (m!.provider === 'everkinetic') {
+        expect(m!.attribution).toMatch(/Everkinetic/)
+        expect(m!.sourceFiles!.every((u) => u.startsWith('https://github.com/everkinetic/data/blob/'))).toBe(true)
+      } else {
+        expect(m!.provider).toBe('wikimedia-commons')
+        expect(m!.sourceUrl).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/)
+        expect(m!.attribution).toMatch(/Wikimedia Commons/)
+      }
     }
-    for (const m of MEDIA_MANIFEST.items) expect(getExercise(m.exerciseId)?.demoStatus).toBe('verificada')
+    for (const m of ALL_MEDIA) expect(getExercise(m.exerciseId)?.demoStatus, m.exerciseId).toBe('verificada')
   })
-  it('las rutinas incluidas solo usan ejercicios con demostración verificada, salvo los pendientes declarados', () => {
-    const DECLARED_PENDING = new Set(['sentadilla_peso_corporal', 'zancada_atras_peso_corporal'])
+  it('las rutinas incluidas solo usan ejercicios con demostración verificada', () => {
     for (const t of TEMPLATES) {
       for (const level of ['beginner', 'intermediate'] as const) {
-        const { draft, warnings } = buildFromTemplate(t, { ...defaultProfile(0), level })
+        const { draft } = buildFromTemplate(t, { ...defaultProfile(0), level })
         for (const d of draft.days) for (const e of d.exercises) {
-          const ex = getExercise(e.exerciseId)!
-          if (ex.demoStatus !== 'verificada') {
-            expect(DECLARED_PENDING.has(ex.id), `${t.id}: ${ex.id}`).toBe(true)
-            expect(warnings.join(' ')).toContain(ex.name)
-          }
+          expect(getExercise(e.exerciseId)!.demoStatus, `${t.id}: ${e.exerciseId}`).toBe('verificada')
         }
       }
     }

@@ -1,0 +1,276 @@
+{
+ "generatedAt": "2026-11-13",
+ "source": {
+  "site": "https://commons.wikimedia.org"
+ },
+ "items": [
+  {
+   "id": "wc-sentadilla_peso_corporal",
+   "exerciseId": "sentadilla_peso_corporal",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/sentadilla_peso_corporal-1.webp",
+    "media/wc/sentadilla_peso_corporal-2.webp",
+    "media/wc/sentadilla_peso_corporal-3.webp",
+    "media/wc/sentadilla_peso_corporal-4.webp",
+    "media/wc/sentadilla_peso_corporal-5.webp",
+    "media/wc/sentadilla_peso_corporal-6.webp",
+    "media/wc/sentadilla_peso_corporal-7.webp",
+    "media/wc/sentadilla_peso_corporal-8.webp",
+    "media/wc/sentadilla_peso_corporal-9.webp",
+    "media/wc/sentadilla_peso_corporal-10.webp",
+    "media/wc/sentadilla_peso_corporal-11.webp",
+    "media/wc/sentadilla_peso_corporal-12.webp",
+    "media/wc/sentadilla_peso_corporal-13.webp",
+    "media/wc/sentadilla_peso_corporal-14.webp",
+    "media/wc/sentadilla_peso_corporal-15.webp",
+    "media/wc/sentadilla_peso_corporal-16.webp",
+    "media/wc/sentadilla_peso_corporal-17.webp",
+    "media/wc/sentadilla_peso_corporal-18.webp",
+    "media/wc/sentadilla_peso_corporal-19.webp",
+    "media/wc/sentadilla_peso_corporal-20.webp",
+    "media/wc/sentadilla_peso_corporal-21.webp",
+    "media/wc/sentadilla_peso_corporal-22.webp"
+   ],
+   "frameDurationsMs": [
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120,
+    120
+   ],
+   "colored": false,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Squats.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Squats.gif"
+   ],
+   "author": "Wensceslao",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Animación: Wensceslao, vía Wikimedia Commons (Squats.gif), CC BY-SA 4.0.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP; recortados, en escala de grises e invertidos (líneas oscuras sobre fondo claro); se reproduce 1 de cada 3 fotogramas.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Silueta (vídeo trazado) de una sentadilla con peso corporal, brazos al frente. Baja hasta una sentadilla profunda.",
+   "bytes": 83578
+  },
+  {
+   "id": "wc-plancha_frontal",
+   "exerciseId": "plancha_frontal",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/plancha_frontal-1.webp"
+   ],
+   "frameDurationsMs": null,
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Plank_exercise.svg",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Plank_exercise.svg"
+   ],
+   "author": "Pk0001",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Pk0001, vía Wikimedia Commons (Plank exercise.svg), CC BY-SA 4.0.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP; SVG rasterizado.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Plancha frontal sobre antebrazos (posición mantenida, una imagen).",
+   "bytes": 8240
+  },
+  {
+   "id": "wc-sentadilla_silla",
+   "exerciseId": "sentadilla_silla",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/sentadilla_silla-1.webp",
+    "media/wc/sentadilla_silla-2.webp",
+    "media/wc/sentadilla_silla-3.webp",
+    "media/wc/sentadilla_silla-4.webp",
+    "media/wc/sentadilla_silla-5.webp",
+    "media/wc/sentadilla_silla-6.webp",
+    "media/wc/sentadilla_silla-7.webp"
+   ],
+   "frameDurationsMs": [
+    1000,
+    500,
+    500,
+    500,
+    2000,
+    500,
+    1000
+   ],
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Squat-CDC_strength_training_for_older_adults.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Squat-CDC_strength_training_for_older_adults.gif"
+   ],
+   "author": "Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults»",
+   "license": "Dominio público",
+   "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-HHS-CDC",
+   "attribution": "Animación: Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults», vía Wikimedia Commons (Squat-CDC strength training for older adults.gif), Dominio público.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Sentadilla hacia una silla con brazos al frente, sin carga.",
+   "bytes": 27940
+  },
+  {
+   "id": "wc-zancada_apoyo",
+   "exerciseId": "zancada_apoyo",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/zancada_apoyo-1.webp",
+    "media/wc/zancada_apoyo-2.webp",
+    "media/wc/zancada_apoyo-3.webp",
+    "media/wc/zancada_apoyo-4.webp",
+    "media/wc/zancada_apoyo-5.webp",
+    "media/wc/zancada_apoyo-6.webp",
+    "media/wc/zancada_apoyo-7.webp"
+   ],
+   "frameDurationsMs": [
+    1000,
+    500,
+    500,
+    500,
+    3000,
+    1000,
+    1000
+   ],
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lunge-CDC_strength_training_for_older_adults.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Lunge-CDC_strength_training_for_older_adults.gif"
+   ],
+   "author": "Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults»",
+   "license": "Dominio público",
+   "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-HHS-CDC",
+   "attribution": "Animación: Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults», vía Wikimedia Commons (Lunge-CDC strength training for older adults.gif), Dominio público.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Zancada al frente con una mano en una barandilla, sin carga; rodilla trasera cerca del suelo.",
+   "bytes": 21400
+  },
+  {
+   "id": "wc-subida_escalon",
+   "exerciseId": "subida_escalon",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/subida_escalon-1.webp",
+    "media/wc/subida_escalon-2.webp",
+    "media/wc/subida_escalon-3.webp",
+    "media/wc/subida_escalon-4.webp",
+    "media/wc/subida_escalon-5.webp",
+    "media/wc/subida_escalon-6.webp",
+    "media/wc/subida_escalon-7.webp"
+   ],
+   "frameDurationsMs": [
+    1000,
+    500,
+    1500,
+    500,
+    500,
+    500,
+    1000
+   ],
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Step_up-CDC_strength_training_for_older_adults.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Step_up-CDC_strength_training_for_older_adults.gif"
+   ],
+   "author": "Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults»",
+   "license": "Dominio público",
+   "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-HHS-CDC",
+   "attribution": "Animación: Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults», vía Wikimedia Commons (Step up-CDC strength training for older adults.gif), Dominio público.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Subida a un escalón con apoyo en el pasamanos, sin carga.",
+   "bytes": 19004
+  },
+  {
+   "id": "wc-gemelos_peso_corporal",
+   "exerciseId": "gemelos_peso_corporal",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/gemelos_peso_corporal-1.webp",
+    "media/wc/gemelos_peso_corporal-2.webp"
+   ],
+   "frameDurationsMs": [
+    2000,
+    4000
+   ],
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Toe_stand-CDC_strength_training_for_older_adults.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Toe_stand-CDC_strength_training_for_older_adults.gif"
+   ],
+   "author": "Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults»",
+   "license": "Dominio público",
+   "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-HHS-CDC",
+   "attribution": "Animación: Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults», vía Wikimedia Commons (Toe stand-CDC strength training for older adults.gif), Dominio público.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Elevación de talones de pie con las manos apoyadas en un mueble (2 fotogramas, movimiento pequeño).",
+   "bytes": 6592
+  },
+  {
+   "id": "wc-flexiones_pared",
+   "exerciseId": "flexiones_pared",
+   "kind": "frames",
+   "provider": "wikimedia-commons",
+   "frames": [
+    "media/wc/flexiones_pared-1.webp",
+    "media/wc/flexiones_pared-2.webp",
+    "media/wc/flexiones_pared-3.webp",
+    "media/wc/flexiones_pared-4.webp",
+    "media/wc/flexiones_pared-5.webp"
+   ],
+   "frameDurationsMs": [
+    500,
+    500,
+    1000,
+    500,
+    1000
+   ],
+   "colored": true,
+   "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wallpushup-CDC_strength_training_for_older_adults.gif",
+   "sourceFiles": [
+    "https://commons.wikimedia.org/wiki/File:Wallpushup-CDC_strength_training_for_older_adults.gif"
+   ],
+   "author": "Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults»",
+   "license": "Dominio público",
+   "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-HHS-CDC",
+   "attribution": "Animación: Centers for Disease Control and Prevention (CDC), «Growing Stronger – Strength Training for Older Adults», vía Wikimedia Commons (Wallpushup-CDC strength training for older adults.gif), Dominio público.",
+   "modifications": "Fotogramas extraídos y convertidos a WebP.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Licencia comprobada en la ficha de Commons (API extmetadata) y revisión visual manual de los fotogramas. Flexiones con las manos en la pared.",
+   "bytes": 13282
+  }
+ ]
+}

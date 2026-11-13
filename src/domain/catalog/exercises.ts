@@ -25,6 +25,8 @@ interface Def {
   harder?: string
   note?: string
   demo?: Exercise['demoStatus']
+  /** id del medio si no es Everkinetic (p. ej. 'wc-...' de Wikimedia Commons). */
+  media?: string
 }
 
 function ex(d: Def): Exercise {
@@ -44,7 +46,7 @@ function ex(d: Def): Exercise {
     repProfile: d.reps,
     instructions: d.ins,
     errors: d.err,
-    media: demoStatus === 'verificada' ? [{ mediaId: `ek-${d.id}` }] : [],
+    media: demoStatus === 'verificada' ? [{ mediaId: d.media ?? `ek-${d.id}` }] : [],
     demoStatus,
     easier: d.easier,
     harder: d.harder,
@@ -669,47 +671,86 @@ export const EXERCISES: Exercise[] = [
     err: ['Tirar del cuello.', 'Hacerlo deprisa sin control.'],
   }),
 
-  // ───────────── SIN DEMOSTRACIÓN VERIFICADA (pendiente real, ver docs/ESTADO.md) ─────────────
+  // ───────────── PESO CORPORAL (demostraciones de Wikimedia Commons, ver docs/CONTENIDOS_Y_LICENCIAS.md) ─────────────
   ex({
     id: 'sentadilla_peso_corporal', name: 'Sentadilla con peso corporal', syn: ['air squat', 'sentadilla libre'],
     p: ['quads', 'glutes'], s: ['adductors', 'hamstrings'], eq: [], pattern: 'squat', cat: 'compound',
-    load: 'bodyweight', reps: 'light', demo: 'pendiente', harder: 'sentadilla_mancuernas',
+    load: 'bodyweight', reps: 'light', media: 'wc-sentadilla_peso_corporal', easier: 'sentadilla_silla', harder: 'sentadilla_mancuernas',
     ins: ['Pies a la anchura de los hombros o algo más, puntas ligeramente hacia fuera.', 'Baja llevando la cadera atrás y abajo, rodillas en la dirección de los pies y brazos al frente para equilibrarte.', 'Desciende hasta donde mantengas la espalda neutra y los talones apoyados; sube empujando el suelo.'],
     err: ['Rodillas hacia dentro.', 'Levantar los talones.', 'Bajar deprisa sin control.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante exacta. Como referencia aproximada, la sentadilla con mancuernas muestra el mismo movimiento de piernas con carga.',
+    note: 'La animación (silueta) baja hasta una sentadilla profunda: baja solo hasta donde mantengas la espalda neutra y los talones apoyados.',
   }),
   ex({
-    id: 'zancada_atras_peso_corporal', name: 'Zancada atrás con peso corporal', syn: ['reverse lunge'],
-    p: ['quads', 'glutes'], s: ['hamstrings', 'adductors'], eq: [], pattern: 'lunge', cat: 'compound',
-    load: 'bodyweight', uni: true, reps: 'light', demo: 'pendiente', harder: 'zancadas_mancuernas',
-    ins: ['De pie, da un paso largo hacia atrás.', 'Baja hasta que la rodilla de atrás se acerque al suelo, con el tronco erguido.', 'Vuelve empujando con la pierna delantera. Alterna o completa un lado.'],
-    err: ['Paso demasiado corto.', 'Rodilla delantera hacia dentro.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante exacta. Referencia aproximada: zancadas con mancuernas.',
+    id: 'sentadilla_silla', name: 'Sentadilla a silla (peso corporal)', syn: ['sentarse y levantarse', 'chair squat'],
+    p: ['quads', 'glutes'], s: ['adductors', 'hamstrings'], eq: ['chair'], pattern: 'squat', cat: 'compound',
+    load: 'bodyweight', reps: 'light', media: 'wc-sentadilla_silla', harder: 'sentadilla_peso_corporal',
+    ins: ['De pie delante de una silla estable, pies a la anchura de la cadera y brazos al frente.', 'Lleva la cadera atrás y baja despacio hasta rozar el asiento, sin dejarte caer.', 'Sube empujando el suelo con todo el pie.'],
+    err: ['Dejarse caer en la silla.', 'Rodillas hacia dentro.', 'Despegar los talones.'],
+    note: 'Más fácil que la sentadilla libre: buena para empezar o para aprender la profundidad.',
+  }),
+  ex({
+    id: 'zancada_apoyo', name: 'Zancada al frente con apoyo (peso corporal)', syn: ['lunge con apoyo', 'estocada'],
+    p: ['quads', 'glutes'], s: ['hamstrings', 'adductors'], eq: ['chair'], pattern: 'lunge', cat: 'compound',
+    load: 'bodyweight', uni: true, reps: 'light', media: 'wc-zancada_apoyo', harder: 'zancadas_mancuernas',
+    ins: ['De pie junto a un apoyo estable (encimera, respaldo de silla, barandilla) con una mano en él.', 'Da un paso largo al frente y baja hasta que la rodilla de atrás se acerque al suelo, con el tronco erguido.', 'Vuelve a la posición inicial empujando con la pierna delantera. Completa un lado y cambia.'],
+    err: ['Paso demasiado corto.', 'Rodilla delantera hacia dentro.', 'Apoyarse con todo el peso en la mano.'],
+    note: 'El apoyo es solo para el equilibrio.',
+  }),
+  ex({
+    id: 'subida_escalon', name: 'Subida a escalón con apoyo (peso corporal)', syn: ['step-up', 'subir escalón'],
+    p: ['quads', 'glutes'], s: ['hamstrings', 'calves'], eq: ['step'], pattern: 'lunge', cat: 'compound',
+    load: 'bodyweight', uni: true, reps: 'light', media: 'wc-subida_escalon', harder: 'subidas_banco',
+    ins: ['De frente a un escalón firme, con una mano en el pasamanos.', 'Sube apoyando todo el pie y empujando con la pierna de arriba.', 'Baja despacio. Completa un lado y cambia.'],
+    err: ['Impulsarse con la pierna de abajo.', 'Escalón resbaladizo o inestable.'],
+  }),
+  ex({
+    id: 'gemelos_peso_corporal', name: 'Elevación de talones de pie con apoyo', syn: ['gemelos sin peso', 'puntillas'],
+    p: ['calves'], s: [], eq: ['chair'], pattern: 'calves', cat: 'isolation',
+    load: 'bodyweight', reps: 'light', media: 'wc-gemelos_peso_corporal',
+    ins: ['De pie, con las manos apoyadas en una encimera o respaldo estable.', 'Sube los talones lo más alto que puedas y mantén un instante.', 'Baja despacio. Para hacerlo más difícil, hazlo a una pierna o en el borde de un escalón.'],
+    err: ['Rebotar.', 'Recorrido corto.'],
+    note: 'Movimiento pequeño: la animación tiene solo dos posiciones.',
+  }),
+  ex({
+    id: 'flexiones_pared', name: 'Flexiones en la pared', syn: ['wall push-up'],
+    p: ['chest'], s: ['triceps', 'shoulders'], eq: [], pattern: 'push_h', cat: 'compound',
+    load: 'bodyweight', reps: 'light', media: 'wc-flexiones_pared', harder: 'flexiones_inclinadas',
+    ins: ['De pie frente a una pared, con las manos apoyadas a la altura y anchura de los hombros.', 'Con el cuerpo recto, flexiona los codos y acerca el pecho a la pared.', 'Empuja hasta estirar los brazos. Cuanto más lejos los pies, más difícil.'],
+    err: ['Doblar la cadera.', 'Codos muy abiertos.'],
+    note: 'La variante más fácil de las flexiones.',
   }),
   ex({
     id: 'plancha_frontal', name: 'Plancha frontal', syn: ['plank'],
     p: ['abs'], s: ['shoulders', 'glutes'], eq: [], pattern: 'core_stab', cat: 'core',
-    load: 'time', reps: 'light', demo: 'pendiente',
+    load: 'time', reps: 'light', media: 'wc-plancha_frontal',
     ins: ['Apoya antebrazos y puntas de los pies, codos bajo los hombros.', 'Mantén el cuerpo en línea recta apretando abdomen y glúteos.', 'Respira con normalidad.'],
     err: ['Dejar caer la cadera.', 'Elevar mucho los glúteos.', 'Aguantar la respiración.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante. La plancha lateral sí tiene demostración.',
+    note: 'Ejercicio isométrico: la ilustración muestra la posición que se mantiene.',
+  }),
+
+  // ───────────── SIN DEMOSTRACIÓN VERIFICADA (pendiente real, ver docs/ESTADO.md) ─────────────
+  ex({
+    id: 'zancada_atras_peso_corporal', name: 'Zancada atrás con peso corporal', syn: ['reverse lunge'],
+    p: ['quads', 'glutes'], s: ['hamstrings', 'adductors'], eq: [], pattern: 'lunge', cat: 'compound',
+    load: 'bodyweight', uni: true, reps: 'light', demo: 'pendiente', easier: 'zancada_apoyo', harder: 'zancadas_mancuernas',
+    ins: ['De pie, da un paso largo hacia atrás.', 'Baja hasta que la rodilla de atrás se acerque al suelo, con el tronco erguido.', 'Vuelve empujando con la pierna delantera. Alterna o completa un lado.'],
+    err: ['Paso demasiado corto.', 'Rodilla delantera hacia dentro.'],
+    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante exacta. Referencia aproximada: zancada al frente con apoyo.',
   }),
   ex({
     id: 'flexiones_inclinadas', name: 'Flexiones inclinadas (manos elevadas)', syn: ['flexiones en banco', 'incline push-up'],
     p: ['chest'], s: ['triceps', 'shoulders', 'abs'], eq: ['chair'], pattern: 'push_h', cat: 'compound',
-    load: 'bodyweight', reps: 'light', demo: 'pendiente', harder: 'flexiones',
+    load: 'bodyweight', reps: 'light', demo: 'pendiente', easier: 'flexiones_pared', harder: 'flexiones',
     ins: ['Apoya las manos en un banco, mesa o encimera estable, algo más abiertas que los hombros.', 'Con el cuerpo recto, baja el pecho hacia el apoyo.', 'Empuja hasta estirar los brazos. Cuanto más alto el apoyo, más fácil.'],
     err: ['Apoyo que se mueve.', 'Cadera hundida.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante. Referencia aproximada: flexiones.',
+    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante. Referencias aproximadas: flexiones en la pared (más fácil) y flexiones (más difícil).',
   }),
 ]
 
 /** Para ejercicios con demostración pendiente: ejercicio con demo que sirve de referencia APROXIMADA (otra variante). */
 export const APPROX_REFERENCE: Record<string, string> = {
-  sentadilla_peso_corporal: 'sentadilla_mancuernas',
-  zancada_atras_peso_corporal: 'zancadas_mancuernas',
-  plancha_frontal: 'plancha_lateral',
-  flexiones_inclinadas: 'flexiones',
+  zancada_atras_peso_corporal: 'zancada_apoyo',
+  flexiones_inclinadas: 'flexiones_pared',
 }
 
 export const EXERCISE_BY_ID: Record<string, Exercise> = Object.fromEntries(EXERCISES.map((e) => [e.id, e]))
@@ -750,6 +791,7 @@ export const EQUIPMENT_LABEL: Record<EquipmentId, string> = {
   bands: 'Bandas elásticas',
   hyper_bench: 'Banco de hiperextensiones',
   chair: 'Silla o banco estable',
+  step: 'Escalón o escalera',
 }
 
 export const PATTERN_LABEL: Record<Exercise['pattern'], string> = {

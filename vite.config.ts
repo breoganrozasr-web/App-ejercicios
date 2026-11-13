@@ -48,7 +48,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.includes('/media/ek/'),
+            urlPattern: ({ url }) => url.pathname.includes('/media/ek/') || url.pathname.includes('/media/wc/'),
             handler: 'CacheFirst',
             options: { cacheName: 'forja-demos-v1', expiration: { maxEntries: 400 } },
           },

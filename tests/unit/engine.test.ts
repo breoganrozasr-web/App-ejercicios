@@ -83,11 +83,13 @@ describe('Caso 2 · casa sin material', () => {
     const pats = patternsOf(r.draft.days)
     expect(pats.has('pull_h') || pats.has('pull_v')).toBe(false)
   })
-  it('la plantilla de casa sin material tampoco usa material oculto y declara las demostraciones pendientes', () => {
+  it('la plantilla de casa sin material tampoco usa material oculto y cubre pierna sin carga', () => {
     const t = TEMPLATES.find((x) => x.id === 'home_none')!
-    const { draft, warnings } = buildFromTemplate(t, p)
+    const { draft } = buildFromTemplate(t, p)
     for (const d of draft.days) for (const e of d.exercises) expect(hasEquipment(HOME_NONE_EQUIPMENT, getExercise(e.exerciseId)!)).toBe(true)
-    expect(warnings.join(' ')).toMatch(/demostración pendiente/i)
+    const ids = draft.days.flatMap((d) => d.exercises.map((e) => e.exerciseId))
+    expect(ids).toContain('sentadilla_peso_corporal')
+    expect(ids).toContain('zancada_apoyo')
   })
 })
 

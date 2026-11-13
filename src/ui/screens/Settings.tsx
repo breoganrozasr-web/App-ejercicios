@@ -8,7 +8,7 @@ import { clearDemo, loadDemo } from '../../data/demo'
 import { DEMO_CACHE, clearDemos, demoCacheInfo, downloadDemos, formatBytes } from '../../data/offline'
 import { getMeta, getRoutineBundle, saveProfile } from '../../data/repo'
 import { EXERCISES } from '../../domain/catalog/exercises'
-import { MEDIA_MANIFEST, demoBytes } from '../../domain/catalog/media'
+import { ALL_MEDIA, COMMONS_MANIFEST, MEDIA_MANIFEST, demoBytes } from '../../domain/catalog/media'
 import { ENGINE_VERSION } from '../../domain/engine/params'
 import type { Increments, Session } from '../../domain/types'
 import { formatDateShort, toLocalDate } from '../../domain/util'
@@ -83,7 +83,7 @@ export function SettingsScreen({ section }: { section?: string }) {
   }, [section])
 
   const routineExIds = bundle ? [...new Set(bundle.version.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)))] : []
-  const allIds = MEDIA_MANIFEST.items.map((m) => m.exerciseId)
+  const allIds = ALL_MEDIA.map((m) => m.exerciseId)
 
   const doDownload = async (ids: string[]) => {
     setDl('0 %')
@@ -254,7 +254,8 @@ export function SettingsScreen({ section }: { section?: string }) {
 
         <Section id="licencias" title="Créditos y licencias">
           <p className="small">Ilustraciones de ejercicios: <strong>Everkinetic</strong> (Greg Priday), repositorio <a href={MEDIA_MANIFEST.source.repo} target="_blank" rel="noreferrer">everkinetic/data</a>, licencia <a href={MEDIA_MANIFEST.source.licenseUrl} target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. Adaptadas en esta app (escala de grises, WebP, animación alternando posiciones, colores invertidos en tema oscuro); las adaptaciones se distribuyen bajo la misma licencia.</p>
-          <p className="small">{MEDIA_MANIFEST.items.length} ejercicios con ilustración verificada a mano; {EXERCISES.filter((e) => e.demoStatus === 'pendiente').length} con demostración pendiente (indicado en cada ficha).</p>
+          <p className="small">Animaciones de ejercicios con peso corporal vía <strong>Wikimedia Commons</strong> ({COMMONS_MANIFEST.items.length}): «Squats.gif» de Wensceslao (CC BY-SA 4.0), «Plank exercise.svg» de Pk0001 (CC BY-SA 4.0) y animaciones de los CDC de EE. UU. («Growing Stronger», dominio público). Autor, licencia y enlace en el pie de cada demostración.</p>
+          <p className="small">{ALL_MEDIA.length} ejercicios con demostración verificada a mano; {EXERCISES.filter((e) => e.demoStatus === 'pendiente').length} con demostración pendiente (indicado en cada ficha).</p>
           <p className="small">Vídeos de YouTube que añadas tú: se reproducen con el reproductor oficial en modo de privacidad mejorada (youtube-nocookie.com), bajo las condiciones de YouTube; no se descargan.</p>
           <p className="small">Código de la app: licencia MIT. Fuente tipográfica Bricolage Grotesque (SIL Open Font License). Iconos Lucide (ISC).</p>
           <p className="tiny muted">App {`1.0.0`} · motor de rutinas {ENGINE_VERSION} · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>

@@ -39,6 +39,7 @@ export type EquipmentId =
   | 'bands'
   | 'hyper_bench' // banco de hiperextensiones
   | 'chair' // silla/sofá estable (casa)
+  | 'step' // escalón o escalera firme
 
 export type Pattern =
   | 'squat' // dominante de rodilla bilateral
@@ -130,9 +131,13 @@ export interface MediaItem {
   id: string
   exerciseId: string
   kind: 'frames' | 'video_embed' | 'user_image'
-  provider: 'everkinetic' | 'youtube' | 'user'
+  provider: 'everkinetic' | 'wikimedia-commons' | 'youtube' | 'user'
   /** Rutas relativas a la app (frames) o URL externa (vídeo). */
   frames?: string[]
+  /** Duración de cada fotograma (ms). Si falta, se alterna con fundido (dos posiciones). */
+  frameDurationsMs?: number[] | null
+  /** Dibujo en color: no se invierten los colores en tema oscuro. */
+  colored?: boolean
   embedUrl?: string
   watchUrl?: string
   sourceUrl: string

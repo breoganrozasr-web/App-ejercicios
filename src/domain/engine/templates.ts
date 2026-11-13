@@ -104,17 +104,16 @@ export const TEMPLATES: TemplateDef[] = [
   {
     id: 'home_none',
     name: 'Casa sin material · 3 días',
-    description: 'Peso corporal y una silla estable. Cuerpo completo 3 días (puedes hacer solo 2). Progresas con más repeticiones y con variantes más difíciles.',
+    description: 'Peso corporal, una silla estable y una pared. Cuerpo completo 3 días (puedes hacer solo 2). Progresas con más repeticiones y con variantes más difíciles.',
     location: 'home', equipment: HOME_NONE_EQUIPMENT, minLevel: 'beginner', weekdays: [0, 2, 4],
     notes: [
       '⚠ Sin material no hay un ejercicio de tirón con carga (remo o dominada): el superman trabaja la zona lumbar pero NO sustituye a un tirón. Para cubrirlo: una banda elástica, una barra de dominadas o un parque con barras.',
-      '⚠ Sentadilla y zancada con peso corporal no tienen todavía demostración con licencia verificada: se muestran instrucciones y una referencia aproximada marcada como tal.',
-      'Si una variante te resulta muy fácil (más de 20 repeticiones con margen), pasa a la siguiente más difícil.',
+      'Si alguna variante te cuesta demasiado, usa la más fácil (sentadilla a silla, flexiones en la pared); si te sobran más de 20 repeticiones, la más difícil.',
     ],
     sessions: [
-      { name: 'Día A · Cuerpo completo', focus: 'full', slots: [{ ...M('squat', 'sentadilla_peso_corporal') }, M('push_h', 'flexiones'), A('glute', 'puente_gluteo'), A('back_ext', 'superman'), A('core_stab', 'plancha_lateral')] },
-      { name: 'Día B · Cuerpo completo', focus: 'full', slots: [M('lunge', 'zancada_atras_peso_corporal'), M('triceps', 'fondos_entre_bancos'), A('glute', 'puente_gluteo'), A('core_flex', 'elevacion_cadera_rodillas'), A('back_ext', 'superman')] },
-      { name: 'Día C · Cuerpo completo', focus: 'full', slots: [M('squat', 'sentadilla_peso_corporal'), M('push_h', 'flexiones_pies_elevados', 'flexiones'), A('glute', 'puente_gluteo'), A('core_flex', 'encogimientos_abdominales'), A('core_flex', 'bicicleta_abdominal')] },
+      { name: 'Día A · Cuerpo completo', focus: 'full', slots: [M('squat', 'sentadilla_peso_corporal'), M('push_h', 'flexiones'), A('glute', 'puente_gluteo'), A('back_ext', 'superman'), A('calves', 'gemelos_peso_corporal'), A('core_stab', 'plancha_lateral')] },
+      { name: 'Día B · Cuerpo completo', focus: 'full', slots: [M('lunge', 'zancada_apoyo'), M('triceps', 'fondos_entre_bancos'), A('glute', 'puente_gluteo'), A('core_flex', 'elevacion_cadera_rodillas'), A('back_ext', 'superman')] },
+      { name: 'Día C · Cuerpo completo', focus: 'full', slots: [M('squat', 'sentadilla_peso_corporal'), M('push_h', 'flexiones_pies_elevados', 'flexiones'), A('glute', 'puente_gluteo'), A('core_stab', 'plancha_frontal'), A('core_flex', 'bicicleta_abdominal')] },
     ],
   },
   {
@@ -139,11 +138,10 @@ export const TEMPLATES: TemplateDef[] = [
     location: 'outdoor', equipment: OUTDOOR_EQUIPMENT, minLevel: 'beginner', weekdays: [0, 2, 4],
     notes: [
       'El remo invertido es la puerta de entrada al tirón: cuanto más horizontal el cuerpo, más difícil. Las dominadas aparecen si tu nivel lo permite.',
-      '⚠ Sentadilla y zancada con peso corporal no tienen todavía demostración con licencia verificada: se muestran instrucciones y una referencia aproximada marcada como tal.',
     ],
     sessions: [
       { name: 'Día A · Cuerpo completo', focus: 'full', slots: [M('pull_h', 'remo_invertido'), M('push_h', 'flexiones'), M('squat', 'sentadilla_peso_corporal'), A('glute', 'puente_gluteo'), A('core_stab', 'plancha_lateral')] },
-      { name: 'Día B · Cuerpo completo', focus: 'full', slots: [{ ...M('pull_v', 'dominadas', 'dominadas_supinas'), fallback: 'pull_h' as Pattern }, M('triceps', 'fondos_entre_bancos'), M('lunge', 'zancada_atras_peso_corporal'), A('core_flex', 'elevacion_cadera_rodillas'), A('back_ext', 'superman')] },
+      { name: 'Día B · Cuerpo completo', focus: 'full', slots: [{ ...M('pull_v', 'dominadas', 'dominadas_supinas'), fallback: 'pull_h' as Pattern }, M('triceps', 'fondos_entre_bancos'), M('lunge', 'zancada_apoyo'), A('core_flex', 'elevacion_cadera_rodillas'), A('back_ext', 'superman')] },
       { name: 'Día C · Cuerpo completo', focus: 'full', slots: [M('pull_h', 'remo_invertido'), M('push_h', 'flexiones_pies_elevados', 'flexiones'), M('squat', 'sentadilla_peso_corporal'), A('glute', 'puente_gluteo'), A('core_flex', 'bicicleta_abdominal')] },
     ],
   },

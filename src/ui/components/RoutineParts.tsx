@@ -15,7 +15,7 @@ export function Thumb({ exerciseId }: { exerciseId: string }) {
   const m = mediaForExercise(exerciseId)
   return (
     <div className="demo-thumb" aria-hidden>
-      {m?.frames ? <img src={assetUrl(m.frames[m.frames.length > 1 ? 1 : 0])} alt="" loading="lazy" /> : <span className="tiny faint">—</span>}
+      {m?.frames ? <img src={assetUrl(m.frames[m.frames.length > 2 ? Math.floor(m.frames.length / 2) : m.frames.length > 1 ? 1 : 0])} alt="" loading="lazy" style={m.colored ? { filter: 'none' } : undefined} /> : <span className="tiny faint">—</span>}
     </div>
   )
 }

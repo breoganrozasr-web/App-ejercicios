@@ -63,15 +63,15 @@ export type GenerateResult =
 
 /** Orden de preferencia por patrón (de más accesible a más técnico). Se filtra por material, nivel y exclusiones. */
 export const PATTERN_PREFS: Record<Pattern, string[]> = {
-  squat: ['prensa', 'sentadilla_banco_mancuernas', 'sentadilla_barra', 'sentadilla_mancuernas', 'sentadilla_multipower', 'sentadilla_banco_barra', 'sentadilla_sumo_mancuerna', 'sentadilla_banda', 'sentadilla_frontal'],
+  squat: ['prensa', 'sentadilla_banco_mancuernas', 'sentadilla_barra', 'sentadilla_mancuernas', 'sentadilla_multipower', 'sentadilla_banco_barra', 'sentadilla_sumo_mancuerna', 'sentadilla_banda', 'sentadilla_frontal', 'sentadilla_peso_corporal', 'sentadilla_silla'],
   hinge: ['peso_muerto_rumano_mancuernas', 'peso_muerto_rumano'],
-  lunge: ['zancadas_mancuernas', 'subidas_banco', 'zancadas_caminando', 'zancadas_barra'],
+  lunge: ['zancadas_mancuernas', 'subidas_banco', 'zancadas_caminando', 'zancadas_barra', 'zancada_apoyo', 'subida_escalon'],
   glute: ['puente_gluteo', 'patada_gluteo_polea'],
   back_ext: ['hiperextensiones', 'superman'],
   knee_flex: ['curl_femoral_tumbado', 'curl_femoral_sentado'],
   knee_ext: ['extension_cuadriceps'],
-  calves: ['gemelos_maquina_pie', 'gemelos_prensa', 'gemelos_sentado_maquina', 'gemelos_banda'],
-  push_h: ['press_pecho_maquina', 'press_banca_mancuernas', 'press_banca_barra', 'press_inclinado_mancuernas', 'press_banca_multipower', 'press_inclinado_barra', 'flexiones', 'flexiones_pies_elevados', 'flexiones_cerradas', 'fondos_asistidos', 'press_banca_cerrado'],
+  calves: ['gemelos_maquina_pie', 'gemelos_prensa', 'gemelos_sentado_maquina', 'gemelos_banda', 'gemelos_peso_corporal'],
+  push_h: ['press_pecho_maquina', 'press_banca_mancuernas', 'press_banca_barra', 'press_inclinado_mancuernas', 'press_banca_multipower', 'press_inclinado_barra', 'flexiones', 'flexiones_pies_elevados', 'flexiones_cerradas', 'fondos_asistidos', 'press_banca_cerrado', 'flexiones_pared'],
   push_v: ['press_hombro_mancuernas', 'press_hombro_maquina', 'press_militar_barra_sentado', 'press_hombro_unilateral', 'press_arnold'],
   pull_v: ['jalon_pecho', 'jalon_supino', 'jalon_estrecho', 'dominadas_supinas', 'dominadas'],
   pull_h: ['remo_polea_baja', 'remo_mancuerna', 'remo_barra_supino', 'remo_invertido'],
@@ -85,7 +85,7 @@ export const PATTERN_PREFS: Record<Pattern, string[]> = {
   hip_abd: ['abductores_maquina'],
   hip_add: ['aductores_maquina'],
   core_flex: ['crunch_polea', 'encogimientos_abdominales', 'elevacion_cadera_rodillas', 'bicicleta_abdominal', 'elevaciones_piernas'],
-  core_stab: ['plancha_lateral', 'rueda_abdominal_barra'],
+  core_stab: ['plancha_frontal', 'plancha_lateral', 'rueda_abdominal_barra'],
 }
 
 /** Patrón de accesorio con el que se completa el volumen de cada grupo. */

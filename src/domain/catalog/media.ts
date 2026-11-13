@@ -1,5 +1,6 @@
 import type { MediaItem } from '../types'
 import manifest from './media-manifest.json'
+import commons from './media-manifest-commons.json'
 
 export const MEDIA_MANIFEST = manifest as unknown as {
   generatedAt: string
@@ -8,10 +9,17 @@ export const MEDIA_MANIFEST = manifest as unknown as {
   items: MediaItem[]
 }
 
-export const MEDIA_BY_ID: Record<string, MediaItem> = Object.fromEntries(MEDIA_MANIFEST.items.map((m) => [m.id, m]))
+/** Demostraciones de Wikimedia Commons (licencia por archivo; ver docs/CONTENIDOS_Y_LICENCIAS.md). */
+export const COMMONS_MANIFEST = commons as unknown as { generatedAt: string; items: MediaItem[] }
+
+/** Todas las demostraciones incluidas en la app. */
+export const ALL_MEDIA: MediaItem[] = [...MEDIA_MANIFEST.items, ...COMMONS_MANIFEST.items]
+
+export const MEDIA_BY_ID: Record<string, MediaItem> = Object.fromEntries(ALL_MEDIA.map((m) => [m.id, m]))
+const MEDIA_BY_EXERCISE: Record<string, MediaItem> = Object.fromEntries(ALL_MEDIA.map((m) => [m.exerciseId, m]))
 
 export function mediaForExercise(exerciseId: string): MediaItem | undefined {
-  return MEDIA_BY_ID[`ek-${exerciseId}`]
+  return MEDIA_BY_EXERCISE[exerciseId]
 }
 
 /** URL absoluta de un recurso de /public respetando la base de despliegue. */

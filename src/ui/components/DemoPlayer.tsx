@@ -19,7 +19,7 @@ export function DemoPlayer({ exerciseId, onOpenReference }: { exerciseId: string
   const ex = getExercise(exerciseId)
   const media = mediaForExercise(exerciseId)
   const userMedia = useLiveQuery(() => db().userMedia.where('exerciseId').equals(exerciseId).toArray(), [exerciseId])
-  if (media?.frames?.length) return <FramesPlayer key={exerciseId} frames={media.frames.map(assetUrl)} name={ex?.name ?? ''} credit={media.attribution} sourceUrl={media.sourceUrl} licenseUrl={media.licenseUrl} />
+  if (media?.frames?.length) return <FramesPlayer key={exerciseId} frames={media.frames.map(assetUrl)} durations={media.frameDurationsMs ?? null} colored={!!media.colored} name={ex?.name ?? ''} credit={media.attribution} sourceUrl={media.sourceUrl} licenseUrl={media.licenseUrl} />
   const img = userMedia?.find((m) => m.kind === 'image')
   const link = userMedia?.find((m) => m.kind === 'link')
   if (img || link) {
@@ -58,21 +58,27 @@ export function DemoPlayer({ exerciseId, onOpenReference }: { exerciseId: string
   )
 }
 
-function FramesPlayer({ frames, name, credit, sourceUrl, licenseUrl }: { frames: string[]; name: string; credit: string; sourceUrl: string; licenseUrl: string }) {
+function FramesPlayer({ frames, durations, colored, name, credit, sourceUrl, licenseUrl }: { frames: string[]; durations: number[] | null; colored: boolean; name: string; credit: string; sourceUrl: string; licenseUrl: string }) {
   const reduced = useReducedMotion()
   const online = useOnline()
   const [playing, setPlaying] = useState(!reduced)
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1)
   const [idx, setIdx] = useState(0)
   const [failed, setFailed] = useState<Set<number>>(new Set())
+  // Dos posiciones (Everkinetic): fundido suave. Secuencias (Commons): cada fotograma con su duración, sin fundido.
   const phase = 1150 / speed
+  const frameMs = durations ? (durations[idx] ?? 400) / speed : phase
   useEffect(() => {
-    if (!playing) return
-    const id = window.setInterval(() => setIdx((i) => (i + 1) % frames.length), phase)
-    return () => window.clearInterval(id)
-  }, [playing, phase, frames.length])
+    if (!playing || frames.length < 2) return
+    const id = window.setTimeout(() => setIdx((i) => (i + 1) % frames.length), frameMs)
+    return () => window.clearTimeout(id)
+  }, [playing, frameMs, idx, frames.length])
   const allFailed = failed.size >= frames.length
-  const labels = useMemo(() => frames.map((_, i) => (frames.length === 2 ? (i === 0 ? 'Posición A' : 'Posición B') : `Posición ${i + 1}`)), [frames])
+  const imgFilter = colored ? 'none' : 'var(--demo-filter)'
+  const labels = useMemo(
+    () => frames.map((_, i) => (frames.length === 1 ? 'Posición mantenida' : frames.length === 2 ? (i === 0 ? 'Posición A' : 'Posición B') : durations ? `Fotograma ${i + 1} de ${frames.length}` : `Posición ${i + 1}`)),
+    [frames, durations],
+  )
   if (allFailed) {
     return (
       <div className="note warn" role="status">
@@ -89,13 +95,26 @@ function FramesPlayer({ frames, name, credit, sourceUrl, licenseUrl }: { frames:
       </div>
     )
   }
+  if (frames.length === 1) {
+    return (
+      <div className="demo" role="group" aria-label={`Demostración: ${name}`}>
+        <div className="stage">
+          <img src={frames[0]} alt={`${name}: posición mantenida`} style={{ filter: imgFilter }} onError={() => setFailed(new Set([0]))} draggable={false} />
+        </div>
+        <div className="controls"><span className="small muted">Posición mantenida (ejercicio isométrico)</span></div>
+        <div className="credit">
+          {credit} <a href={sourceUrl} target="_blank" rel="noreferrer">Fuente</a> · <a href={licenseUrl} target="_blank" rel="noreferrer">Licencia</a>
+        </div>
+      </div>
+    )
+  }
   if (reduced && !playing) {
     return (
       <div className="demo">
         <div className="frames-static" style={{ padding: 8 }}>
           {frames.map((f, i) => (
             <figure key={f}>
-              <img src={f} alt={`${name}: ${labels[i]}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'contain', filter: 'var(--demo-filter)' }} onError={() => setFailed((s) => new Set(s).add(i))} />
+              <img src={f} alt={`${name}: ${labels[i]}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'contain', filter: imgFilter }} onError={() => setFailed((s) => new Set(s).add(i))} />
               <figcaption>{labels[i]}</figcaption>
             </figure>
           ))}
@@ -114,7 +133,7 @@ function FramesPlayer({ frames, name, credit, sourceUrl, licenseUrl }: { frames:
   }
   return (
     <div className="demo" role="group" aria-label={`Demostración animada: ${name}`}>
-      <div className="stage" style={{ ['--fade' as string]: `${Math.round(phase * 0.42)}ms` }}>
+      <div className="stage" style={{ ['--fade' as string]: durations ? '0ms' : `${Math.round(phase * 0.42)}ms` }}>
         {frames.map((f, i) => (
           <img
             key={f}
@@ -122,7 +141,7 @@ function FramesPlayer({ frames, name, credit, sourceUrl, licenseUrl }: { frames:
             src={f}
             alt={i === idx ? `${name}: ${labels[i]}` : ''}
             aria-hidden={i !== idx}
-            style={{ opacity: i === idx ? 1 : 0 }}
+            style={{ opacity: i === idx ? 1 : 0, filter: imgFilter }}
             onError={() => setFailed((s) => new Set(s).add(i))}
             draggable={false}
           />
