@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, ChartLine, ChevronRight, Info, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChartLine, ChevronLeft, ChevronRight, Info, Pencil, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
@@ -10,7 +10,7 @@ import { weeklyTarget } from '../../domain/engine/params'
 import { checkScope } from '../../domain/engine/scope'
 import { exerciseTrend, sessionsPerWeek, weeklyMuscleSets } from '../../domain/records'
 import type { Session, SetEntry } from '../../domain/types'
-import { formatDateLong, formatDateShort, formatDuration, formatNumber, formatTime, newId, toLocalDate } from '../../domain/util'
+import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, formatNumber, formatTime, newId, toLocalDate } from '../../domain/util'
 import { LineChart, WeekBars } from '../components/Charts'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -54,7 +54,7 @@ export function ProgressScreen() {
           <>
             {hasDemo && <div className="note warn"><span className="badge demo">Ejemplo</span><span className="small">Incluye datos de ejemplo. Bórralos en Ajustes → Datos de ejemplo.</span></div>}
             <section className="card stack">
-              <div className="row between"><h3>Constancia</h3><span className="small muted">{finished.length} sesiones en total</span></div>
+              <div className="row between"><h3>Constancia</h3><span className="small muted">{finished.length} {finished.length === 1 ? 'sesión' : 'sesiones'} en total</span></div>
               <WeekBars data={perWeek.map((w) => ({ week: w.week, value: w.count }))} label="Sesiones por semana" unit="sesiones" />
               <p className="tiny muted">Sesiones por semana en las últimas 12 semanas. Sin rachas: perder un día no borra nada.</p>
             </section>
@@ -104,6 +104,7 @@ export function ProgressScreen() {
               </section>
             )}
 
+            <MonthCalendar sessions={finished} />
             <section className="stack-sm">
               <h2 className="section-title">Historial</h2>
               <div className="card flat list" style={{ padding: '0 12px' }}>
@@ -174,7 +175,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
             {s.rampApplied && <span className="badge suggest">Familiarización</span>}
           </div>
           <h1 style={{ fontSize: '1.6rem' }}>{s.title}</h1>
-          <span className="small muted">{formatDateLong(s.date)} · {formatTime(s.startedAt)} · {formatDuration(dur)} min · {sum.done}/{sum.planned} series de trabajo</span>
+          <span className="small muted">{formatDateLong(s.date)} · {formatTime(s.startedAt)} · {Math.max(1, Math.round(dur / 60))} min · {sum.done}/{sum.planned} series de trabajo</span>
         </div>
         {view.exercises.map((e, ei) => {
           let n = 0
@@ -243,4 +244,47 @@ function setText(x: SetEntry, lt: Session['exercises'][number]['loadTypeSnapshot
   if (lt === 'band') return `${reps} rep${x.bandLabel ? ` · banda ${x.bandLabel}` : ''}`
   const unit = lt === 'dumbbell_each' ? ' kg c/u' : ' kg'
   return `${x.weightKg === null ? '—' : formatNumber(x.weightKg)}${unit} × ${reps}${x.side !== 'both' ? (x.side === 'left' ? ' (izq.)' : ' (dcho.)') : ''}`
+}
+
+/** Calendario mensual (semana de lunes a domingo) con las sesiones registradas. */
+function MonthCalendar({ sessions }: { sessions: Session[] }) {
+  const today = toLocalDate()
+  const [month, setMonth] = useState(today.slice(0, 7))
+  const first = `${month}-01`
+  const start = weekStart(first)
+  const [y, m] = month.split('-').map(Number)
+  const label = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1))
+  const byDate = new Map<string, Session[]>()
+  for (const s of sessions) byDate.set(s.date, [...(byDate.get(s.date) ?? []), s])
+  const cells = Array.from({ length: 42 }, (_, i) => addDays(start, i)).filter((d, i) => i < 35 || d.slice(0, 7) === month)
+  const shift = (n: number) => { const d = new Date(y, m - 1 + n, 1); setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`) }
+  return (
+    <section className="card stack-sm" aria-label="Calendario de sesiones">
+      <div className="row">
+        <button className="icon-btn" onClick={() => shift(-1)} aria-label="Mes anterior"><ChevronLeft /></button>
+        <h3 className="grow center" style={{ textTransform: 'capitalize' }}>{label}</h3>
+        <button className="icon-btn" onClick={() => shift(1)} aria-label="Mes siguiente"><ChevronRight /></button>
+      </div>
+      <div className="week" style={{ gap: 4 }}>
+        {WEEKDAY_SHORT.map((d) => <span key={d} className="tiny muted center">{d}</span>)}
+        {cells.map((d) => {
+          const list = byDate.get(d) ?? []
+          const inMonth = d.slice(0, 7) === month
+          const status = list.some((s) => s.status === 'completed') ? 'done' : list.length ? 'partial' : 'none'
+          const content = (
+            <>
+              <span className="tiny">{Number(d.slice(8))}</span>
+              <span className={`dot ${status}`} style={{ width: 14, height: 14 }} />
+            </>
+          )
+          const style = { minHeight: 48, padding: '4px 0', opacity: inMonth ? 1 : 0.4, gap: 2 } as const
+          return list.length ? (
+            <a key={d} className={`d ${d === today ? 'today' : ''}`} style={{ ...style, textDecoration: 'none' }} href={href(`progreso/sesion/${list[0].id}`)} aria-label={`${d}: ${list.length} sesión${list.length > 1 ? 'es' : ''}`}>{content}</a>
+          ) : (
+            <div key={d} className={`d ${d === today ? 'today' : ''}`} style={style} aria-hidden>{content}</div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }

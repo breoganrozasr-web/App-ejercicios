@@ -50,7 +50,7 @@ test('Caso 1/8 · perfil → rutina → entrenar con coma decimal → recargar �
   // Progreso lo muestra
   await page.goto('/#/progreso')
   await expect(page.getByText('Constancia')).toBeVisible()
-  await expect(page.getByText('1 sesiones en total')).toBeVisible()
+  await expect(page.getByText('1 sesión en total')).toBeVisible()
   expect(errors).toEqual([])
 })
 

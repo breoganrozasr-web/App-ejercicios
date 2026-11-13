@@ -18,7 +18,8 @@ export function epley(weight: number, reps: number): number {
   return weight * (1 + reps / 30)
 }
 
-const E1RM_TYPES: LoadType[] = ['barbell_total', 'dumbbell_each', 'machine', 'cable']
+/** Solo pesos libres en ejercicios multiarticulares: en máquinas/poleas la carga no es comparable y el 1RM no es pertinente. */
+const E1RM_TYPES: LoadType[] = ['barbell_total', 'dumbbell_each']
 
 export interface ExerciseSetPoint {
   date: string
@@ -85,7 +86,7 @@ export function computeRecords(sessions: Session[], exerciseId: string, allowE1r
       const cur = byReps.get(n)
       if (!cur || w > cur.kg) byReps.set(n, { kg: w, date: p.date })
     }
-    if (allowE1rm && E1RM_TYPES.includes(lt) && r <= E1RM_MAX_REPS && w > 0) {
+    if (allowE1rm && E1RM_TYPES.includes(lt) && ex.category === 'compound' && r <= E1RM_MAX_REPS && w > 0) {
       const e = round2(epley(w, r))
       if (!res.bestE1rm || e > res.bestE1rm.kg) res.bestE1rm = { kg: e, fromKg: w, reps: r, date: p.date }
     }
@@ -128,7 +129,7 @@ export function exerciseTrend(sessions: Session[], exerciseId: string, allowE1rm
       }
       if (set.reps !== null && (reps === null || set.reps > reps)) reps = set.reps
       if (set.durationSec !== null && (sec === null || set.durationSec > sec)) sec = set.durationSec
-      if (allowE1rm && lt && E1RM_TYPES.includes(lt) && set.weightKg && set.reps && set.reps <= E1RM_MAX_REPS) {
+      if (allowE1rm && lt && E1RM_TYPES.includes(lt) && ex?.category === 'compound' && set.weightKg && set.reps && set.reps <= E1RM_MAX_REPS) {
         const e = round2(epley(set.weightKg, set.reps))
         if (e1rm === null || e > e1rm) e1rm = e
       }

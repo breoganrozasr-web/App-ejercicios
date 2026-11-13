@@ -12,9 +12,11 @@ import { alternativesFor } from '../../domain/engine/substitution'
 import { computeRecords, exerciseTrend } from '../../domain/records'
 import type { EquipmentId, Exercise, LoadType, MuscleId, Pattern, Session } from '../../domain/types'
 import { formatDateShort, formatNumber, newId } from '../../domain/util'
+import { defaultIncrement, historyFor } from '../../domain/engine/progression'
+import { DEFAULT_INCREMENTS } from '../../domain/profile'
 import { LineChart } from '../components/Charts'
 import { DemoPlayer } from '../components/DemoPlayer'
-import { Chip } from '../components/inputs'
+import { Chip, DecimalInput } from '../components/inputs'
 import { useToast } from '../components/overlay'
 import { Thumb } from '../components/RoutineParts'
 import { back, go, href } from '../router'
@@ -99,7 +101,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
           </div>
         </div>
         <DemoPlayer exerciseId={ex.id} onOpenReference={(id) => go(`ejercicios/${id}`)} />
-        {ex.variantNote && <p className="small muted">{ex.variantNote}</p>}
+        {ex.variantNote && ex.demoStatus === 'verificada' && <p className="small muted">{ex.variantNote}</p>}
         <section className="card stack-sm">
           <div className="row wrap"><strong>Principales:</strong> {ex.primary.map((m) => MUSCLE_LABEL[m]).join(', ')}</div>
           {ex.secondary.length > 0 && <div className="row wrap small"><strong>Secundarios:</strong> {ex.secondary.map((m) => MUSCLE_LABEL[m]).join(', ')}</div>}
@@ -145,6 +147,9 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
             {rec.bestTimeSec && <p className="small">Mayor tiempo: <strong>{rec.bestTimeSec.sec} s</strong> · {formatDateShort(rec.bestTimeSec.date)}</p>}
           </section>
         )}
+
+        <ExerciseHistory exerciseId={ex.id} sessions={sessions} />
+        {(ex.loadType !== 'time' && ex.loadType !== 'band') && <ExerciseSettingsCard exerciseId={ex.id} />}
 
         <section className="card stack-sm">
           <h3>Alternativas</h3>
@@ -274,5 +279,59 @@ export function NewExerciseScreen() {
         <button className="btn primary big block" disabled={!name.trim() || !primary.length} onClick={() => void save()}>Crear ejercicio</button>
       </main>
     </>
+  )
+}
+
+/** Últimas sesiones de ESTE ejercicio (misma variante), con series de trabajo y calentamiento separados. */
+function ExerciseHistory({ exerciseId, sessions }: { exerciseId: string; sessions: Session[] }) {
+  const items = historyFor(exerciseId, sessions).slice(0, 8)
+  if (!items.length) return null
+  return (
+    <section className="card stack-sm">
+      <h3>Últimas sesiones</h3>
+      <div className="list">
+        {items.map((h) => {
+          const work = h.ex.sets.filter((x) => x.kind === 'work' && x.completed)
+          const lt = h.ex.loadTypeSnapshot
+          const txt = work.map((x) => lt === 'time' ? `${x.durationSec ?? '?'} s` : lt === 'assisted' ? `${x.reps ?? '?'} (asist. ${formatNumber(x.assistKg)})` : lt === 'bodyweight' || lt === 'band' ? `${x.reps ?? '?'}${x.addedKg ? ` +${formatNumber(x.addedKg)}` : ''}` : `${formatNumber(x.weightKg)}×${x.reps ?? '?'}`).join(' · ')
+          return (
+            <a key={h.session.id} className="list-item small" href={href(`progreso/sesion/${h.session.id}`)}>
+              <span style={{ width: 64 }} className="muted">{formatDateShort(h.date)}</span>
+              <span className="grow num">{txt}{h.ex.painFlag ? ' · molestia' : ''}</span>
+            </a>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+/** Ajustes propios de un ejercicio: incremento mínimo real (p. ej. mancuernas de 1 kg) y descanso preferido. */
+function ExerciseSettingsCard({ exerciseId }: { exerciseId: string }) {
+  const { profile } = useApp()
+  const ex = getExercise(exerciseId)
+  const setting = useLiveQuery(() => db().exerciseSettings.get(exerciseId), [exerciseId])
+  const toast = useToast()
+  if (!ex) return null
+  const defInc = defaultIncrement(ex.loadType, profile?.increments ?? DEFAULT_INCREMENTS)
+  const save = async (patch: { incrementKg?: number | undefined; restSec?: number | undefined }) => {
+    await db().exerciseSettings.put({ ...(setting ?? { exerciseId }), ...patch, exerciseId })
+    toast('Ajuste del ejercicio guardado')
+  }
+  return (
+    <details className="more card flat">
+      <summary>Ajustes de este ejercicio</summary>
+      <div className="row" style={{ paddingTop: 8 }}>
+        <label className="stack-sm grow" style={{ gap: 2 }}>
+          <span className="small">{ex.loadType === 'assisted' ? 'Paso de asistencia (kg)' : 'Incremento mínimo (kg)'}</span>
+          <DecimalInput className="input" label="Incremento mínimo en kg" value={setting?.incrementKg ?? null} placeholder={formatNumber(defInc)} onChange={(v) => void save({ incrementKg: v ?? undefined })} max={50} />
+        </label>
+        <label className="stack-sm grow" style={{ gap: 2 }}>
+          <span className="small">Descanso (s)</span>
+          <DecimalInput className="input" integer label="Descanso en segundos" value={setting?.restSec ?? null} placeholder="según rutina" onChange={(v) => void save({ restSec: v ?? undefined })} max={900} />
+        </label>
+      </div>
+      <p className="tiny muted">Vacío = valor general de Ajustes ({formatNumber(defInc)} kg) o el descanso de la rutina. La sugerencia de subida usará este incremento.</p>
+    </details>
   )
 }

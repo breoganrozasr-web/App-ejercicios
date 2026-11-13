@@ -80,11 +80,9 @@ export function TodayScreen() {
           </section>
         ) : bundle && next ? (
           <section className="card stack">
-            <div className="row between">
-              <span className="small muted">{isFirst ? 'Primera sesión de la rutina' : todayPlanned ? 'Hoy está planificado' : 'Siguiente sesión'}</span>
-              <a className="small" href={href(`rutinas/${bundle.routine.id}`)}>{bundle.routine.name}</a>
-            </div>
+            <span className="small muted">{isFirst ? 'Primera sesión de la rutina' : todayPlanned ? 'Hoy está planificado' : 'Siguiente sesión'}</span>
             <div className="hero-day">{next.name}</div>
+            <a className="small" href={href(`rutinas/${bundle.routine.id}`)} style={{ alignSelf: 'flex-start' }}>{bundle.routine.name}</a>
             <span className="small muted">
               {next.exercises.length} ejercicios · ≈{dayDuration(next).minutes} min
               {!todayPlanned && nextPlannedDate ? ` · planificada el ${WEEKDAY_NAME[weekdayMon0(nextPlannedDate)]}, pero puedes hacerla hoy` : ''}

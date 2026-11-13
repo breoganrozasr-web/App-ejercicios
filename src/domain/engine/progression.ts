@@ -278,7 +278,7 @@ function firstTime(ex: Exercise | undefined, p: Prescription): Suggestion {
   return {
     kind: 'first_time',
     title: 'Primera vez: busca una carga cómoda',
-    detail: `Sin prueba de máximo. Haz 1–3 series de aproximación subiendo poco a poco. Elige para las series de trabajo una carga con la que llegarías a ${p.repMax} repeticiones dejando unas 2–4 en reserva. Si te sobran más, sube un poco en la siguiente serie; si no llegas a ${p.repMin}, baja.`,
+    detail: `Sin prueba de máximo: sube poco a poco en las aproximaciones y elige una carga con la que harías ${p.repMax} dejando 2–4 en reserva. Si sobran muchas, sube; si no llegas a ${p.repMin}, baja.`,
     targetReps: [p.repMin, p.repMax],
   }
 }

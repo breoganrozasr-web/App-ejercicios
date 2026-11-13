@@ -8,6 +8,14 @@ const base = process.env.BASE ?? '/'
 
 export default defineConfig({
   base,
+  build: {
+    rollupOptions: {
+      output: {
+        // Librerías en ficheros aparte: cambian poco y se reaprovechan entre actualizaciones.
+        manualChunks: { react: ['react', 'react-dom'], dexie: ['dexie', 'dexie-react-hooks'], icons: ['lucide-react'] },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({

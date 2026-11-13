@@ -1,22 +1,37 @@
 # Estado del proyecto (punto de continuación)
 
-Última actualización: 2026-11-13 (sesión inicial).
+Última actualización: **13 de noviembre de 2026**. Rama: `claude/app-from-spec-1c0pa7`.
 
-## Hecho
-- Investigación de evidencia y licencias (notas resumidas en docs/EVIDENCIA.md y docs/CONTENIDOS_Y_LICENCIAS.md — en curso).
-- Proyecto Vite 7 + React 19 + TypeScript 5.9 + Dexie 4 + vite-plugin-pwa 1.3 + Vitest 3 + Playwright 1.63.
-- Dominio: tipos, catálogo (85 ejercicios con demostración verificada + 4 con demostración pendiente), motor de rutinas,
-  plantillas, progresión doble, récords, sustituciones.
-- Medios Everkinetic generados (`scripts/build_media.py`) + manifiesto `src/domain/catalog/media-manifest.json`.
-- Datos: esquema Dexie v1, repositorio (rutinas versionadas, sesiones con instantánea), copias (JSON/CSV, restauración).
+## Terminado y probado
 
-## En curso
-- Interfaz (pantallas).
+- **App completa y utilizable** (PWA): perfil/onboarding, propuesta del generador con razones, conflictos y ajustes de tiempo; 10 plantillas; rutina en blanco y sesión libre; editor con versiones, superseries, sustituciones y calendario; modo entrenamiento completo; catálogo con 88 fichas; progreso (constancia, calendario mensual, series por músculo, evolución, récords, 1RM estimado con límites, peso corporal); ajustes (copias JSON/CSV, restauración con vista previa y transacción, demostraciones offline con tamaño y borrado, persistencia, guía de iPhone, datos de ejemplo, ayuda, licencias, borrado total).
+- **Motor determinista** v1.0.0 con reglas R1–R17 documentadas en `docs/EVIDENCIA.md`.
+- **Demostraciones**: 84 ejercicios con animación del muñeco (Everkinetic, CC BY-SA 4.0), cada par revisado a mano; manifiesto con origen, licencia, atribución y fecha.
+- **Pruebas**: 52 unitarias/integración + 19 E2E en verde (`docs/PRUEBAS.md`).
+- **Despliegue preparado**: `.github/workflows/deploy-pages.yml` (manual) y build verificado bajo `/App-ejercicios/`.
 
-## Pendiente
-- Pruebas E2E, revisión visual, documentación final.
+## Pendientes reales (no ocultos)
+
+1. **Publicación**: el repositorio es privado; GitHub Pages gratuito requiere repositorio público. Acción del propietario (ver README → Publicación).
+2. **Prueba en iPhone físico / Safari**: no disponible en este entorno (solo Chromium emulado). Lista de verificación en `docs/PRUEBAS.md`.
+3. **4 demostraciones pendientes** (sentadilla y zancada con peso corporal, plancha frontal, flexiones inclinadas). Las plantillas “Casa sin material” y “Parque” usan las dos primeras y lo avisan. Posible fuente: Wikimedia Commons (bloqueado en esta sesión). Ver `docs/CONTENIDOS_Y_LICENCIAS.md`.
+4. **Evidencia a texto completo**: las fuentes se verificaron a nivel de resumen/buscador; pubmed/pmc y webs de revistas estaban bloqueadas.
+
+## Ideas no implementadas (fuera del alcance de la v1)
+
+- Sincronización entre dispositivos (deliberadamente no incluida: los datos son locales; se usan copias).
+- Notificaciones push de fin de descanso con la pantalla bloqueada (no fiables sin servidor; se avisa en la app).
+- Integración de imágenes de wger (licencia por imagen; requiere acceso a wger.de).
 
 ## Cómo continuar
-1. `npm install`
-2. `npm run dev` (desarrollo) / `npm test` (unitarias) / `npm run build && npm run e2e`.
-3. Revisar este archivo y docs/PRUEBAS.md.
+
+```bash
+npm install
+npm test && npm run build && npm run e2e
+npm run dev            # desarrollo
+```
+
+- Reglas del motor: `src/domain/engine/params.ts` (+ subir `ENGINE_VERSION`).
+- Catálogo: `src/domain/catalog/exercises.ts`; demos: `scripts/build_media.py <ruta a everkinetic/data>`.
+- Esquema de datos: `src/data/db.ts` (añadir `this.version(N+1)` con `upgrade`, nunca borrar versiones).
+- Antes de tocar copias: `docs/FORMATO_COPIA.md`.
