@@ -12,7 +12,8 @@
 
 ## Pendientes reales (no ocultos)
 
-1. **Publicación**: `main` ya contiene todo el trabajo (historial revisado y sin correo personal) y el workflow de Pages construye y pasa las pruebas en GitHub. Falta que la persona propietaria haga público el repositorio y elija Settings → Pages → Source: GitHub Actions (las herramientas de desarrollo no pueden cambiar esos ajustes). Después, ejecutar el workflow y verificar la URL.
+1. **Publicación: HECHA.** Forja está en https://breoganrozasr-web.github.io/App-ejercicios/ (repositorio público, GitHub Pages con GitHub Actions; cada push a `main` vuelve a desplegar). Verificado el 13-11-2026 en la web real con Chromium y WebKit emulando iPhone 13 (ver docs/PRUEBAS.md).
+   - Aviso de privacidad: el correo personal del commit inicial se sustituyó por la dirección privada de GitHub antes de publicar, pero GitHub puede conservar el commit antiguo (sin referencia) accesible por su identificador o en el registro de actividad. Para purgarlo del todo: solicitud gratuita al soporte de GitHub.
 2. **Prueba en iPhone físico**: probado con Chromium y WebKit para Linux emulando iPhone, no en un iPhone real. Lista de verificación en `docs/PRUEBAS.md`.
 3. **4 demostraciones pendientes** (sentadilla y zancada con peso corporal, plancha frontal, flexiones inclinadas). Las plantillas “Casa sin material” y “Parque” usan las dos primeras y lo avisan. Posible fuente: Wikimedia Commons (bloqueado en esta sesión). Ver `docs/CONTENIDOS_Y_LICENCIAS.md`.
 4. **Evidencia a texto completo**: las fuentes se verificaron a nivel de resumen/buscador; pubmed/pmc y webs de revistas estaban bloqueadas.

@@ -19,7 +19,7 @@ PWA instalable para entrenar en el gimnasio, en casa o en el parque: te propone 
 
 ## Usarla en el iPhone
 
-1. Abre la dirección publicada en **Safari** (ver «Publicación» abajo).
+1. Abre **https://breoganrozasr-web.github.io/App-ejercicios/** en **Safari**.
 2. Botón **Compartir** → **Añadir a pantalla de inicio**.
 3. Ábrela desde el icono. Tras la primera carga funciona sin conexión.
 4. En Ajustes → Demostraciones sin conexión, pulsa «Descargar las de mi rutina» para tener las animaciones offline.

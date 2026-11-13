@@ -87,7 +87,7 @@ export function TodayScreen() {
               {next.exercises.length} ejercicios · ≈{dayDuration(next).minutes} min
               {!todayPlanned && nextPlannedDate ? ` · planificada el ${WEEKDAY_NAME[weekdayMon0(nextPlannedDate)]}, pero puedes hacerla hoy` : ''}
             </span>
-            {inRamp && <span className="badge suggest" style={{ alignSelf: 'flex-start' }}>Semana de familiarización: una serie menos y más margen</span>}
+            {inRamp && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
               {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}</li>)}
               {next.exercises.length > 6 && <li>y {next.exercises.length - 6} más</li>}
