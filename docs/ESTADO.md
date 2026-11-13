@@ -12,8 +12,8 @@
 
 ## Pendientes reales (no ocultos)
 
-1. **Publicación**: el repositorio es privado; GitHub Pages gratuito requiere repositorio público. Acción del propietario (ver README → Publicación).
-2. **Prueba en iPhone físico / Safari**: no disponible en este entorno (solo Chromium emulado). Lista de verificación en `docs/PRUEBAS.md`.
+1. **Publicación**: `main` ya contiene todo el trabajo (historial revisado y sin correo personal) y el workflow de Pages construye y pasa las pruebas en GitHub. Falta que la persona propietaria haga público el repositorio y elija Settings → Pages → Source: GitHub Actions (las herramientas de desarrollo no pueden cambiar esos ajustes). Después, ejecutar el workflow y verificar la URL.
+2. **Prueba en iPhone físico**: probado con Chromium y WebKit para Linux emulando iPhone, no en un iPhone real. Lista de verificación en `docs/PRUEBAS.md`.
 3. **4 demostraciones pendientes** (sentadilla y zancada con peso corporal, plancha frontal, flexiones inclinadas). Las plantillas “Casa sin material” y “Parque” usan las dos primeras y lo avisan. Posible fuente: Wikimedia Commons (bloqueado en esta sesión). Ver `docs/CONTENIDOS_Y_LICENCIAS.md`.
 4. **Evidencia a texto completo**: las fuentes se verificaron a nivel de resumen/buscador; pubmed/pmc y webs de revistas estaban bloqueadas.
 

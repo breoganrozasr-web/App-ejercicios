@@ -20,6 +20,8 @@ npm run e2e          # Playwright: levanta `npm run preview` y prueba la app con
 | `npm test` | ✅ **52/52** (3 ficheros) |
 | `npm run e2e` | ✅ **19/19** (iPhone 13; además iPhone SE y iPhone 15 Pro Max en las pruebas de diseño) |
 | Build bajo subruta `/App-ejercicios/` (como en GitHub Pages) | ✅ comprobado a mano con servidor estático: service worker, manifiesto y demos cargan sin errores |
+| GitHub Actions (`main`, ejecución 1) | ✅ job `build` en los servidores de GitHub: `npm ci`, 52 pruebas y build con `BASE=/App-ejercicios/`. ❌ job `deploy`: «Get Pages site failed» porque GitHub Pages aún no está activado (repositorio privado) |
+| **WebKit 26.6** (Playwright, Linux) | ✅ **12/13** E2E en `webkit-iphone-13`. La prueba del caso 9 se omite en WebKit porque `context.setOffline()` de Playwright corta también las respuestas del service worker («internal error»). Sustituida por una comprobación con **desconexión real** (servidor apagado): la app recarga desde el service worker, se empieza una sesión, se escribe «40,5» y se conserva tras recargar ✅ |
 
 ### Casos obligatorios del encargo
 
@@ -43,7 +45,7 @@ npm run e2e          # Playwright: levanta `npm run preview` y prueba la app con
 
 ## Qué se ha comprobado y qué no
 
-- **Emulación, no iPhone real.** Todas las pruebas de navegador usan **Chromium** con el viewport, la escala y el agente de usuario de iPhone. En este entorno **no hay WebKit** ni dispositivo físico. **No se ha probado en Safari ni en un iPhone.**
+- **Emulación, no iPhone real.** Las pruebas de navegador usan **Chromium** y **WebKit 26.6 para Linux** (el motor de Safari, pero no Safari de iOS) con viewport, escala y agente de usuario de iPhone. **No se ha probado en un iPhone físico.** Para repetir con WebKit: `npx playwright install webkit && npx playwright install-deps webkit` y `PW_WEBKIT=1 npm run e2e -- --project=webkit-iphone-13`.
 - Revisión visual: capturas reales de las pantallas (claro/oscuro, SE/13/15 Pro Max, horizontal) revisadas a mano; se corrigieron fallos detectados (fechas, textos duplicados, insignias recortadas, enlaces partidos, sugerencias demasiado largas).
 - Contenido de la evidencia: verificado solo a nivel de resumen/buscador (ver docs/EVIDENCIA.md).
 

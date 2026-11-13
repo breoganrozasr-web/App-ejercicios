@@ -17,5 +17,7 @@ export default defineConfig({
     { name: 'iphone-13', use: iphone('iPhone 13') },
     { name: 'iphone-se', use: iphone('iPhone SE'), testMatch: /layout\.spec\.ts/ },
     { name: 'iphone-15-pro-max', use: iphone('iPhone 15 Pro Max'), testMatch: /layout\.spec\.ts/ },
+    // WebKit (motor de Safari en Linux; NO es iOS). Solo si está instalado: PW_WEBKIT=1 npm run e2e -- --project=webkit-iphone-13
+    ...(process.env.PW_WEBKIT ? [{ name: 'webkit-iphone-13', use: { ...devices['iPhone 13'] } }] : []),
   ],
 })

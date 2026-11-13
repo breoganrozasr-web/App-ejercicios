@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
 import { acceptProposal, onboard } from './helpers'
 
-test('Caso 9 · tras la primera carga funciona sin conexión; las demos descargadas se ven y las demás avisan', async ({ page, context }) => {
+test('Caso 9 · tras la primera carga funciona sin conexión; las demos descargadas se ven y las demás avisan', async ({ page, context, browserName }) => {
+  // En WebKit, context.setOffline() de Playwright corta también las respuestas del service worker ("internal error").
+  // En WebKit se comprobó aparte con una desconexión real (servidor apagado): ver docs/PRUEBAS.md.
+  test.skip(browserName === 'webkit', 'Emulación offline de Playwright no compatible con service workers en WebKit')
   await onboard(page)
   await acceptProposal(page)
   // Esperar a que el service worker controle la página

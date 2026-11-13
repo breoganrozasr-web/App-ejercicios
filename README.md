@@ -54,12 +54,13 @@ tests/unit, tests/e2e
 
 ## Publicación gratuita
 
-El despliegue está **preparado pero no activado** (no se ha publicado nada). Opción recomendada, sin coste ni cuentas nuevas: **GitHub Pages**.
+Se publica con **GitHub Pages** (gratis, sin cuentas nuevas) mediante `.github/workflows/deploy-pages.yml`, que se ejecuta en cada push a `main` (y a mano desde Actions): instala, pasa las pruebas, construye con la subruta del repositorio y despliega.
 
-1. GitHub Pages gratuito solo publica repositorios **públicos**. Este repositorio es privado: hay que hacerlo público (Settings → General → Danger Zone → Change visibility). El repositorio no contiene datos personales; las ilustraciones son CC BY-SA y el código MIT.
+Requisitos que solo puede cambiar la persona propietaria en la web de GitHub (una vez):
+1. GitHub Pages gratuito solo publica repositorios **públicos**: Settings → General → Danger Zone → Change visibility → Public. Antes se revisaron archivos e historial (sin credenciales ni datos personales; el correo del commit inicial se sustituyó por la dirección privada de GitHub).
 2. Settings → Pages → Build and deployment → Source: **GitHub Actions**.
-3. Fusiona esta rama en `main`, ve a Actions → «Publicar en GitHub Pages» → **Run workflow**.
-4. La app quedará en `https://breoganrozasr-web.github.io/App-ejercicios/` (HTTPS, necesario para instalarla y usarla sin conexión).
+
+URL: `https://breoganrozasr-web.github.io/App-ejercicios/` (HTTPS, necesario para instalarla y usarla sin conexión).
 
 Alternativas si prefieres mantener el repositorio privado (requieren crear una cuenta gratuita, sin tarjeta, en el servicio): Cloudflare Pages o Netlify, subiendo la carpeta `dist/` generada con `npm run build`. Servirla desde tu ordenador por la red local (http://192.168…) **no** sirve para instalarla en el iPhone: el service worker exige HTTPS.
 
