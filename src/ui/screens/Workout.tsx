@@ -443,9 +443,12 @@ function ExerciseBlock(props: {
           const prevInSession = e.sets.slice(0, si).reverse().find((x) => x.completed)
           const ph = placeholderFor(lt, sug && sug.kind !== 'paused_pain' && sug.kind !== 'paused_scope' ? sug : null, lastWork[Math.max(0, workN - 1)], prevInSession, p?.repMin)
           const tag = set.kind === 'warmup' ? 'C' : String(workN)
+          const warmN = e.sets.slice(0, si + 1).filter((x) => x.kind === 'warmup').length
+          const setName = set.kind === 'warmup' ? `calentamiento ${warmN}` : `serie ${workN}`
           return (
             <SetRow
               key={set.id}
+              setName={setName}
               set={set}
               lt={lt}
               tag={tag}
@@ -481,30 +484,30 @@ function describeSet(x: SetEntry, lt: LoadType): string {
   return `${formatNumber(x.weightKg)}×${reps}`
 }
 
-function SetRow({ set, lt, tag, ph, useAssist, onSet, onToggle, onRir, onMenu }: { set: SetEntry; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onMenu: () => void }) {
+function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, onMenu }: { set: SetEntry; setName: string; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onMenu: () => void }) {
   const fmt = (n: number | null | undefined) => (n === null || n === undefined ? '' : formatNumber(n))
   const sideTxt = set.side === 'left' ? ' I' : set.side === 'right' ? ' D' : ''
   return (
     <>
-      <button className={`set-tag ${set.kind === 'warmup' ? 'warm' : ''}`} onClick={onMenu} aria-label={`Serie ${set.kind === 'warmup' ? 'de calentamiento' : tag}: opciones`}>{tag}{sideTxt}</button>
+      <button className={`set-tag ${set.kind === 'warmup' ? 'warm' : ''}`} onClick={onMenu} aria-label={`Opciones de ${setName}`}>{tag}{sideTxt}</button>
       {lt === 'time' ? (
-        <DecimalInput label="Segundos" integer value={set.durationSec} onChange={(v) => onSet({ durationSec: v })} placeholder={fmt(ph.durationSec)} max={3600} />
+        <DecimalInput label={`Segundos, ${setName}`} integer value={set.durationSec} onChange={(v) => onSet({ durationSec: v })} placeholder={fmt(ph.durationSec)} max={3600} />
       ) : (
         <>
           {lt === 'band' ? (
-            <input className="num-input" style={{ fontSize: '0.95rem' }} aria-label="Banda (color o nivel)" maxLength={20} value={set.bandLabel ?? ''} onChange={(e) => onSet({ bandLabel: e.target.value || null })} placeholder="color" />
+            <input className="num-input" style={{ fontSize: '0.95rem' }} aria-label={`Banda (color o nivel), ${setName}`} maxLength={20} value={set.bandLabel ?? ''} onChange={(e) => onSet({ bandLabel: e.target.value || null })} placeholder="color" />
           ) : lt === 'assisted' || (lt === 'bodyweight' && useAssist) ? (
-            <DecimalInput label="Asistencia en kg" value={set.assistKg} onChange={(v) => onSet({ assistKg: v })} placeholder={fmt(ph.assistKg)} />
+            <DecimalInput label={`Asistencia en kg, ${setName}`} value={set.assistKg} onChange={(v) => onSet({ assistKg: v })} placeholder={fmt(ph.assistKg)} />
           ) : lt === 'bodyweight' ? (
-            <DecimalInput label="Lastre en kg (opcional)" value={set.addedKg} onChange={(v) => onSet({ addedKg: v })} placeholder="0" />
+            <DecimalInput label={`Lastre en kg (opcional), ${setName}`} value={set.addedKg} onChange={(v) => onSet({ addedKg: v })} placeholder="0" />
           ) : (
-            <DecimalInput label={LOAD_LABEL[lt].field} value={set.weightKg} onChange={(v) => onSet({ weightKg: v })} placeholder={fmt(ph.weightKg)} />
+            <DecimalInput label={`${LOAD_LABEL[lt].field}, ${setName}`} value={set.weightKg} onChange={(v) => onSet({ weightKg: v })} placeholder={fmt(ph.weightKg)} />
           )}
-          <DecimalInput label="Repeticiones" integer value={set.reps} onChange={(v) => onSet({ reps: v })} placeholder={fmt(ph.reps)} max={500} />
-          <button className={`rir-btn ${set.rir !== null ? 'set' : ''}`} onClick={onRir} aria-label={`RIR ${set.rir ?? 'sin anotar'}`}>{set.rir === null ? '—' : set.rir >= 5 ? '5+' : set.rir}</button>
+          <DecimalInput label={`Repeticiones, ${setName}`} integer value={set.reps} onChange={(v) => onSet({ reps: v })} placeholder={fmt(ph.reps)} max={500} />
+          <button className={`rir-btn ${set.rir !== null ? 'set' : ''}`} onClick={onRir} aria-label={`RIR ${setName}: ${set.rir ?? 'sin anotar'}`}>{set.rir === null ? '—' : set.rir >= 5 ? '5+' : set.rir}</button>
         </>
       )}
-      <button className="set-done" aria-pressed={set.completed} onClick={onToggle} aria-label={set.completed ? 'Marcar como no hecha' : 'Marcar serie como hecha'}>
+      <button className="set-done" aria-pressed={set.completed} onClick={onToggle} aria-label={set.completed ? `Desmarcar ${setName}` : `Marcar ${setName} como hecha`}>
         <Check aria-hidden />
       </button>
     </>
