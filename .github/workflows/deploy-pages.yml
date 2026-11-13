@@ -1,9 +1,11 @@
-# Publica la app en GitHub Pages (gratis para repositorios públicos).
-# Solo se ejecuta A MANO (Actions → "Publicar en GitHub Pages" → Run workflow) para no publicar nada sin autorización.
-# Requisitos: repositorio público y Settings → Pages → Source: "GitHub Actions".
+# Publica Forja en GitHub Pages (gratis para repositorios públicos).
+# Se ejecuta al hacer push a main y también a mano (Actions → "Publicar en GitHub Pages" → Run workflow).
+# Requisito previo (una sola vez, en la web de GitHub): Settings → Pages → Source: "GitHub Actions".
 name: Publicar en GitHub Pages
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -19,17 +21,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npm run build
+      - name: Pruebas unitarias e integración
+        run: npm test
+      - name: Tipos + build de producción
+        run: npm run build
         env:
           BASE: /${{ github.event.repository.name }}/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
   deploy:
@@ -39,5 +43,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Comprobar que GitHub Pages está activado
+        uses: actions/configure-pages@v6
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
