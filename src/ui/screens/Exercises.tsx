@@ -306,7 +306,7 @@ function ExerciseHistory({ exerciseId, sessions }: { exerciseId: string; session
   )
 }
 
-/** Ajustes propios de un ejercicio: incremento mínimo real (p. ej. mancuernas de 1 kg) y descanso preferido. */
+/** Ajustes propios de un ejercicio: incremento mínimo real (p. ej. mancuernas de 1 kg), descanso preferido y nota fija. */
 function ExerciseSettingsCard({ exerciseId }: { exerciseId: string }) {
   const { profile } = useApp()
   const ex = getExercise(exerciseId)
@@ -314,7 +314,7 @@ function ExerciseSettingsCard({ exerciseId }: { exerciseId: string }) {
   const toast = useToast()
   if (!ex) return null
   const defInc = defaultIncrement(ex.loadType, profile?.increments ?? DEFAULT_INCREMENTS)
-  const save = async (patch: { incrementKg?: number | undefined; restSec?: number | undefined }) => {
+  const save = async (patch: { incrementKg?: number | undefined; restSec?: number | undefined; note?: string | undefined }) => {
     await db().exerciseSettings.put({ ...(setting ?? { exerciseId }), ...patch, exerciseId })
     toast('Ajuste del ejercicio guardado')
   }
@@ -332,6 +332,10 @@ function ExerciseSettingsCard({ exerciseId }: { exerciseId: string }) {
         </label>
       </div>
       <p className="tiny muted">Vacío = valor general de Ajustes ({formatNumber(defInc)} kg) o el descanso de la rutina. La sugerencia de subida usará este incremento.</p>
+      <label className="stack-sm" style={{ gap: 2, paddingTop: 8 }}>
+        <span className="small">Nota fija (se ve en cada entrenamiento)</span>
+        <textarea key={setting?.note ?? ''} className="input" aria-label="Nota fija del ejercicio" maxLength={300} defaultValue={setting?.note ?? ''} placeholder="Ej.: asiento en 4, agarre ancho" onBlur={(ev) => { const v = ev.target.value.trim(); if (v !== (setting?.note ?? '')) void save({ note: v || undefined }) }} />
+      </label>
     </details>
   )
 }

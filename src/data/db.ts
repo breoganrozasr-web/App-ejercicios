@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type {
-  BodyWeightEntry, ChangeLogEntry, Exercise, ExerciseSetting, MetaEntry, Profile, Routine, RoutineVersion, ScheduleOverride, Session,
+  BodyWeightEntry, ChangeLogEntry, Exercise, ExerciseSetting, MeasurementEntry, MetaEntry, Profile, ProgressPhoto, Routine, RoutineVersion, ScheduleOverride, Session,
 } from '../domain/types'
 
 /** Imagen o enlace de demostración aportado por la persona usuaria para un ejercicio propio. */
@@ -19,7 +19,7 @@ export interface UserMedia {
  * Esquema versionado. Para cambiarlo: añadir this.version(N+1).stores({...}).upgrade(tx => ...)
  * SIN borrar las versiones anteriores. Nunca se borra la base al actualizar la app.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export class ForjaDB extends Dexie {
   meta!: Table<MetaEntry, string>
@@ -33,6 +33,8 @@ export class ForjaDB extends Dexie {
   customExercises!: Table<Exercise, string>
   exerciseSettings!: Table<ExerciseSetting, string>
   userMedia!: Table<UserMedia, string>
+  measurements!: Table<MeasurementEntry, string>
+  photos!: Table<ProgressPhoto, string>
 
   constructor(name = 'forja') {
     super(name)
@@ -49,11 +51,16 @@ export class ForjaDB extends Dexie {
       exerciseSettings: 'exerciseId',
       userMedia: 'id, exerciseId',
     })
+    // v2: medidas corporales y fotos de progreso. Solo añade tablas: los datos de v1 no se tocan.
+    this.version(2).stores({
+      measurements: 'id, date, site',
+      photos: 'id, date',
+    })
   }
 }
 
 export const TABLES = [
-  'meta', 'profile', 'routines', 'routineVersions', 'overrides', 'sessions', 'bodyweight', 'changelog', 'customExercises', 'exerciseSettings', 'userMedia',
+  'meta', 'profile', 'routines', 'routineVersions', 'overrides', 'sessions', 'bodyweight', 'changelog', 'customExercises', 'exerciseSettings', 'userMedia', 'measurements', 'photos',
 ] as const
 export type TableName = (typeof TABLES)[number]
 

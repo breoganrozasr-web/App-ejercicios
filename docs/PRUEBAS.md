@@ -1,6 +1,6 @@
 # Pruebas: comandos, resultados reales y comprobaciones pendientes
 
-Última ejecución: **13 de noviembre de 2026**, en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 vía Playwright 1.63).
+Última ejecución: **13 de noviembre de 2026** (versión 1.1), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63).
 
 ## Comandos
 
@@ -16,9 +16,10 @@ npm run e2e          # Playwright: levanta `npm run preview` y prueba la app con
 | Comprobación | Resultado |
 |---|---|
 | `npm run typecheck` | ✅ sin errores |
-| `npm run build` | ✅ (JS principal ≈149 KB gzip + Dexie 36 KB + iconos 6 KB; precache de la app ≈814 KB; demos aparte, ≈2 MB bajo demanda) |
-| `npm test` | ✅ **52/52** (3 ficheros) |
-| `npm run e2e` | ✅ **19/19** (iPhone 13; además iPhone SE y iPhone 15 Pro Max en las pruebas de diseño) |
+| `npm run build` | ✅ (JS principal ≈163 KB gzip + Dexie 36 KB + iconos 7 KB; precache de la app ≈868 KB; demos aparte, bajo demanda) |
+| `npm test` | ✅ **73/73** (4 ficheros; `features.test.ts` cubre la versión 1.1: calorías, discos, calentamiento, preparación, días por músculo, récords, sesión pasada y cambio de fecha, **actualización de una base v1 a v2 sin pérdida**, copias con y sin fotos) |
+| `npm run e2e` | ✅ **22/22** (iPhone 13; además iPhone SE y iPhone 15 Pro Max en las pruebas de diseño). `mejoras.spec.ts`: preparación baja → quitar series con deshacer, nota fija, récord en directo, resumen con récords y comparación, sesión pasada con calorías (240–340 kcal con 75 kg y 55 min) y cambio de fecha con registro, discos (62,5 kg = 20 + 1,25 por lado) y calentamiento, medidas, modo de sonido guardado tras recargar |
+| **WebKit 26.6, versión 1.1** | ✅ **15/16** en `webkit-iphone-13` (1 omitida: la prueba sin conexión, ver abajo) |
 | Build bajo subruta `/App-ejercicios/` (como en GitHub Pages) | ✅ comprobado a mano con servidor estático: service worker, manifiesto y demos cargan sin errores |
 | GitHub Actions (`main`, ejecución 1) | ✅ job `build` en los servidores de GitHub: `npm ci`, 52 pruebas y build con `BASE=/App-ejercicios/`. ❌ job `deploy`: «Get Pages site failed» porque GitHub Pages aún no está activado (repositorio privado) |
 | **WebKit 26.6** (Playwright, Linux) | ✅ **12/13** E2E en `webkit-iphone-13`. La prueba del caso 9 se omite en WebKit porque `context.setOffline()` de Playwright corta también las respuestas del service worker («internal error»). Sustituida por una comprobación con **desconexión real** (servidor apagado): la app recarga desde el service worker, se empieza una sesión, se escribe «40,5» y se conserva tras recargar ✅ |
@@ -40,14 +41,15 @@ npm run e2e          # Playwright: levanta `npm run preview` y prueba la app con
 | 10 | Exportar/restaurar; archivo corrupto o incompatible no daña la base | `data.test.ts` (fusionar sin duplicar, reemplazar exacto, JSON roto, otra app, versión futura, fecha inválida, fallo a mitad → transacción deshecha, limpieza de texto, demo no exportada), `flows.spec.ts` (descarga real, archivo roto rechazado, fusión) | ✅ |
 | 11 | Editar rutina, archivar, actualizar: sesiones pasadas intactas | `data.test.ts`, `flows.spec.ts` | ✅ (la actualización del service worker se ha revisado por diseño: `registerType: 'prompt'`, no recarga durante un entrenamiento y no toca IndexedDB; no hay prueba automática de una actualización real) |
 | 12 | Reproductor fallido, URL rota, proveedor caído | `offline-media.spec.ts` (404 de medios → aviso y registro usable; YouTube solo online con enlace alternativo; enlace no https rechazado) | ✅ |
-| 13 | Rutinas precargadas con medios de su variante y atribuciones | `data.test.ts` (84 ejercicios verificados con archivos existentes, licencia, atribución, URL de origen con commit; plantillas solo usan verificados salvo los **2 pendientes declarados**) + revisión visual manual de cada par de ilustraciones | ⚠️ Cumple salvo la sentadilla y la zancada con peso corporal (plantillas de casa sin material y parque): demostración pendiente, avisada en la app |
+| 13 | Rutinas precargadas con medios de su variante y atribuciones | `data.test.ts` (91 ejercicios verificados con archivos existentes, licencia, atribución y origen; **todas las plantillas usan solo ejercicios con demostración verificada**) + revisión visual manual de cada demostración | ✅ |
 | 14 | Navegación, teclado y barras en tamaños de iPhone, orientación y tema oscuro | `layout.spec.ts` en 3 tamaños: sin desbordes en 6 pantallas × claro/oscuro, objetivos táctiles ≥44 px, `inputmode` decimal/numérico, el campo enfocado queda por encima de la barra de descanso, horizontal | ✅ (emulación Chromium) |
 | 15 | Generación repetida sin duplicados ni cambios aleatorios | `engine.test.ts` (perfiles y plantillas idénticos al regenerar; sin ejercicios repetidos en un día) | ✅ |
 
 ## Qué se ha comprobado y qué no
 
 - **Emulación, no iPhone real.** Las pruebas de navegador usan **Chromium** y **WebKit 26.6 para Linux** (el motor de Safari, pero no Safari de iOS) con viewport, escala y agente de usuario de iPhone. **No se ha probado en un iPhone físico.** Para repetir con WebKit: `npx playwright install webkit && npx playwright install-deps webkit` y `PW_WEBKIT=1 npm run e2e -- --project=webkit-iphone-13`.
-- Revisión visual: capturas reales de las pantallas (claro/oscuro, SE/13/15 Pro Max, horizontal) revisadas a mano; se corrigieron fallos detectados (fechas, textos duplicados, insignias recortadas, enlaces partidos, sugerencias demasiado largas).
+- Revisión visual: capturas reales de las pantallas (claro/oscuro, SE/13/15 Pro Max, horizontal) revisadas a mano; se corrigieron fallos detectados (fechas, textos duplicados, insignias recortadas, enlaces partidos, sugerencias demasiado largas). En la v1.1 se revisaron además «¿Cómo llegas hoy?», el resumen de sesión, la hoja de sesión pasada, Progreso (medidas, fotos, músculos) y los ajustes de sonido, en claro y oscuro (se acortó una etiqueta recortada y se ensanchó el campo de hora).
+- **Sonido:** el código y la interfaz se prueban (el botón «Probar sonido» no da errores y el modo se guarda), pero **que suene con el iPhone en silencio no se puede comprobar en emulación**: depende de `navigator.audioSession` en Safari de iOS (17+).
 - Contenido de la evidencia: verificado solo a nivel de resumen/buscador (ver docs/EVIDENCIA.md).
 
 ## Lista breve para verificar en tu iPhone (pendiente)
@@ -62,3 +64,6 @@ npm run e2e          # Playwright: levanta `npm run preview` y prueba la app con
 8. Girar a horizontal en el entrenamiento y en una demostración.
 9. Activar Ajustes de iOS → Accesibilidad → Reducir movimiento: la demostración muestra las posiciones fijas con botón «Animar».
 10. VoiceOver: recorrer una serie (debe leer “kg de la máquina, serie 1”, “Marcar serie 1 como hecha”).
+11. **Sonido del descanso (v1.1):** con el interruptor de silencio activado y los cascos puestos, Ajustes → «Aviso al terminar el descanso: Siempre» → «Probar sonido»: deben oírse tres pitidos. Repetir con música sonando (puede pausarla) y probar «Con música» (no la para, pero en silencio no suena).
+12. **Pantalla encendida (v1.1):** durante un entrenamiento, dejar el iPhone quieto más tiempo que el bloqueo automático: no debe apagarse. Al terminar o pausar, vuelve a bloquearse con normalidad.
+13. **Fotos (v1.1):** Progreso → Activar fotos → Añadir foto: elegir cámara o fototeca; la foto aparece bien orientada y ocupa poco.

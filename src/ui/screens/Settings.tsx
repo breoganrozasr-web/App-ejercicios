@@ -1,23 +1,25 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Download, FileDown, HardDrive, Smartphone, Trash2, Upload, User, WifiOff } from 'lucide-react'
+import { ArrowLeft, Download, FileDown, HardDrive, Smartphone, Trash2, Upload, User, Volume2, WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useApp } from '../../App'
-import { BackupError, backupFileName, exportBackup, markBackupDone, parseBackupText, previewBackup, restoreBackup, sessionsToCsv, type BackupPreview } from '../../data/backup'
+import { APP_VERSION, BackupError, backupFileName, exportBackup, markBackupDone, parseBackupText, previewBackup, restoreBackup, sessionsToCsv, type BackupPreview } from '../../data/backup'
 import { SCHEMA_VERSION, TABLES, db } from '../../data/db'
 import { clearDemo, loadDemo } from '../../data/demo'
 import { DEMO_CACHE, clearDemos, demoCacheInfo, downloadDemos, formatBytes } from '../../data/offline'
-import { getMeta, getRoutineBundle, saveProfile } from '../../data/repo'
+import { getMeta, getRoutineBundle, saveProfile, setMeta } from '../../data/repo'
 import { EXERCISES } from '../../domain/catalog/exercises'
 import { ALL_MEDIA, COMMONS_MANIFEST, MEDIA_MANIFEST, demoBytes } from '../../domain/catalog/media'
 import { ENGINE_VERSION } from '../../domain/engine/params'
+import { DEFAULT_PLATES, PLATE_CHOICES } from '../../domain/plates'
 import type { Increments, Session } from '../../domain/types'
-import { formatDateShort, toLocalDate } from '../../domain/util'
-import { DecimalInput, Segmented, Toggle } from '../components/inputs'
+import { formatDateShort, formatNumber, toLocalDate } from '../../domain/util'
+import { Chip, DecimalInput, Segmented, Toggle } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
 import { useOnline } from '../hooks'
 import { isIOS, isStandalone, persistenceStatus, requestPersistence } from '../pwa'
 import { back, href } from '../router'
-import { setSoundEnabled, soundEnabled } from '../sound'
+import { getKeepAwake, getSoundMode, hasAudioSessionApi, setKeepAwake, setSoundMode, testSound, type SoundMode } from '../sound'
+import { wakeLockSupported } from '../wakelock'
 
 const LEVEL_TXT = { beginner: 'Desde cero', returning: 'Vuelta tras pausa', intermediate: 'Intermedio' }
 const GOAL_TXT = { hypertrophy: 'Ganar músculo', strength: 'Ganar fuerza', mixed: 'Fuerza + músculo', general: 'Condición física' }
@@ -72,7 +74,11 @@ export function SettingsScreen({ section }: { section?: string }) {
   const [preview, setPreview] = useState<BackupPreview | null>(null)
   const [restoreErr, setRestoreErr] = useState<string | null>(null)
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('forja-theme') ?? 'auto' } catch { return 'auto' } })
-  const [sound, setSound] = useState(soundEnabled())
+  const [sound, setSound] = useState<SoundMode>(getSoundMode())
+  const [awake, setAwake] = useState(getKeepAwake())
+  const [withPhotos, setWithPhotos] = useState(false)
+  const photoCount = useLiveQuery(() => db().photos.count(), [], 0)
+  const plates = useLiveQuery(() => getMeta<number[]>('plates', DEFAULT_PLATES), [], DEFAULT_PLATES)
 
   useEffect(() => {
     void demoCacheInfo().then(setCache)
@@ -99,7 +105,7 @@ export function SettingsScreen({ section }: { section?: string }) {
   }
 
   const exportJson = async () => {
-    const data = await exportBackup()
+    const data = await exportBackup({ includePhotos: withPhotos })
     try {
       const how = await shareOrDownload(backupFileName(), JSON.stringify(data), 'application/json')
       await markBackupDone()
@@ -140,12 +146,30 @@ export function SettingsScreen({ section }: { section?: string }) {
                 </label>
               ))}
             </div>
+            <span className="label">Discos que tienes (por lado)</span>
+            <div className="row wrap" role="group" aria-label="Discos disponibles">
+              {PLATE_CHOICES.map((p) => (
+                <Chip key={p} on={plates.includes(p)} label={`Disco de ${formatNumber(p)} kg`} onClick={() => { const next = plates.includes(p) ? plates.filter((x) => x !== p) : [...plates, p].sort((a, b) => b - a); void setMeta('plates', next) }}>{formatNumber(p)}</Chip>
+              ))}
+            </div>
+            <p className="tiny muted">Se usan en la calculadora de discos (botón «Discos» en los ejercicios con barra) junto con el peso de la barra.</p>
           </Section>
         )}
 
         <Section id="apariencia" title="Apariencia y avisos">
           <Segmented label="Tema" value={theme} onChange={(v) => { setTheme(v); try { if (v === 'auto') localStorage.removeItem('forja-theme'); else localStorage.setItem('forja-theme', v) } catch { /* sin almacenamiento */ } if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v }} options={[{ value: 'auto', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />
-          <Toggle checked={sound} onChange={(v) => { setSound(v); setSoundEnabled(v) }} label="Sonido al terminar el descanso" desc="Solo con la app abierta y en primer plano. Con el iPhone bloqueado o la app en segundo plano no se puede garantizar el aviso; el tiempo sí se recalcula al volver." />
+          <div className="stack-sm" id="s-sonido">
+            <span className="label"><Volume2 size={16} aria-hidden /> Aviso al terminar el descanso</span>
+            <Segmented label="Aviso al terminar el descanso" value={sound} onChange={(v) => { setSound(v); setSoundMode(v) }} options={[{ value: 'always', label: 'Siempre' }, { value: 'mix', label: 'Con música' }, { value: 'off', label: 'Sin sonido' }]} />
+            <p className="small muted">
+              {sound === 'always' && <>Tres pitidos al acabar el descanso, <strong>también con el iPhone en silencio</strong> (por los cascos o el altavoz). Si estás escuchando música, iOS puede pausarla cuando suena el aviso: si te molesta, elige «Con música».</>}
+              {sound === 'mix' && <>Los pitidos se mezclan con tu música sin pararla, pero <strong>no suenan si el iPhone está en modo silencio</strong>.</>}
+              {sound === 'off' && <>Sin pitidos: solo el aviso en pantalla.</>}
+            </p>
+            {sound !== 'off' && <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={() => testSound()}><Volume2 size={16} /> Probar sonido</button>}
+            {sound === 'always' && !hasAudioSessionApi() && <p className="tiny muted">Este navegador no permite elegir el tipo de audio: si no oyes la prueba con el modo silencio activado, quítalo durante el entrenamiento.</p>}
+          </div>
+          <Toggle checked={awake} onChange={(v) => { setAwake(v); setKeepAwake(v) }} label="Pantalla encendida durante el entrenamiento" desc={`Evita que el iPhone se bloquee mientras entrenas, para que el aviso del descanso pueda sonar. Con la pantalla bloqueada o la app en segundo plano, una web no puede avisar; el tiempo sí se recalcula al volver.${wakeLockSupported() ? '' : ' (Este navegador no lo permite.)'}`} />
         </Section>
 
         <Section id="demos" title="Demostraciones sin conexión" icon={<WifiOff aria-hidden />}>
@@ -161,6 +185,7 @@ export function SettingsScreen({ section }: { section?: string }) {
         <Section id="copias" title="Copias de seguridad" icon={<HardDrive aria-hidden />}>
           <p className="small">Tus datos están <strong>solo en este navegador/instalación</strong>. No se sincronizan con otros dispositivos. Si borras los datos del navegador, desinstalas la app o el sistema libera espacio, podrías perderlos: haz copias.</p>
           <p className="small">Última copia: <strong>{lastBackup ? formatDateShort(toLocalDate(lastBackup)) : 'nunca'}</strong></p>
+          {photoCount > 0 && <Toggle checked={withPhotos} onChange={setWithPhotos} label={`Incluir fotos de progreso (${photoCount})`} desc="Por defecto no se incluyen: la copia ocupa menos y no sacas tus fotos del dispositivo sin querer." />}
           <button className="btn primary" onClick={() => void exportJson()}><FileDown size={18} /> Exportar copia completa (.json)</button>
           <button className="btn soft" onClick={async () => { const s = (await db().sessions.toArray()).filter((x: Session) => !x.isDemo); download(`forja-registros-${toLocalDate()}.csv`, sessionsToCsv(s), 'text/csv;charset=utf-8'); toast('CSV descargado') }}><FileDown size={18} /> Exportar registros (.csv)</button>
           <label className="btn soft">
@@ -189,7 +214,7 @@ export function SettingsScreen({ section }: { section?: string }) {
             <div className="card flat stack-sm" style={{ background: 'var(--surface-2)' }}>
               <strong>Vista previa de la copia</strong>
               <span className="small">Creada: {preview.file.exportedAt ? new Date(preview.file.exportedAt).toLocaleString('es-ES') : 'desconocido'} · versión {preview.file.appVersion || '?'}</span>
-              <span className="small">{preview.counts.sessions ?? 0} sesiones{preview.sessionRange ? ` (${formatDateShort(preview.sessionRange.from)} – ${formatDateShort(preview.sessionRange.to)})` : ''} · {preview.counts.routines ?? 0} rutinas · {preview.counts.customExercises ?? 0} ejercicios propios · {preview.counts.bodyweight ?? 0} pesos</span>
+              <span className="small">{preview.counts.sessions ?? 0} sesiones{preview.sessionRange ? ` (${formatDateShort(preview.sessionRange.from)} – ${formatDateShort(preview.sessionRange.to)})` : ''} · {preview.counts.routines ?? 0} rutinas · {preview.counts.customExercises ?? 0} ejercicios propios · {preview.counts.bodyweight ?? 0} pesos · {preview.counts.measurements ?? 0} medidas{preview.file.tables.photos ? ` · ${preview.counts.photos ?? 0} fotos` : ''}</span>
               <span className="small">{preview.existingIds} registros ya existen en este dispositivo.</span>
               {preview.warnings.map((w) => <span key={w} className="small muted">{w}</span>)}
               <button className="btn primary" onClick={async () => { if (!(await confirm({ title: 'Fusionar', body: 'Se añaden los registros que no tienes. Si un registro existe en ambos, se queda el más reciente. No se duplica nada.', confirm: 'Fusionar' }))) return; const r = await restoreBackup(preview.file, 'merge'); setPreview(null); toast(`Fusionado: ${r.added} nuevos, ${r.updated} actualizados`) }}>Fusionar con mis datos</button>
@@ -258,13 +283,13 @@ export function SettingsScreen({ section }: { section?: string }) {
           <p className="small">{ALL_MEDIA.length} ejercicios con demostración verificada a mano; {EXERCISES.filter((e) => e.demoStatus === 'pendiente').length} con demostración pendiente (indicado en cada ficha).</p>
           <p className="small">Vídeos de YouTube que añadas tú: se reproducen con el reproductor oficial en modo de privacidad mejorada (youtube-nocookie.com), bajo las condiciones de YouTube; no se descargan.</p>
           <p className="small">Código de la app: licencia MIT. Fuente tipográfica Bricolage Grotesque (SIL Open Font License). Iconos Lucide (ISC).</p>
-          <p className="tiny muted">App {`1.0.0`} · motor de rutinas {ENGINE_VERSION} · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>
+          <p className="tiny muted">App {APP_VERSION} · motor de rutinas {ENGINE_VERSION} · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>
         </Section>
 
         <Section id="borrar" title="Borrar todos mis datos">
-          <p className="small">Elimina perfil, rutinas, sesiones y ajustes de este dispositivo. No se puede deshacer: exporta una copia antes.</p>
+          <p className="small">Elimina perfil, rutinas, sesiones, medidas, fotos y ajustes de este dispositivo. No se puede deshacer: exporta una copia antes.</p>
           <button className="btn danger solid" onClick={async () => {
-            if (!(await confirm({ title: '¿Borrar todos tus datos?', body: 'Perfil, rutinas, sesiones, pesos y ejercicios propios de este dispositivo.', confirm: 'Continuar', danger: true }))) return
+            if (!(await confirm({ title: '¿Borrar todos tus datos?', body: 'Perfil, rutinas, sesiones, pesos, medidas, fotos y ejercicios propios de este dispositivo.', confirm: 'Continuar', danger: true }))) return
             if (!(await confirm({ title: 'Confirmación final', body: 'Esta acción no se puede deshacer.', confirm: 'Borrar definitivamente', danger: true }))) return
             await db().transaction('rw', TABLES.map((t) => db().table(t)), async () => { for (const t of TABLES) await db().table(t).clear() })
             window.location.hash = '#/hoy'

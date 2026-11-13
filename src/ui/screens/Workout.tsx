@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  ArrowDown, ArrowLeft, ArrowUp, Check, CircleHelp, Copy, Ellipsis, HeartPulse, Lightbulb, Link2, Pause, Play, Plus, Repeat, SkipForward, StickyNote, Trash2, TriangleAlert,
+  ArrowDown, ArrowLeft, ArrowUp, Check, CircleHelp, Copy, Disc3, Ellipsis, Flame, HeartPulse, Lightbulb, Link2, Pause, Pin, Play, Plus, Repeat, SkipForward, StickyNote, Trash2, TriangleAlert,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../../App'
@@ -12,16 +12,21 @@ import { prescriptionFor } from '../../domain/engine/generator'
 import { describePrescription, describeRir } from '../../domain/engine/prescription'
 import { historyFor, suggestNext, type Suggestion } from '../../domain/engine/progression'
 import { progressionAllowed } from '../../domain/engine/scope'
+import { DEFAULT_PLATES, describePlates, platesFor, warmupPlan, type WarmupStep } from '../../domain/plates'
 import { DEFAULT_INCREMENTS } from '../../domain/profile'
-import type { LoadType, Session, SessionExercise, SetEntry } from '../../domain/types'
+import { READINESS_SCALES, readinessLevel, readinessReasons } from '../../domain/readiness'
+import { priorSets, setRecord } from '../../domain/records'
+import type { Increments, LoadType, Readiness, Session, SessionExercise, SetEntry } from '../../domain/types'
 import { formatDateShort, formatDuration, formatNumber, newId, toLocalDate } from '../../domain/util'
 import { DemoPlayer } from '../components/DemoPlayer'
 import { DecimalInput } from '../components/inputs'
 import { Sheet, useConfirm, useToast } from '../components/overlay'
 import { ExercisePicker } from '../components/RoutineParts'
 import { useNow } from '../hooks'
+import { getMeta } from '../../data/repo'
 import { go } from '../router'
-import { restDoneAlert, unlockAudio } from '../sound'
+import { getKeepAwake, restDoneAlert, unlockAudio } from '../sound'
+import { useWakeLock } from '../wakelock'
 
 type Upd = (f: (s: Session) => Session, undoLabel?: string) => void
 
@@ -58,9 +63,14 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const [rirFor, setRirFor] = useState<{ exUid: string; setId: string } | null>(null)
   const [setMenu, setSetMenu] = useState<{ exUid: string; setId: string } | null>(null)
   const [exMenu, setExMenu] = useState<string | null>(null)
+  const [noteFor, setNoteFor] = useState<string | null>(null)
+  const [platesFor_, setPlatesFor] = useState<{ exUid: string; kg: number | null } | null>(null)
   const [busy, setBusy] = useState(false)
   const lock = useRef(0)
   const alerted = useRef<string | null>(null)
+  const plates = useLiveQuery(() => getMeta<number[]>('plates', DEFAULT_PLATES), [], DEFAULT_PLATES)
+  const backdated = !!s.backdated
+  useWakeLock(getKeepAwake() && !backdated && !s.pausedAt)
 
   /** Toda modificación pasa por aquí: estado local + guardado inmediato en IndexedDB (serializado). */
   const update = useCallback<Upd>((f, undoLabel) => {
@@ -80,6 +90,14 @@ function ActiveWorkout({ initial }: { initial: Session }) {
       })
     }
   }, [toast])
+
+  // Cualquier toque durante el entrenamiento deja el audio listo (iOS solo lo permite tras un gesto), p. ej. tras recargar a mitad de un descanso.
+  useEffect(() => {
+    if (backdated) return
+    const onTouch = () => unlockAudio()
+    window.addEventListener('pointerdown', onTouch, { passive: true })
+    return () => window.removeEventListener('pointerdown', onTouch)
+  }, [backdated])
 
   // Guardado de seguridad al ocultar/cerrar la app.
   useEffect(() => {
@@ -111,7 +129,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const updSet = (exUid: string, setId: string, patch: Partial<SetEntry>) => updEx(exUid, (e) => ({ ...e, sets: e.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) }))
 
   const toggleDone = (e: SessionExercise, set: SetEntry, placeholder: Partial<SetEntry>) => {
-    unlockAudio()
+    if (!backdated) unlockAudio()
     if (set.completed) {
       updSet(e.uid, set.id, { completed: false, completedAt: null })
       return
@@ -125,12 +143,32 @@ function ActiveWorkout({ initial }: { initial: Session }) {
       }
     }
     const restSec = settings.find((x) => x.exerciseId === e.exerciseId)?.restSec ?? (set.kind === 'warmup' ? 60 : e.prescription?.restSec ?? 90)
+    // Récord en directo: se compara con las sesiones anteriores (y con lo ya hecho hoy, para no repetir el aviso).
+    const merged: SetEntry = { ...set, ...fill, completed: true }
+    const prior = priorSets(finished, e.exerciseId, sRef.current)
+    const today_ = sRef.current.exercises.filter((ee) => ee.exerciseId === e.exerciseId).flatMap((ee) => ee.sets).filter((x) => x.id !== set.id && x.kind === 'work' && x.completed)
+    const rec = prior.length ? setRecord(merged, e.loadTypeSnapshot, [...prior, ...today_], formatNumber) : null
+    const recTxt = rec ? `Récord: ${rec.value}, ${rec.detail}` : ''
     update((x) => ({
       ...x,
       exercises: x.exercises.map((ee) => (ee.uid === e.uid ? { ...ee, sets: ee.sets.map((ss) => (ss.id === set.id ? { ...ss, ...fill, completed: true, completedAt: Date.now() } : ss)) } : ee)),
-      rest: { startedAt: Date.now(), durationSec: restSec, setId: set.id },
-    }), filled ? 'Serie completada con los valores propuestos: revísalos si no coinciden' : undefined)
+      rest: backdated ? null : { startedAt: Date.now(), durationSec: restSec, setId: set.id },
+    }), filled ? `${recTxt ? `${recTxt}. ` : ''}Serie completada con los valores propuestos: revísalos si no coinciden` : undefined)
+    if (rec && !filled) toast(recTxt, undefined, 6000)
   }
+
+  const removeOnePending = () => update((x) => ({
+    ...x,
+    exercises: x.exercises.map((ee) => {
+      const pending = ee.sets.filter((st) => st.kind === 'work' && !st.completed)
+      if (pending.length < 2) return ee
+      const drop = pending[pending.length - 1].id
+      return { ...ee, sets: ee.sets.filter((st) => st.id !== drop) }
+    }),
+  }), 'Quitada una serie pendiente por ejercicio')
+  const canRemovePending = s.exercises.some((ee) => ee.sets.filter((st) => st.kind === 'work' && !st.completed).length >= 2)
+  const level = readinessLevel(s.readiness)
+  const anyDone = s.exercises.some((ee) => ee.sets.some((st) => st.completed))
 
   const addSet = (e: SessionExercise, kind: 'work' | 'warmup' = 'work') => {
     const t = Date.now()
@@ -211,10 +249,12 @@ function ActiveWorkout({ initial }: { initial: Session }) {
           <div className="grow" style={{ minWidth: 0 }}>
             <div style={{ fontWeight: 720, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.title}</div>
             <div className="small muted num" aria-live="off">
-              {formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.rampApplied ? '· familiarización' : ''}
+              {backdated
+                ? `Registro a posteriori · ${formatDateShort(s.date)} · ${s.manualDurationMin ?? 60} min`
+                : <>{formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.rampApplied ? '· familiarización' : ''}</>}
             </div>
           </div>
-          <button className="icon-btn soft" onClick={togglePause} aria-label={s.pausedAt ? 'Reanudar' : 'Pausar'}>{s.pausedAt ? <Play /> : <Pause />}</button>
+          {!backdated && <button className="icon-btn soft" onClick={togglePause} aria-label={s.pausedAt ? 'Reanudar' : 'Pausar'}>{s.pausedAt ? <Play /> : <Pause />}</button>}
           <button className="btn primary small" disabled={busy} onClick={() => void finish()}>Terminar</button>
         </div>
       </header>
@@ -222,9 +262,21 @@ function ActiveWorkout({ initial }: { initial: Session }) {
         {s.pausedAt && (
           <div className="note info"><Pause aria-hidden /><span className="small">Sesión en pausa. Tus datos están guardados; puedes cerrar la app y volver.</span></div>
         )}
+        {backdated && (
+          <div className="note info"><Pin aria-hidden /><span className="small">Estás registrando una sesión pasada: anota lo que hiciste y marca las series. No hay cronómetro ni descansos.</span></div>
+        )}
+        {!backdated && s.readiness === undefined && !anyDone && s.exercises.length > 0 && (
+          <ReadinessCard onAnswer={(r) => update((x) => ({ ...x, readiness: r }))} onSkip={() => update((x) => ({ ...x, readiness: null }))} />
+        )}
+        {level === 'low' && s.readiness && (
+          <div className="note warn stack-sm" role="status">
+            <span className="small"><strong>Hoy vas con menos margen</strong> ({readinessReasons(s.readiness).join(', ')}). Entrenar igualmente suele estar bien: deja 1 repetición más en reserva, no busques récords y, si quieres, haz una serie menos.</span>
+            {canRemovePending && <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={removeOnePending}>Quitar una serie pendiente de cada ejercicio</button>}
+          </div>
+        )}
         {s.exercises.length === 0 && (
           <div className="card empty">
-            <p>Sesión libre: añade el primer ejercicio.</p>
+            <p>{backdated ? 'Añade los ejercicios que hiciste.' : 'Sesión libre: añade el primer ejercicio.'}</p>
           </div>
         )}
         {s.exercises.map((e, i) => (
@@ -234,6 +286,11 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             index={i}
             current={e.uid === currentUid}
             history={historyFor(e.exerciseId, finished, undefined, s.id)}
+            increments={increments}
+            pinned={settings.find((x) => x.exerciseId === e.exerciseId)?.note}
+            lowReadiness={level === 'low'}
+            onPlates={(kg) => setPlatesFor({ exUid: e.uid, kg })}
+            onFillWarmup={(plan) => updEx(e.uid, (ee) => { let i = 0; return { ...ee, sets: ee.sets.map((st) => (st.kind === 'warmup' && !st.completed && plan[i] ? { ...st, weightKg: plan[i].kg, reps: plan[i++].reps } : st)) } }, 'Calentamiento rellenado (sin marcar)')}
             suggestion={e.prescription ? suggestNext({ exerciseId: e.exerciseId, prescription: e.prescription, history: historyFor(e.exerciseId, finished, undefined, s.id), increments, incrementOverride: settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg, today, progressionAllowed: allowProg }) : null}
             onDemo={() => setDemoFor(e.exerciseId)}
             onMenu={() => setExMenu(e.uid)}
@@ -290,7 +347,14 @@ function ActiveWorkout({ initial }: { initial: Session }) {
       </Sheet>
 
       <SetMenu target={setMenu} session={s} onClose={() => setSetMenu(null)} update={update} />
-      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} />
+      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} onNote={(id) => { setExMenu(null); setNoteFor(id) }} />
+      <PinnedNoteSheet exerciseId={noteFor} onClose={() => setNoteFor(null)} />
+      <Sheet open={!!platesFor_} onClose={() => setPlatesFor(null)} title="Discos y calentamiento">
+        {platesFor_ && (() => {
+          const ex = s.exercises.find((x) => x.uid === platesFor_.exUid)
+          return ex ? <PlatesBody e={ex} initialKg={platesFor_.kg} increments={increments} plates={plates} /> : null
+        })()}
+      </Sheet>
 
       <ExercisePicker
         open={!!picker}
@@ -347,6 +411,11 @@ function ExerciseBlock(props: {
   current: boolean
   history: ReturnType<typeof historyFor>
   suggestion: Suggestion | null
+  increments: Increments
+  pinned?: string
+  lowReadiness: boolean
+  onPlates: (kg: number | null) => void
+  onFillWarmup: (plan: WarmupStep[]) => void
   onDemo: () => void
   onMenu: () => void
   onToggle: (e: SessionExercise, set: SetEntry, placeholder: Partial<SetEntry>) => void
@@ -370,6 +439,12 @@ function ExerciseBlock(props: {
   const cols = lt === 'time' ? 'three' : ''
   const kgLabel = lt === 'assisted' ? 'Asist.' : lt === 'band' ? 'Banda' : isBw ? (useAssist ? 'Asist.' : 'Lastre') : 'kg'
   const lastSummary = lastWork.map((x) => describeSet(x, lt)).join(' · ')
+  const weighted = lt === 'barbell_total' || lt === 'dumbbell_each' || lt === 'machine' || lt === 'cable'
+  const lastMax = lastWork.reduce<number | null>((m, x) => (x.weightKg !== null && (m === null || x.weightKg > m) ? x.weightKg : m), null)
+  const workTarget = weighted ? e.sets.find((x) => x.kind === 'work' && x.weightKg !== null)?.weightKg ?? sug?.targetWeightKg ?? lastMax : null
+  const pendingWarm = e.sets.filter((x) => x.kind === 'warmup' && !x.completed).length
+  const warmPlan = workTarget && pendingWarm && !e.sets.some((x) => x.kind === 'warmup' && x.completed) ? warmupPlan(workTarget, pendingWarm, lt, props.increments) : []
+  const showIncreaseNote = props.lowReadiness && sug && (sug.kind === 'increase' || sug.kind === 'increase_optional')
   let workN = 0
   return (
     <section className={`card wk-ex ${props.current ? 'current' : ''} ${allDone ? 'done' : ''}`} aria-label={`${props.index + 1}. ${e.nameSnapshot}`}>
@@ -382,6 +457,7 @@ function ExerciseBlock(props: {
             {e.replacedFrom && <span className="badge">Sustituto</span>}
           </div>
           <h3>{props.index + 1}. {e.nameSnapshot}</h3>
+          {props.pinned && <span className="small pinned"><Pin size={14} aria-hidden /> {props.pinned}</span>}
           {p && (
             <span className="small muted">
               {describePrescription(p, ex)} · {describeRir(p)} · descanso {formatDuration(p.restSec)}
@@ -390,9 +466,16 @@ function ExerciseBlock(props: {
         </div>
         <button className="icon-btn soft" onClick={props.onMenu} aria-label={`Opciones de ${e.nameSnapshot}`}><Ellipsis /></button>
       </div>
-      <button className="btn soft small" style={{ alignSelf: 'flex-start', marginTop: 8 }} onClick={props.onDemo}>
-        <CircleHelp size={16} /> Ver cómo se hace
-      </button>
+      <div className="row wrap" style={{ marginTop: 8, gap: 6 }}>
+        <button className="btn soft small" onClick={props.onDemo}>
+          <CircleHelp size={16} /> Ver cómo se hace
+        </button>
+        {lt === 'barbell_total' && (
+          <button className="btn soft small" onClick={() => props.onPlates(workTarget ?? null)}>
+            <Disc3 size={16} /> Discos
+          </button>
+        )}
+      </div>
 
       <div className="stack-sm" style={{ marginTop: 10 }}>
         {lastH ? (
@@ -407,6 +490,7 @@ function ExerciseBlock(props: {
           <div className="suggestion stack-sm">
             <span className="label"><Lightbulb aria-hidden /> Sugerencia · {sug.title}</span>
             <span className="small">{sug.detail}</span>
+            {showIncreaseNote && <span className="small"><strong>Hoy vas con menos margen:</strong> mantener la carga de la última vez también vale.</span>}
             {(sug.targetWeightKg !== undefined || sug.targetAssistKg !== undefined) && (
               <button
                 className="btn small soft"
@@ -428,6 +512,11 @@ function ExerciseBlock(props: {
             })}
           >
             <Copy size={16} /> Copiar lo de la última vez (sin marcar)
+          </button>
+        )}
+        {warmPlan.length > 0 && (
+          <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => props.onFillWarmup(warmPlan)}>
+            <Flame size={16} /> Calentamiento: {warmPlan.map((w) => `${formatNumber(w.kg)}×${w.reps}`).join(' · ')}
           </button>
         )}
       </div>
@@ -555,7 +644,7 @@ function SetMenu({ target, session, onClose, update }: { target: { exUid: string
   )
 }
 
-function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void }) {
+function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void; onNote: (exerciseId: string) => void }) {
   const idx = session.exercises.findIndex((x) => x.uid === uid)
   const e = session.exercises[idx]
   const isBw = e?.loadTypeSnapshot === 'bodyweight'
@@ -567,6 +656,7 @@ function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo }: { ui
         <div className="list">
           <button className="list-item" onClick={() => onDemo(e.exerciseId)}><CircleHelp size={20} /> Ver cómo se hace</button>
           <button className="list-item" onClick={() => onReplace(e.uid)}><Repeat size={20} /> Sustituir ejercicio</button>
+          <button className="list-item" onClick={() => onNote(e.exerciseId)}><Pin size={20} /> Nota fija (asiento, agarre, máquina…)</button>
           <button className="list-item" onClick={() => { update((x) => ({ ...x, exercises: x.exercises.map((ee) => (ee.uid === e.uid ? { ...ee, painFlag: !ee.painFlag } : ee)) })); onClose() }}>
             <HeartPulse size={20} /> {e.painFlag ? 'Quitar marca de molestia' : 'Marcar molestia o dolor'}
           </button>
@@ -587,5 +677,85 @@ function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo }: { ui
         </div>
       )}
     </Sheet>
+  )
+}
+
+function ReadinessCard({ onAnswer, onSkip }: { onAnswer: (r: Readiness) => void; onSkip: () => void }) {
+  const [v, setV] = useState<{ sleep: number | null; energy: number | null; soreness: number | null }>({ sleep: null, energy: null, soreness: null })
+  const complete = v.sleep !== null && v.energy !== null && v.soreness !== null
+  return (
+    <section className="card stack-sm" aria-label="Cómo llegas hoy">
+      <div className="row between"><h3>¿Cómo llegas hoy?</h3><span className="tiny muted">Opcional</span></div>
+      {(Object.keys(READINESS_SCALES) as (keyof typeof READINESS_SCALES)[]).map((k) => (
+        <div key={k} className="stack-sm" style={{ gap: 4 }}>
+          <span className="small"><strong>{READINESS_SCALES[k].label}</strong> <span className="muted">(1 {READINESS_SCALES[k].lo.toLowerCase()} · 5 {READINESS_SCALES[k].hi.toLowerCase()})</span></span>
+          <div className="seg" role="group" aria-label={READINESS_SCALES[k].label}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} aria-pressed={v[k] === n} aria-label={`${READINESS_SCALES[k].label} ${n}`} onClick={() => setV({ ...v, [k]: n })}>{n}</button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div className="row">
+        <button className="btn ghost small grow" onClick={onSkip}>Omitir</button>
+        <button className="btn primary small grow" disabled={!complete} onClick={() => complete && onAnswer({ sleep: v.sleep as number, energy: v.energy as number, soreness: v.soreness as number, at: Date.now() })}>Guardar</button>
+      </div>
+      <p className="tiny muted">Solo sirve para ajustar el día: si vas justo, la app te propone entrenar con más margen. No es un diagnóstico.</p>
+    </section>
+  )
+}
+
+function PinnedNoteSheet({ exerciseId, onClose }: { exerciseId: string | null; onClose: () => void }) {
+  const setting = useLiveQuery(async () => (exerciseId ? (await db().exerciseSettings.get(exerciseId)) ?? null : null), [exerciseId], null)
+  const [text, setText] = useState<string | null>(null)
+  const toast = useToast()
+  const value = text ?? setting?.note ?? ''
+  const close = () => { setText(null); onClose() }
+  return (
+    <Sheet open={!!exerciseId} onClose={close} title="Nota fija del ejercicio">
+      {exerciseId && (
+        <div className="stack">
+          <p className="small muted">Se muestra cada vez que hagas {getExercise(exerciseId)?.name ?? 'este ejercicio'}: altura del asiento, agarre, número de máquina, ajuste de la polea…</p>
+          <textarea className="input" aria-label="Nota fija" maxLength={300} value={value} onChange={(ev) => setText(ev.target.value)} placeholder="Ej.: asiento en 4, respaldo en 2, agarre ancho" />
+          <button className="btn primary" onClick={async () => { const cur = (await db().exerciseSettings.get(exerciseId)) ?? { exerciseId }; await db().exerciseSettings.put({ ...cur, exerciseId, note: value.trim() || undefined }); toast(value.trim() ? 'Nota fija guardada' : 'Nota fija borrada'); close() }}>Guardar</button>
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+function PlatesBody({ e, initialKg, increments, plates }: { e: SessionExercise; initialKg: number | null; increments: Increments; plates: number[] }) {
+  const [kg, setKg] = useState<number | null>(initialKg)
+  const bar = increments.barKg
+  const warmCount = Math.max(2, e.sets.filter((x) => x.kind === 'warmup').length)
+  const plan = kg ? warmupPlan(kg, warmCount, 'barbell_total', increments) : []
+  const line = (target: number) => {
+    const r = platesFor(target, bar, plates)
+    if (r.belowBar) return `menos que la barra (${formatNumber(bar)} kg)`
+    return `${describePlates(r.perSide, formatNumber)} por lado${r.exact ? '' : ` → ${formatNumber(r.totalKg)} kg (lo más cercano por debajo)`}`
+  }
+  return (
+    <div className="stack">
+      <label className="stack-sm" style={{ gap: 4 }}>
+        <span className="small">Peso total de la barra cargada (kg)</span>
+        <DecimalInput className="input" label="Peso total en kg" value={kg} onChange={setKg} max={500} placeholder="kg" />
+      </label>
+      {kg ? (
+        <div className="card flat stack-sm" style={{ background: 'var(--surface-2)' }}>
+          <span className="small muted">Barra de {formatNumber(bar)} kg +</span>
+          <strong className="num" style={{ fontSize: '1.15rem' }}>{line(kg)}</strong>
+        </div>
+      ) : <p className="small muted">Escribe el peso total para ver los discos.</p>}
+      {plan.length > 0 && (
+        <div className="stack-sm">
+          <h3>Calentamiento sugerido</h3>
+          <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+            {plan.map((w, i) => <li key={i} className="num">{formatNumber(w.kg)} kg × {w.reps} — {w.kg <= bar ? 'barra sola' : line(w.kg)}</li>)}
+          </ul>
+          <p className="tiny muted">Cargas crecientes con pocas repeticiones para no cansarte antes de las series de trabajo. Es una convención práctica: ajústala a tu gusto.</p>
+        </div>
+      )}
+      <p className="tiny muted">Discos disponibles: {plates.map(formatNumber).join(', ')} kg (por lado). Cámbialos en Ajustes → Incrementos de carga. Peso de la barra: {formatNumber(bar)} kg.</p>
+    </div>
   )
 }

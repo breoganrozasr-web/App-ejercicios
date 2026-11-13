@@ -268,7 +268,13 @@ function isRampWeek(routine: Routine, version: RoutineVersion, today: string): b
  * Empieza una sesión desde un día de rutina. Si ya hay una sesión activa, la devuelve (evita duplicados por doble toque).
  * La sesión guarda una COPIA de la prescripción: editar o borrar la rutina después no cambia el historial.
  */
-export async function startSessionFromDay(routineId: string, dayId: string, date = toLocalDate()): Promise<Session> {
+/** Registro a posteriori: hora de inicio real y duración declarada (no hay cronómetro). */
+export interface BackdateOpts {
+  startedAt: number
+  durationMin: number
+}
+
+export async function startSessionFromDay(routineId: string, dayId: string, date = toLocalDate(), backdate?: BackdateOpts): Promise<Session> {
   return db().transaction('rw', [db().sessions, db().routines, db().routineVersions], async () => {
     const active = await db().sessions.where('status').equals('active').first()
     if (active) return active
@@ -288,7 +294,7 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
       dayId,
       title: day.name,
       date,
-      startedAt: now,
+      startedAt: backdate?.startedAt ?? now,
       endedAt: null,
       pausedAt: null,
       pausedTotalMs: 0,
@@ -298,20 +304,22 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
       engineVersion: version.engineVersion,
       updatedAt: now,
       rest: null,
+      ...(backdate ? { backdated: true, manualDurationMin: backdate.durationMin } : {}),
     }
     await db().sessions.add(session)
     return session
   })
 }
 
-export async function startFreeSession(date = toLocalDate()): Promise<Session> {
+export async function startFreeSession(date = toLocalDate(), backdate?: BackdateOpts): Promise<Session> {
   return db().transaction('rw', db().sessions, async () => {
     const active = await db().sessions.where('status').equals('active').first()
     if (active) return active
     const now = Date.now()
     const s: Session = {
-      id: newId('ses'), status: 'active', routineId: null, routineVersionId: null, dayId: null, title: 'Sesión libre', date, startedAt: now, endedAt: null,
+      id: newId('ses'), status: 'active', routineId: null, routineVersionId: null, dayId: null, title: 'Sesión libre', date, startedAt: backdate?.startedAt ?? now, endedAt: null,
       pausedAt: null, pausedTotalMs: 0, exercises: [], notes: '', rampApplied: false, engineVersion: ENGINE_VERSION, updatedAt: now, rest: null,
+      ...(backdate ? { backdated: true, manualDurationMin: backdate.durationMin } : {}),
     }
     await db().sessions.add(s)
     return s
@@ -334,7 +342,9 @@ export async function finishSession(s: Session, status: 'completed' | 'partial')
   await flushWrites()
   const now = Date.now()
   const pausedExtra = s.pausedAt ? now - s.pausedAt : 0
-  const done: Session = { ...s, status, endedAt: now, pausedAt: null, pausedTotalMs: s.pausedTotalMs + pausedExtra, rest: null, updatedAt: now }
+  const done: Session = s.backdated
+    ? { ...s, status, endedAt: s.startedAt + (s.manualDurationMin ?? 60) * 60000, pausedAt: null, pausedTotalMs: 0, rest: null, updatedAt: now }
+    : { ...s, status, endedAt: now, pausedAt: null, pausedTotalMs: s.pausedTotalMs + pausedExtra, rest: null, updatedAt: now }
   await db().transaction('rw', [db().sessions, db().meta], async () => {
     await db().sessions.put(done)
     const n = await getMeta<number>('sessionsSinceBackup', 0)
@@ -360,6 +370,25 @@ export async function updateFinishedSession(s: Session, summary: string): Promis
     await db().sessions.put({ ...s, updatedAt: Date.now() })
     await log('session', s.id, summary)
   })
+}
+
+/** Hora local (HH:MM) de una fecha YYYY-MM-DD → epoch ms. */
+export function localDateTime(date: string, hhmm: string): number {
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = (hhmm || '18:00').split(':').map(Number)
+  return new Date(y, m - 1, d, hh || 0, mm || 0, 0, 0).getTime()
+}
+
+/**
+ * Cambia la fecha (y opcionalmente la hora y la duración) de una sesión terminada. Mueve inicio y fin juntos.
+ * Devuelve la sesión modificada (sin guardar).
+ */
+export function retimeSession(s: Session, date: string, opts: { hhmm?: string; durationMin?: number } = {}): Session {
+  const cur = new Date(s.startedAt)
+  const hhmm = opts.hhmm ?? `${String(cur.getHours()).padStart(2, '0')}:${String(cur.getMinutes()).padStart(2, '0')}`
+  const startedAt = localDateTime(date, hhmm)
+  const durMs = opts.durationMin !== undefined ? opts.durationMin * 60000 + s.pausedTotalMs : (s.endedAt ?? s.startedAt) - s.startedAt
+  return { ...s, date, startedAt, endedAt: startedAt + durMs, ...(s.backdated && opts.durationMin !== undefined ? { manualDurationMin: opts.durationMin } : {}) }
 }
 
 export async function allSessions(): Promise<Session[]> {

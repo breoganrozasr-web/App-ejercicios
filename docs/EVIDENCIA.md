@@ -1,6 +1,6 @@
 # Evidencia científica y decisiones del motor de rutinas
 
-Fecha de consulta de todas las fuentes: **13 de noviembre de 2026**. Versión del motor: **1.0.0** (`src/domain/engine/params.ts`).
+Fecha de consulta de todas las fuentes: **13 de noviembre de 2026**. Versión del motor: **1.0.0** (`src/domain/engine/params.ts`). Reglas R18–R22 añadidas en la versión 1.1 de la app (no cambian la generación de rutinas).
 
 ## Cómo se ha hecho y qué límites tiene (léelo primero)
 
@@ -62,6 +62,15 @@ Fecha de consulta de todas las fuentes: **13 de noviembre de 2026**. Versión de
 | M4 | ACOG Committee Opinion n.º 804 (2020). *Physical Activity and Exercise During Pregnancy and the Postpartum Period.* | — | [S] Evaluación clínica antes de empezar un programa. | No verificado en primaria. | R13 |
 | — | Fisher J, et al. *The Role of Supervision in Resistance Training; an Exploratory Systematic Review and Meta-Analysis.* Int J Strength Cond. 2022;2(1) | doi:10.47206/ijsc.v2i1.101 | [A] Supervisión: efecto pequeño-moderado sobre fuerza. | Sin datos de adherencia. | R14, avisos de técnica |
 
+### Fuentes añadidas en la versión 1.1 (13 de noviembre de 2026)
+
+| # | Cita | URL / DOI | Tipo y población | Hallazgo relevante | Limitaciones / certeza | Reglas que sustenta |
+|---|---|---|---|---|---|---|
+| N1 | Herrmann SD, et al. *2024 Adult Compendium of Physical Activities: A third update of the energy costs of human activities.* J Sport Health Sci. 2024 | PubMed 38242596 | [A] Compendio de valores MET por actividad (adultos 19–59 años). Código 02054 «ejercicios de fuerza múltiples, 8–15 repeticiones» = 3,5 MET; 02052 «sentadillas, peso muerto… lento o explosivo» = 5,0 MET. | Valores medios de grupo: no tienen en cuenta la composición corporal, el descanso entre series ni la eficiencia individual. Existe un compendio aparte para mayores de 60 años (no aplicado). | R18 |
+| N2 | Saw AE, Main LC, Gastin PB. *Monitoring the athlete training response: subjective self-reported measures trump commonly used objective measures: a systematic review.* Br J Sports Med. 2016;50(5):281–291 | doi:10.1136/bjsports-2015-094758 | [A] Revisión sistemática (56 estudios, deportistas): las medidas subjetivas (bienestar, estrés percibido) reflejaron la carga de entrenamiento aguda y crónica con más sensibilidad y consistencia que las objetivas. | Deportistas, no población general; cuestionarios diversos. | R19 |
+| N3 | Craven J, et al. *Effects of Acute Sleep Loss on Physical Performance: A Systematic and Meta-Analytical Review.* Sports Med. 2022;52(11):2669–2690 | doi:10.1007/s40279-022-01706-y | [A] Dormir ≤ 6 h redujo el rendimiento físico en torno a un 7–8 % de media, con heterogeneidad muy alta; efecto más claro en tareas de tarde y con privación total o restricción al final de la noche. | 89 % hombres; el efecto en fuerza parece pequeño según comentarios secundarios. | R19 |
+| N4 | Ribeiro AS, et al. *Effect of Different Warm-up Procedures on the Performance of Resistance Training Exercises.* Percept Mot Skills. 2014 · Ribeiro et al. *The Role of Specific Warm-up during Bench Press and Squat Exercises: A Novel Approach.* Int J Environ Res Public Health. 2020;17(18):6882 | — | [A] 2014: el tipo de calentamiento no cambió las repeticiones hasta el fallo al 80 % 1RM. 2020: series de aproximación con cargas crecientes mejoraron la producción de fuerza; pocas repeticiones con cargas bajas no bastaron en sentadilla. | Estudios pequeños, cruzados, en hombres entrenados; resultados no del todo concordantes. | R21 |
+
 ## 2. Síntesis
 
 ### 2.1 Conclusiones relativamente consistentes
@@ -109,6 +118,11 @@ Todas son **editables** por la persona y se muestran con su explicación en la a
 | **R15 · Peso corporal** | Progresión por repeticiones y variantes más difíciles; asistencia: menos = más difícil. Sin material no se simula un tirón cargado: se muestra la carencia y alternativas. | I3–I6. |
 | **R16 · Días consecutivos** | El reparto evita repetir grupos en días naturales seguidos (incluido domingo→lunes). Si no se puede, el segundo día lleva una serie menos y +1 RIR en esos ejercicios. | Decisión práctica (no hay evidencia directa). |
 | **R17 · Material** | Máquinas, pesos libres, bandas y peso corporal se consideran válidos; se elige según disponibilidad. Los kg de máquinas/variantes distintas no se comparan ni se trasladan. | A (equipo no es factor consistente), H5. |
+| **R18 · Calorías (estimación)** | Rango = 3,5–5,0 MET × peso corporal (kg) × horas de sesión sin pausas, redondeado a 10 kcal. Solo si hay peso anotado y la sesión dura ≥ 5 min. Se muestra como «aprox.» e incluye el gasto en reposo. | N1. Es una estimación de grupo, no una medida. |
+| **R19 · Preparación del día** | Pregunta opcional al empezar: sueño, energía y agujetas (1–5). «Con menos margen» si sueño ≤ 2, energía ≤ 2 o agujetas ≥ 4: se sugiere +1 RIR, no buscar récords, mantener la carga si tocaba subir y, si se quiere, quitar una serie pendiente por ejercicio (con deshacer). Nunca bloquea el entrenamiento. | N2, N3. Umbrales: decisión práctica. |
+| **R20 · Días desde el último entrenamiento** | Por músculo, fecha más reciente con series de trabajo completadas donde es músculo **principal**. Se muestra como dato, sin «porcentaje de recuperación». | Decisión práctica: no hay forma fiable de estimar la recuperación con estos datos. |
+| **R21 · Series de aproximación** | Con la carga de trabajo prevista: 1 serie → 60 %×6; 2 → 50 %×8 y 75 %×4; 3 → 40 %×8, 60 %×5 y 80 %×3; 4 → 30 %×10, 50 %×6, 70 %×4 y 85 %×2. Redondeado al incremento del material y nunca por debajo de la barra. Se rellena sin marcar. | N4. Convención práctica; la evidencia es limitada. |
+| **R22 · Récords en directo y en el resumen** | Solo si hay historial previo del mismo ejercicio (la primera vez no es récord). Con carga: más kg que nunca con al menos esas repeticiones, o más repeticiones que nunca con al menos esa carga. Peso corporal/banda: más repeticiones sin asistencia (y con igual o más lastre). Tiempo: más segundos. Asistida: menos asistencia con ≥ repeticiones. Un récord por ejercicio en el resumen. | Extiende R11 (mismo ejercicio, solo series de trabajo). |
 
 ### 2.4 Comprobación de los principios del encargo
 - (a) Sin frontera mágica en 8–12: **se sostiene**.

@@ -174,3 +174,137 @@ export function sessionsPerWeek(sessions: Session[], weeks: number, today: strin
 }
 
 export const TRACKED_MUSCLES: MuscleId[] = MAJOR_MUSCLES
+
+// ───────────────────────── Último entrenamiento por músculo ─────────────────────────
+
+/**
+ * Fecha más reciente con al menos una serie de trabajo completada en la que el músculo es PRINCIPAL
+ * (EVIDENCIA, regla R20). Es un dato, no una medida de recuperación.
+ */
+export function lastTrainedByMuscle(sessions: Session[], muscles: MuscleId[] = MAJOR_MUSCLES): Record<string, string | null> {
+  const out: Record<string, string | null> = Object.fromEntries(muscles.map((m) => [m, null]))
+  for (const s of sessions) {
+    if (s.status !== 'completed' && s.status !== 'partial') continue
+    for (const ex of s.exercises) {
+      if (!ex.sets.some((x) => x.kind === 'work' && x.completed)) continue
+      const def = getExercise(ex.exerciseId)
+      if (!def) continue
+      for (const m of def.primary) if (m in out && (out[m] === null || (out[m] as string) < s.date)) out[m] = s.date
+    }
+  }
+  return out
+}
+
+// ───────────────────────── Récords de una serie / sesión ─────────────────────────
+
+export interface SetRecord {
+  kind: 'load' | 'reps_at_load' | 'reps' | 'time' | 'assist'
+  /** Texto corto: «62,5 kg × 8». */
+  value: string
+  /** Explicación: «más peso que nunca para 8 o más repeticiones (antes 60 kg)». */
+  detail: string
+  /** Para ordenar: mejora relativa. */
+  gain: number
+}
+
+/**
+ * ¿Supera esta serie a todo lo registrado ANTES en el mismo ejercicio? (EVIDENCIA, regla R22)
+ * Solo cuenta si hay historial con el que comparar (la primera vez no es un récord):
+ *  - Con carga: más kg que nunca con al menos esas repeticiones, o más repeticiones que nunca con al menos esa carga.
+ *  - Peso corporal / banda: más repeticiones sin asistencia. Tiempo: más segundos. Asistida: menos asistencia con ≥ repeticiones.
+ */
+export function setRecord(set: SetEntry, lt: LoadType, prior: SetEntry[], fmt: (n: number) => string): SetRecord | null {
+  if (set.kind !== 'work') return null
+  const prev = prior.filter((p) => p.kind === 'work' && p.completed)
+  if (!prev.length) return null
+  if (lt === 'time') {
+    const sec = set.durationSec
+    if (sec === null) return null
+    const best = Math.max(...prev.map((p) => p.durationSec ?? 0))
+    return best > 0 && sec > best ? { kind: 'time', value: `${sec} s`, detail: `tu mejor tiempo (antes ${best} s)`, gain: sec / best - 1 } : null
+  }
+  const reps = set.reps
+  if (reps === null || reps < 1) return null
+  if (lt === 'assisted') {
+    const a = set.assistKg ?? set.weightKg
+    if (a === null) return null
+    const cands = prev.filter((p) => (p.reps ?? 0) >= reps && (p.assistKg ?? p.weightKg) !== null)
+    if (!cands.length) return null
+    const min = Math.min(...cands.map((p) => (p.assistKg ?? p.weightKg) as number))
+    return a < min ? { kind: 'assist', value: `${reps} rep · asist. ${fmt(a)} kg`, detail: `la menor asistencia para ${reps} o más repeticiones (antes ${fmt(min)} kg)`, gain: (min - a) / Math.max(1, min) } : null
+  }
+  if (lt === 'bodyweight' || lt === 'band') {
+    if ((set.assistKg ?? 0) > 0) return null
+    const added = set.addedKg ?? 0
+    const cands = prev.filter((p) => !((p.assistKg ?? 0) > 0) && (p.addedKg ?? 0) >= added)
+    if (!cands.length) return null
+    const best = Math.max(...cands.map((p) => p.reps ?? 0))
+    return best > 0 && reps > best
+      ? { kind: 'reps', value: `${reps} rep${added ? ` (+${fmt(added)} kg)` : ''}`, detail: `más repeticiones que nunca${added ? ' con ese lastre o más' : ''} (antes ${best})`, gain: reps / best - 1 }
+      : null
+  }
+  const w = set.weightKg
+  if (w === null || w <= 0) return null
+  const withReps = prev.filter((p) => p.weightKg !== null && (p.reps ?? 0) >= reps)
+  if (withReps.length) {
+    const bestKg = Math.max(...withReps.map((p) => p.weightKg as number))
+    if (w > bestKg) return { kind: 'load', value: `${fmt(w)} kg × ${reps}`, detail: `más peso que nunca para ${reps} o más repeticiones (antes ${fmt(bestKg)} kg)`, gain: w / bestKg - 1 }
+  }
+  const withLoad = prev.filter((p) => p.weightKg !== null && (p.weightKg as number) >= w)
+  if (withLoad.length) {
+    const bestReps = Math.max(...withLoad.map((p) => p.reps ?? 0))
+    if (bestReps > 0 && reps > bestReps) return { kind: 'reps_at_load', value: `${fmt(w)} kg × ${reps}`, detail: `más repeticiones que nunca con ${fmt(w)} kg o más (antes ${bestReps})`, gain: (reps / bestReps - 1) * 0.5 }
+  }
+  return null
+}
+
+/** Series de trabajo completadas de un ejercicio en sesiones terminadas ANTERIORES a `before`. */
+export function priorSets(sessions: Session[], exerciseId: string, before: { id: string; startedAt: number }): SetEntry[] {
+  const out: SetEntry[] = []
+  for (const s of sessions) {
+    if (s.id === before.id || (s.status !== 'completed' && s.status !== 'partial') || s.startedAt >= before.startedAt) continue
+    for (const ex of s.exercises) if (ex.exerciseId === exerciseId) for (const set of ex.sets) if (set.kind === 'work' && set.completed) out.push(set)
+  }
+  return out
+}
+
+/** Mejor récord por ejercicio conseguido en una sesión (comparado con las sesiones anteriores). */
+export function sessionRecords(session: Session, all: Session[], fmt: (n: number) => string): { exerciseId: string; name: string; rec: SetRecord }[] {
+  const out: { exerciseId: string; name: string; rec: SetRecord }[] = []
+  const seen = new Set<string>()
+  for (const ex of session.exercises) {
+    if (seen.has(ex.exerciseId)) continue
+    seen.add(ex.exerciseId)
+    const prior = priorSets(all, ex.exerciseId, session)
+    if (!prior.length) continue
+    // Un único récord por ejercicio: la serie que más mejora lo anterior.
+    let best: SetRecord | null = null
+    const sets = session.exercises.filter((e) => e.exerciseId === ex.exerciseId).flatMap((e) => e.sets)
+    for (const set of sets) {
+      if (set.kind !== 'work' || !set.completed) continue
+      const r = setRecord(set, ex.loadTypeSnapshot, prior, fmt)
+      if (r && (!best || r.gain > best.gain)) best = r
+    }
+    if (best) out.push({ exerciseId: ex.exerciseId, name: ex.nameSnapshot, rec: best })
+  }
+  return out
+}
+
+/** Comparación con la sesión anterior del mismo día de rutina (o con el mismo título si es libre). */
+export function previousComparable(session: Session, all: Session[]): Session | null {
+  const cands = all.filter((s) => s.id !== session.id && (s.status === 'completed' || s.status === 'partial') && s.startedAt < session.startedAt && (session.dayId ? s.routineId === session.routineId && s.dayId === session.dayId : !s.routineId && s.title === session.title))
+  return cands.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
+}
+
+export function sessionTotals(s: Session): { sets: number; reps: number; exercises: number } {
+  let sets = 0
+  let reps = 0
+  let exercises = 0
+  for (const e of s.exercises) {
+    const done = e.sets.filter((x) => x.kind === 'work' && x.completed)
+    if (done.length) exercises++
+    sets += done.length
+    for (const x of done) reps += x.reps ?? 0
+  }
+  return { sets, reps, exercises }
+}

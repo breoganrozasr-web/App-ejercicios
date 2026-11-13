@@ -1,13 +1,17 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Play, Settings, Wand2 } from 'lucide-react'
+import { CalendarPlus, Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Play, Settings, Wand2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
-import { getMeta, getRoutineBundle, nextRoutineDay, plannedForWeek, setMeta, startFreeSession, startSessionFromDay } from '../../data/repo'
+import { getMeta, getRoutineBundle, localDateTime, nextRoutineDay, plannedForWeek, setMeta, startFreeSession, startSessionFromDay } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
+import { MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
+import { lastTrainedByMuscle } from '../../domain/records'
 import { dayDuration } from '../../domain/engine/analysis'
 import type { ScheduleOverride, Session } from '../../domain/types'
-import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, daysBetween, formatDateLong, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
+import type { MuscleId } from '../../domain/types'
+import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, daysBetween, formatDateLong, formatDateShort, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
+import { DecimalInput } from '../components/inputs'
 import { Sheet, useToast } from '../components/overlay'
 import { useNow } from '../hooks'
 import { requestPersistence } from '../pwa'
@@ -22,6 +26,7 @@ export function TodayScreen() {
   const backupInfo = useLiveQuery(async () => ({ last: await getMeta<number | null>('lastBackupAt', null), since: await getMeta<number>('sessionsSinceBackup', 0) }), [])
   const [busy, setBusy] = useState(false)
   const [pickDay, setPickDay] = useState(false)
+  const [past, setPast] = useState<{ date: string; hhmm: string; dur: number | null; what: string } | null>(null)
   const toast = useToast()
   const now = useNow(30000)
 
@@ -57,6 +62,24 @@ export function TodayScreen() {
     }
   }
 
+  const startPast = async () => {
+    if (!past || busy || !past.date || past.date > today) return
+    setBusy(true)
+    try {
+      const dur = Math.max(5, Math.min(600, past.dur ?? 60))
+      const opts = { startedAt: localDateTime(past.date, past.hhmm), durationMin: dur }
+      const s = past.what === 'free' || !bundle ? await startFreeSession(past.date, opts) : await startSessionFromDay(bundle.routine.id, past.what, past.date, opts)
+      setPast(null)
+      go(`entreno/${s.id}`)
+    } catch (e) {
+      toast(`No se pudo crear: ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+  const last = lastTrainedByMuscle(done)
+  const nextMuscles = next ? [...new Set(next.exercises.flatMap((e) => getExercise(e.exerciseId)?.primary ?? []))].filter((m): m is MuscleId => MAJOR_MUSCLES.includes(m)) : []
+
   const showBackup = backupInfo && done.filter((s) => !s.isDemo).length > 0 && (backupInfo.since >= 4 || (backupInfo.last !== null && now - backupInfo.last > 14 * 86400000 && backupInfo.since > 0) || (backupInfo.last === null && backupInfo.since >= 2))
 
   return (
@@ -73,7 +96,7 @@ export function TodayScreen() {
           <section className="card accent stack">
             <span className="small muted">Entrenamiento en curso</span>
             <div className="hero-day">{activeSession.title}</div>
-            <span className="small muted"><Clock size={14} aria-hidden /> Empezado hace {Math.max(1, Math.round((now - activeSession.startedAt - activeSession.pausedTotalMs) / 60000))} min{activeSession.pausedAt ? ' · en pausa' : ''}</span>
+            <span className="small muted"><Clock size={14} aria-hidden /> {activeSession.backdated ? `Registro a posteriori del ${formatDateShort(activeSession.date)}` : `Empezado hace ${Math.max(1, Math.round((now - activeSession.startedAt - activeSession.pausedTotalMs) / 60000))} min${activeSession.pausedAt ? ' · en pausa' : ''}`}</span>
             <a className="btn big block" style={{ background: 'var(--accent-ink)', color: 'var(--accent)', border: 0 }} href={href(`entreno/${activeSession.id}`)}>
               <Play size={20} /> Continuar
             </a>
@@ -92,6 +115,9 @@ export function TodayScreen() {
               {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}</li>)}
               {next.exercises.length > 6 && <li>y {next.exercises.length - 6} más</li>}
             </ul>
+            {done.length > 0 && nextMuscles.length > 0 && (
+              <span className="tiny muted">Última vez: {nextMuscles.map((m) => `${MUSCLE_LABEL[m].toLowerCase()} ${last[m] ? agoShort(daysBetween(last[m] as string, today)) : '(nunca)'}`).join(' · ')}</span>
+            )}
             <button className="btn primary big block" disabled={busy || next.exercises.length === 0} onClick={() => void start(next.id)}>
               <Play size={20} /> Empezar
             </button>
@@ -134,6 +160,12 @@ export function TodayScreen() {
           <span className="tiny muted">Círculo naranja: planificado · verde: hecho · amarillo: parcial. Sin rachas: lo que cuenta es la constancia a medio plazo.</span>
         </section>
 
+        {!activeSession && (
+          <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => setPast({ date: addDays(today, -1), hhmm: '18:00', dur: 60, what: next?.id ?? 'free' })}>
+            <CalendarPlus size={16} /> Registrar una sesión pasada
+          </button>
+        )}
+
         {showBackup && (
           <a className="card tight row" href={href('ajustes/copias')} style={{ textDecoration: 'none', color: 'inherit' }}>
             <HardDriveDownload className="faint" aria-hidden />
@@ -149,6 +181,27 @@ export function TodayScreen() {
           </a>
         )}
       </main>
+      <Sheet open={!!past} onClose={() => setPast(null)} title="Registrar una sesión pasada">
+        {past && (
+          <div className="stack">
+            <p className="small muted">Para anotar un entrenamiento que hiciste sin la app. No hay cronómetro: indica cuándo fue y cuánto duró.</p>
+            <div className="row wrap">
+              <label className="stack-sm grow" style={{ gap: 2 }}><span className="small">Fecha</span><input type="date" className="input" value={past.date} max={today} onChange={(ev) => setPast({ ...past, date: ev.target.value })} /></label>
+              <label className="stack-sm" style={{ gap: 2, width: 140 }}><span className="small">Hora de inicio</span><input type="time" className="input" value={past.hhmm} onChange={(ev) => setPast({ ...past, hhmm: ev.target.value })} /></label>
+              <label className="stack-sm" style={{ gap: 2, width: 110 }}><span className="small">Duración (min)</span><DecimalInput className="input" integer label="Duración en minutos" value={past.dur} onChange={(v) => setPast({ ...past, dur: v })} max={600} /></label>
+            </div>
+            <div className="field">
+              <label htmlFor="pastwhat">Qué hiciste</label>
+              <select id="pastwhat" className="input" value={past.what} onChange={(ev) => setPast({ ...past, what: ev.target.value })}>
+                {bundle?.version.days.map((d) => <option key={d.id} value={d.id}>{d.name} ({bundle.routine.name})</option>)}
+                <option value="free">Sesión libre (eliges los ejercicios)</option>
+              </select>
+            </div>
+            {past.date > today && <p className="small" role="alert">La fecha no puede ser futura.</p>}
+            <button className="btn primary big block" disabled={busy || !past.date || past.date > today} onClick={() => void startPast()}>Empezar a anotar</button>
+          </div>
+        )}
+      </Sheet>
       <Sheet open={pickDay} onClose={() => setPickDay(false)} title="Elegir día de la rutina">
         <div className="list">
           {bundle?.version.days.map((d) => (
@@ -161,6 +214,10 @@ export function TodayScreen() {
       </Sheet>
     </>
   )
+}
+
+function agoShort(d: number): string {
+  return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : `hace ${d} d`
 }
 
 function nameOf(id: string): string {

@@ -359,3 +359,16 @@ details.more[open] > summary::after { transform: rotate(180deg); }
   .demo .stage { aspect-ratio: 16 / 9; }
   :root { --nav-h: 56px; }
 }
+
+/* ── Mejoras 1.1: nota fija, resumen, fotos ── */
+.pinned { display: inline-flex; gap: 6px; align-items: flex-start; color: var(--accent-strong); font-weight: 600; }
+.pinned svg { flex: none; margin-top: 2px; }
+.label { display: inline-flex; gap: 6px; align-items: center; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.summary-grid > div { display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px 10px; min-width: 0; }
+.summary-grid strong { font-size: 1.15rem; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.photo-thumb { display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; cursor: pointer; color: inherit; min-width: 0; }
+.photo-thumb img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; background: var(--surface-2); }
+label.btn[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
+@media (max-width: 360px) { .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

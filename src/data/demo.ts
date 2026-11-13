@@ -1,5 +1,5 @@
 import { getExercise } from '../domain/catalog'
-import type { BodyWeightEntry, Session, SessionExercise, SetEntry } from '../domain/types'
+import type { BodyWeightEntry, MeasurementEntry, Session, SessionExercise, SetEntry } from '../domain/types'
 import { addDays, newId, toLocalDate } from '../domain/util'
 import { db } from './db'
 
@@ -45,21 +45,28 @@ export async function loadDemo(today = toLocalDate()): Promise<number> {
     k++
   }
   const bw: BodyWeightEntry[] = [0, 10, 20, 30].map((o, i) => ({ id: newId('bw'), date: addDays(start, o), kg: 72 + i * 0.3, isDemo: true }))
-  await db().transaction('rw', db().sessions, db().bodyweight, async () => {
+  const ms: MeasurementEntry[] = [0, 14, 28].flatMap((o, i) => [
+    { id: newId('ms'), date: addDays(start, o), site: 'waist' as const, cm: 84 - i * 0.5, isDemo: true },
+    { id: newId('ms'), date: addDays(start, o), site: 'arm' as const, cm: 33 + i * 0.3, isDemo: true },
+  ])
+  await db().transaction('rw', [db().sessions, db().bodyweight, db().measurements], async () => {
     await db().sessions.bulkPut(sessions)
     await db().bodyweight.bulkPut(bw)
+    await db().measurements.bulkPut(ms)
   })
   return sessions.length
 }
 
 export async function clearDemo(): Promise<number> {
   let n = 0
-  await db().transaction('rw', [db().sessions, db().bodyweight, db().routines, db().routineVersions], async () => {
+  await db().transaction('rw', [db().sessions, db().bodyweight, db().measurements, db().routines, db().routineVersions], async () => {
     const s = await db().sessions.filter((x) => !!x.isDemo).primaryKeys()
     await db().sessions.bulkDelete(s)
     n += s.length
     const b = await db().bodyweight.filter((x) => !!x.isDemo).primaryKeys()
     await db().bodyweight.bulkDelete(b)
+    const m = await db().measurements.filter((x) => !!x.isDemo).primaryKeys()
+    await db().measurements.bulkDelete(m)
     const r = await db().routines.filter((x) => !!x.isDemo).toArray()
     for (const rt of r) {
       await db().routineVersions.where('routineId').equals(rt.id).delete()

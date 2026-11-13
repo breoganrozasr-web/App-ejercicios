@@ -9,11 +9,12 @@ import { loadCustomExercises, log, setMeta } from './repo'
  * Formato de copia (documentado en docs/FORMATO_COPIA.md):
  * { format: "forja-backup", formatVersion: 1, schemaVersion, appVersion, exportedAt, tables: { <tabla>: [...] } }
  * Incluye imágenes propias (data URL) de ejercicios creados por la persona. No incluye demostraciones de terceros.
+ * Las fotos de progreso solo se incluyen si se pide expresamente (tabla «photos» ausente = la copia no las lleva).
  */
 export const BACKUP_FORMAT = 'forja-backup'
 export const BACKUP_FORMAT_VERSION = 1
-export const MAX_BACKUP_BYTES = 25 * 1024 * 1024
-export const APP_VERSION = '1.0.0'
+export const MAX_BACKUP_BYTES = 100 * 1024 * 1024
+export const APP_VERSION = '1.1.0'
 
 export interface BackupFile {
   format: string
@@ -25,16 +26,17 @@ export interface BackupFile {
 }
 
 const KEY_OF: Record<TableName, string> = {
-  meta: 'key', profile: 'id', routines: 'id', routineVersions: 'id', overrides: 'id', sessions: 'id', bodyweight: 'id', changelog: 'id', customExercises: 'id', exerciseSettings: 'exerciseId', userMedia: 'id',
+  meta: 'key', profile: 'id', routines: 'id', routineVersions: 'id', overrides: 'id', sessions: 'id', bodyweight: 'id', changelog: 'id', customExercises: 'id', exerciseSettings: 'exerciseId', userMedia: 'id', measurements: 'id', photos: 'id',
 }
 
 /** Claves de meta que NO se exportan (son del dispositivo). */
 const LOCAL_META = new Set(['persistRequested', 'lastBackupAt', 'sessionsSinceBackup', 'installHintDismissed'])
 
-export async function exportBackup(opts: { includeDemo?: boolean } = {}): Promise<BackupFile> {
+export async function exportBackup(opts: { includeDemo?: boolean; includePhotos?: boolean } = {}): Promise<BackupFile> {
   const tables: BackupFile['tables'] = {}
   await db().transaction('r', TABLES.map((t) => db().table(t)), async () => {
     for (const t of TABLES) {
+      if (t === 'photos' && !opts.includePhotos) continue
       let rows = await db().table(t).toArray()
       if (t === 'meta') rows = rows.filter((r: { key: string }) => !LOCAL_META.has(r.key))
       if (!opts.includeDemo) rows = rows.filter((r: { isDemo?: boolean }) => !r.isDemo)
@@ -104,6 +106,8 @@ function validateRow(table: TableName, row: unknown): string | null {
   if (table === 'routines' && !isStr(r.currentVersionId)) return 'rutina sin versión'
   if (table === 'profile' && r.id !== 'me') return 'perfil no válido'
   if (table === 'bodyweight' && typeof r.kg !== 'number') return 'peso corporal no válido'
+  if (table === 'measurements' && (typeof r.cm !== 'number' || !isStr(r.site) || !isStr(r.date))) return 'medida no válida'
+  if (table === 'photos' && (!isStr(r.dataUrl) || !isStr(r.date))) return 'foto no válida'
   return null
 }
 
@@ -116,7 +120,7 @@ export interface BackupPreview {
 }
 
 export function parseBackupText(text: string): BackupFile {
-  if (text.length > MAX_BACKUP_BYTES) throw new BackupError('El archivo es demasiado grande (máx. 25 MB).')
+  if (text.length > MAX_BACKUP_BYTES) throw new BackupError('El archivo es demasiado grande (máx. 100 MB).')
   let raw: unknown
   try {
     raw = JSON.parse(text)
@@ -160,6 +164,7 @@ export async function previewBackup(file: BackupFile): Promise<BackupPreview> {
   const dates = sessions.map((s) => s.date).sort()
   const warnings: string[] = []
   if (!sessions.length) warnings.push('La copia no contiene sesiones registradas.')
+  if (file.tables.photos === undefined) warnings.push('La copia no incluye fotos de progreso: las que tengas en este dispositivo se conservan.')
   return { file, counts, sessionRange: dates.length ? { from: dates[0], to: dates[dates.length - 1] } : null, existingIds, warnings }
 }
 
@@ -174,7 +179,8 @@ export async function restoreBackup(file: BackupFile, mode: 'replace' | 'merge')
   let updated = 0
   let kept = 0
   await db().transaction('rw', TABLES.map((t) => db().table(t)), async () => {
-    if (mode === 'replace') for (const t of TABLES) await db().table(t).clear()
+    // Reemplazo: se borra todo salvo las fotos cuando la copia no las incluye (se exportan solo si se pide).
+    if (mode === 'replace') for (const t of TABLES) if (!(t === 'photos' && file.tables.photos === undefined)) await db().table(t).clear()
     for (const t of TABLES) {
       const rows = (file.tables[t] ?? []) as Record<string, unknown>[]
       if (!rows.length) continue

@@ -1,26 +1,28 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, ChartLine, ChevronLeft, ChevronRight, Info, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChartLine, ChevronLeft, ChevronRight, Flame, Info, Pencil, Trash2, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
-import { deleteSession, restoreSession, sessionWorkSummary, updateFinishedSession } from '../../data/repo'
+import { deleteSession, restoreSession, retimeSession, sessionWorkSummary, updateFinishedSession } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
 import { MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
 import { weeklyTarget } from '../../domain/engine/params'
 import { checkScope } from '../../domain/engine/scope'
-import { exerciseTrend, sessionsPerWeek, weeklyMuscleSets } from '../../domain/records'
+import { bodyweightOn, kcalRange, sessionMinutes } from '../../domain/energy'
+import { READINESS_SCALES, readinessLevel } from '../../domain/readiness'
+import { exerciseTrend, previousComparable, sessionRecords, sessionTotals, sessionsPerWeek, weeklyMuscleSets } from '../../domain/records'
 import type { Session, SetEntry } from '../../domain/types'
-import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, formatNumber, formatTime, newId, toLocalDate } from '../../domain/util'
+import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, formatNumber, formatTime, toLocalDate } from '../../domain/util'
 import { LineChart, WeekBars } from '../components/Charts'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
 import { back, go, href } from '../router'
+import { BodyweightCard, MeasurementsCard, MuscleRecencyCard, PhotosCard } from './Body'
 
 export function ProgressScreen() {
   const { profile } = useApp()
   const today = toLocalDate()
   const sessions = useLiveQuery(() => db().sessions.toArray(), [], [] as Session[])
-  const bw = useLiveQuery(() => db().bodyweight.orderBy('date').toArray(), [], [])
   const finished = sessions.filter((s) => s.status === 'completed' || s.status === 'partial').sort((a, b) => b.startedAt - a.startedAt)
   const perWeek = sessionsPerWeek(finished, 12, today)
   const muscleWeeks = weeklyMuscleSets(finished, 2, today)
@@ -36,8 +38,6 @@ export function ProgressScreen() {
   const allowE1rm = !profile || checkScope(profile).kind === 'adult'
   const trend = sel ? exerciseTrend(finished, sel, allowE1rm) : []
   const selEx = sel ? getExercise(sel) : undefined
-  const [bwInput, setBwInput] = useState<number | null>(null)
-  const toast = useToast()
   const hasDemo = finished.some((s) => s.isDemo)
 
   return (
@@ -80,6 +80,8 @@ export function ProgressScreen() {
                 })}
               </div>
             </section>
+
+            <MuscleRecencyCard sessions={finished} />
 
             {sel && (
               <section className="card stack">
@@ -127,16 +129,11 @@ export function ProgressScreen() {
           </>
         )}
 
-        <section className="card stack">
-          <h3>Peso corporal (opcional)</h3>
-          {bw.length >= 2 && <LineChart points={bw.map((b) => ({ x: b.date, y: b.kg }))} yLabel="kg" label="Peso corporal" />}
-          {bw.length > 0 && <p className="small">Último: <strong>{formatNumber(bw[bw.length - 1].kg)} kg</strong> ({formatDateShort(bw[bw.length - 1].date)})</p>}
-          <div className="row">
-            <DecimalInput className="input grow" label="Peso corporal de hoy en kg" value={bwInput} onChange={setBwInput} placeholder="kg hoy" max={400} />
-            <button className="btn soft" disabled={!bwInput} onClick={async () => { if (!bwInput) return; await db().bodyweight.put({ id: newId('bw'), date: today, kg: bwInput }); setBwInput(null); toast('Peso anotado') }}>Anotar</button>
-          </div>
-        </section>
-        <div className="note info"><Info aria-hidden /><span className="small">La app no calcula músculo ganado, calorías ni “recuperación”: con estos datos no se puede estimar con fiabilidad.</span></div>
+        <h2 className="section-title">Cuerpo</h2>
+        <BodyweightCard />
+        <MeasurementsCard />
+        <PhotosCard />
+        <div className="note info"><Info aria-hidden /><span className="small">Ninguna app puede medir el músculo que ganas ni tu “recuperación” con estos datos. Aquí ves lo que sí se registra (cargas, series, medidas, fotos y días desde el último entrenamiento) y, en cada sesión, un <strong>rango aproximado</strong> de calorías.</span></div>
       </main>
     </>
   )
@@ -145,7 +142,10 @@ export function ProgressScreen() {
 export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
   const s = useLiveQuery(() => db().sessions.get(sessionId), [sessionId], null)
   const logs = useLiveQuery(() => db().changelog.where('entityId').equals(sessionId).toArray(), [sessionId], [])
+  const all = useLiveQuery(() => db().sessions.toArray(), [], [] as Session[])
+  const bw = useLiveQuery(() => db().bodyweight.toArray(), [], [])
   const [edit, setEdit] = useState<Session | null>(null)
+  const [when, setWhen] = useState<{ date: string; hhmm: string; dur: number | null } | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
   if (s === null) return null
@@ -156,7 +156,32 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
   }
   const view = edit ?? s
   const sum = sessionWorkSummary(view)
-  const dur = s.endedAt ? (s.endedAt - s.startedAt - s.pausedTotalMs) / 1000 : 0
+  const durMin = Math.max(1, Math.round(sessionMinutes(s)))
+  const startEdit = () => {
+    setEdit(structuredClone(s))
+    const d = new Date(s.startedAt)
+    setWhen({ date: s.date, hhmm: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`, dur: durMin })
+  }
+  const saveEdit = async () => {
+    if (!edit) return
+    let next: Session = { ...edit, status: sessionWorkSummary(edit).done < sessionWorkSummary(edit).planned ? 'partial' : 'completed' }
+    const changes: string[] = ['Sesión editada a mano']
+    if (when && /^\d{4}-\d{2}-\d{2}$/.test(when.date)) {
+      const d0 = new Date(s.startedAt)
+      const hh0 = `${String(d0.getHours()).padStart(2, '0')}:${String(d0.getMinutes()).padStart(2, '0')}`
+      const durChanged = when.dur !== null && when.dur !== durMin && when.dur > 0
+      if (when.date !== s.date || when.hhmm !== hh0 || durChanged) {
+        next = retimeSession(next, when.date, { hhmm: when.hhmm, durationMin: durChanged ? (when.dur as number) : undefined })
+        if (when.date !== s.date) changes.push(`fecha cambiada de ${formatDateShort(s.date)} a ${formatDateShort(when.date)}`)
+        if (when.hhmm !== hh0) changes.push(`hora de inicio ${when.hhmm}`)
+        if (durChanged) changes.push(`duración ${when.dur} min`)
+      }
+    }
+    await updateFinishedSession(next, changes.join('; '))
+    setEdit(null)
+    setWhen(null)
+    toast('Cambios guardados')
+  }
   const setVal = (ei: number, si: number, patch: Partial<SetEntry>) => setEdit((x) => { if (!x) return x; const c = structuredClone(x); c.exercises[ei].sets[si] = { ...c.exercises[ei].sets[si], ...patch }; return c })
   return (
     <>
@@ -164,7 +189,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
         <button className="icon-btn" onClick={() => back('progreso')} aria-label="Volver"><ArrowLeft /></button>
         <span className="title grow">Sesión</span>
         {!edit && (
-          <button className="icon-btn" aria-label="Editar sesión" onClick={async () => { if (await confirm({ title: 'Editar sesión ya guardada', body: 'Los cambios quedarán anotados en el registro de cambios de esta sesión.', confirm: 'Editar' })) setEdit(structuredClone(s)) }}><Pencil /></button>
+          <button className="icon-btn" aria-label="Editar sesión" onClick={async () => { if (await confirm({ title: 'Editar sesión ya guardada', body: 'Puedes cambiar series, notas, fecha, hora y duración. Los cambios quedarán anotados en el registro de cambios de esta sesión.', confirm: 'Editar' })) startEdit() }}><Pencil /></button>
         )}
       </header>
       <main className="page">
@@ -173,10 +198,22 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
             {s.status === 'partial' && <span className="badge warn">Parcial</span>}
             {s.isDemo && <span className="badge demo">Ejemplo</span>}
             {s.rampApplied && <span className="badge suggest">Familiarización</span>}
+            {s.backdated && <span className="badge">Registrada después</span>}
           </div>
           <h1 style={{ fontSize: '1.6rem' }}>{s.title}</h1>
-          <span className="small muted">{formatDateLong(s.date)} · {formatTime(s.startedAt)} · {Math.max(1, Math.round(dur / 60))} min · {sum.done}/{sum.planned} series de trabajo</span>
+          <span className="small muted">{formatDateLong(s.date)} · {formatTime(s.startedAt)} · {durMin} min · {sum.done}/{sum.planned} series de trabajo</span>
         </div>
+        {edit && when && (
+          <section className="card stack-sm">
+            <h3>Fecha, hora y duración</h3>
+            <div className="row wrap">
+              <label className="stack-sm grow" style={{ gap: 2 }}><span className="small">Fecha</span><input type="date" className="input" value={when.date} max={toLocalDate()} onChange={(ev) => setWhen({ ...when, date: ev.target.value })} /></label>
+              <label className="stack-sm" style={{ gap: 2, width: 140 }}><span className="small">Hora de inicio</span><input type="time" className="input" value={when.hhmm} onChange={(ev) => setWhen({ ...when, hhmm: ev.target.value })} /></label>
+              <label className="stack-sm" style={{ gap: 2, width: 110 }}><span className="small">Duración (min)</span><DecimalInput className="input" integer label="Duración en minutos" value={when.dur} onChange={(v) => setWhen({ ...when, dur: v })} max={600} /></label>
+            </div>
+          </section>
+        )}
+        {!edit && <SessionSummary s={s} all={all} bodyKg={bodyweightOn(bw, s.date)} minutes={durMin} />}
         {view.exercises.map((e, ei) => {
           let n = 0
           return (
@@ -216,8 +253,8 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
         {edit ? (
           <div className="stack-sm">
             <textarea className="input" aria-label="Notas de la sesión" value={edit.notes} onChange={(ev) => setEdit({ ...edit, notes: ev.target.value })} />
-            <button className="btn primary big block" onClick={async () => { await updateFinishedSession({ ...edit, status: sessionWorkSummary(edit).done < sessionWorkSummary(edit).planned ? 'partial' : 'completed' }, 'Sesión editada a mano'); setEdit(null); toast('Cambios guardados') }}>Guardar cambios</button>
-            <button className="btn ghost block" onClick={() => setEdit(null)}>Cancelar</button>
+            <button className="btn primary big block" onClick={() => void saveEdit()}>Guardar cambios</button>
+            <button className="btn ghost block" onClick={() => { setEdit(null); setWhen(null) }}>Cancelar</button>
           </div>
         ) : (
           <>
@@ -233,6 +270,49 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
         )}
       </main>
     </>
+  )
+}
+
+/** Resumen al terminar: duración, series, repeticiones, calorías (rango), récords y comparación con la vez anterior. */
+function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[]; bodyKg: number | null; minutes: number }) {
+  const t = sessionTotals(s)
+  const kcal = bodyKg && minutes >= 5 ? kcalRange(minutes, bodyKg) : null
+  const recs = sessionRecords(s, all, formatNumber)
+  const prev = previousComparable(s, all)
+  const pt = prev ? sessionTotals(prev) : null
+  const delta = (a: number, b: number) => (a === b ? 'igual' : `${a > b ? '+' : '−'}${Math.abs(a - b)}`)
+  const lvl = readinessLevel(s.readiness)
+  return (
+    <section className="card stack" aria-label="Resumen de la sesión">
+      <div className="summary-grid">
+        <div><span className="tiny muted">Duración</span><strong className="num">{minutes} min</strong></div>
+        <div><span className="tiny muted">Series</span><strong className="num">{t.sets}</strong></div>
+        <div><span className="tiny muted">Repetic.</span><strong className="num">{t.reps}</strong></div>
+        <div><span className="tiny muted">Ejercicios</span><strong className="num">{t.exercises}</strong></div>
+      </div>
+      <div className="row small" style={{ alignItems: 'flex-start' }}>
+        <Flame size={18} className="faint" aria-hidden />
+        {kcal ? (
+          <span className="grow">Gasto estimado: <strong className="num">{formatNumber(kcal.lo)}–{formatNumber(kcal.hi)} kcal</strong> <span className="muted">(aprox., con {formatNumber(bodyKg)} kg y {minutes} min; incluye lo que gastarías en reposo)</span></span>
+        ) : (
+          <span className="grow muted">{bodyKg ? 'Sesión demasiado corta para estimar calorías.' : 'Anota tu peso corporal en Progreso para ver un rango aproximado de calorías.'}</span>
+        )}
+      </div>
+      {recs.length > 0 && (
+        <div className="stack-sm">
+          <span className="label"><Trophy size={16} aria-hidden /> Récords en esta sesión</span>
+          <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
+            {recs.map((r) => <li key={r.exerciseId}><strong>{r.name}</strong>: <span className="num">{r.rec.value}</span>, {r.rec.detail}</li>)}
+          </ul>
+        </div>
+      )}
+      {prev && pt && (
+        <p className="small muted">Respecto a la vez anterior ({formatDateShort(prev.date)}): series {delta(t.sets, pt.sets)}, repeticiones {delta(t.reps, pt.reps)}.</p>
+      )}
+      {s.readiness && (
+        <p className="small muted">Cómo llegabas: {READINESS_SCALES.sleep.label.toLowerCase()} {s.readiness.sleep}/5 · {READINESS_SCALES.energy.label.toLowerCase()} {s.readiness.energy}/5 · {READINESS_SCALES.soreness.label.toLowerCase()} {s.readiness.soreness}/5{lvl === 'low' ? ' (con menos margen)' : ''}.</p>
+      )}
+    </section>
   )
 }
 

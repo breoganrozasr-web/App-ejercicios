@@ -375,6 +375,45 @@ export interface Session {
   updatedAt: number
   /** Temporizador de descanso persistido como marca temporal. */
   rest: RestTimerState | null
+  /** Cómo llegaba la persona a la sesión (opcional; se pregunta al empezar). */
+  readiness?: Readiness | null
+  /** Sesión registrada a posteriori (sin cronómetro). */
+  backdated?: boolean
+  /** Duración declarada en minutos (sesiones registradas a posteriori). */
+  manualDurationMin?: number
+}
+
+/** Autoevaluación 1–5. Sueño y energía: 1 = muy mal/baja, 5 = muy bien/alta. Agujetas: 1 = ninguna, 5 = muchas. */
+export interface Readiness {
+  sleep: number
+  energy: number
+  soreness: number
+  at: number
+}
+
+export type MeasureSite = 'waist' | 'hips' | 'chest' | 'arm' | 'thigh' | 'calf' | 'neck'
+
+/** Medida corporal con cinta métrica (cm). */
+export interface MeasurementEntry {
+  id: string
+  date: string
+  site: MeasureSite
+  cm: number
+  isDemo?: boolean
+}
+
+export type PhotoPose = 'front' | 'side' | 'back'
+
+/** Foto de progreso: solo en este dispositivo (JPEG comprimido en data URL). */
+export interface ProgressPhoto {
+  id: string
+  date: string
+  pose: PhotoPose
+  dataUrl: string
+  bytes: number
+  width: number
+  height: number
+  createdAt: number
 }
 
 export interface RestTimerState {

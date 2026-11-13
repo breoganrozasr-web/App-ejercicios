@@ -1,14 +1,15 @@
 # Contenidos, demostraciones y licencias
 
-Fecha de comprobación: **13 de noviembre de 2026**. Manifiesto de medios: [`media-manifest.json`](media-manifest.json) (copia de `src/domain/catalog/media-manifest.json`, generado por `scripts/build_media.py`).
+Fecha de comprobación: **13 de noviembre de 2026**. Manifiestos de medios: [`media-manifest.json`](media-manifest.json) (Everkinetic, generado por `scripts/build_media.py`) y [`media-manifest-commons.json`](media-manifest-commons.json) (Wikimedia Commons, generado por `scripts/build_commons_media.py`); copias de los de `src/domain/catalog/`.
 
 ## Resultado
 
 | | Cantidad | Tipo | Sin conexión |
 |---|---|---|---|
-| Ejercicios del catálogo | 88 | — | Fichas, instrucciones y errores: siempre |
+| Ejercicios del catálogo | 93 | — | Fichas, instrucciones y errores: siempre |
 | Con **animación de muñeco verificada** (Everkinetic) | **84** | Dibujo lineal en 2–4 posiciones, animado alternando fotogramas (pausa, paso a paso, velocidad 0,5×/1×/1,5×) | Sí, tras descargarlas (Ajustes → Demostraciones) o tras verlas una vez con conexión |
-| Con **demostración pendiente** | **4** | Sentadilla con peso corporal, zancada atrás con peso corporal, plancha frontal, flexiones inclinadas | Instrucciones escritas + referencia aproximada marcada como “otra variante” |
+| Con **animación verificada de Wikimedia Commons** | **7** | Silueta animada (sentadilla), dibujo fijo (plancha, isométrico) y animaciones a color de los CDC (sentadilla a silla, zancada con apoyo, subida a escalón, gemelos, flexiones en pared) | Igual que las anteriores |
+| Con **demostración pendiente** | **2** | Zancada atrás con peso corporal, flexiones inclinadas | Instrucciones escritas + referencia aproximada marcada como “otra variante” (zancada con apoyo / flexiones en pared). No se usan en ninguna plantilla. |
 | Vídeos reales incluidos | 0 | — | — |
 | Vídeos externos (YouTube) | Solo los que añada la persona en ejercicios propios | Reproductor oficial en modo privacidad mejorada | **No** (solo con conexión; no se descargan) |
 
@@ -40,12 +41,16 @@ Notas de variante aplicadas (visibles en la ficha): `chest-dips` se usa como **f
 | AscendAPI / ExerciseDB — https://ascendapi.com, https://github.com/ExerciseDB/exercisedb-api | AscendAPI | Código AGPL, **medios propietarios**; términos prohíben almacenar/cachear (vía buscador) | No | ❌ No usar |
 | yuhonas/free-exercise-db y wrkout/exercises.json | yuhonas / wrkout | Repos “Unlicense”, pero el upstream declara que las fotos se tomaron de internet sin derechos | No | ❌ No usar las imágenes |
 | YouTube (incrustación) — https://developers.google.com/youtube/player_parameters, https://developers.google.com/youtube/terms/developer-policies | Google / autor del vídeo | Términos de YouTube | **No** (prohibido descargar o cachear) | 🟡 Solo para enlaces que añada la persona, a petición y online |
-| Wikimedia Commons (animaciones y vídeos CC/PD) | Autor de cada fichero | Por fichero (CC BY-SA 4.0, CC BY 3.0, dominio público CDC…) | Sí según ficha | 🟡 Candidata para cubrir los 4 pendientes (host bloqueado en esta sesión) |
+| Wikimedia Commons — https://commons.wikimedia.org | Autor de cada fichero | Por fichero (comprobada con la API `extmetadata` de cada ficha) | Sí según ficha | ✅ **Usada para 7 ejercicios de peso corporal** (ver abajo) |
 | Darebee | Darebee | CC BY-NC-ND y prohíbe uso en apps | No | ❌ |
 
 ## Cómo se cumple cada licencia
 
 - **Everkinetic (CC BY-SA 4.0):** atribución en cada demostración (pie del reproductor: autor, fuente, licencia, enlace), pantalla Ajustes → Créditos y licencias, manifiesto con `author`, `license`, `licenseUrl`, `sourceFiles` (URL de cada archivo original con commit), `modifications` y `checkedAt`. Texto completo de la licencia en `public/LICENSES/CC-BY-SA-4.0-everkinetic.md`. Las adaptaciones (escala de grises, WebP, animación, inversión en tema oscuro) se distribuyen bajo la misma licencia. La licencia del código de la app (MIT) es independiente.
+- **Wikimedia Commons:** cada demostración lleva en su pie autor, licencia, enlace a la ficha de Commons y las modificaciones; también en Ajustes → Créditos y en el manifiesto (`author`, `license`, `licenseUrl`, `sourceUrl`, `sourceFiles`, `modifications`, `checkedAt`, `verification`).
+  - «Squats.gif», de **Wensceslao**, **CC BY-SA 4.0** → sentadilla con peso corporal. Adaptación: colores invertidos (silueta oscura), recorte, 1 de cada 3 fotogramas, WebP; se distribuye con la misma licencia.
+  - «Plank exercise.svg», de **Pk0001**, **CC BY-SA 4.0** → plancha frontal (imagen fija: es un ejercicio isométrico). Adaptación: renderizado a WebP; misma licencia.
+  - Animaciones de los **CDC de EE. UU.** («Growing Stronger – Strength Training for Older Adults»), **dominio público** (obra del Gobierno federal de EE. UU., plantilla PD-USGov-HHS-CDC) → sentadilla hacia una silla, zancada con apoyo, subida a escalón, elevación de talones y flexiones en la pared. Adaptación: fotogramas extraídos a WebP con sus tiempos originales. Se cita la fuente aunque no sea obligatorio.
 - **YouTube:** reproductor oficial en `youtube-nocookie.com` con `playsinline=1`, cargado solo al pulsar (patrón “fachada”), tamaño ≥200 px, sin superposiciones, enlace “Ver en YouTube” siempre visible como alternativa, política de referer `strict-origin-when-cross-origin`. El service worker **no** cachea nada de YouTube.
 - **Contenido propio:** imágenes (≤2 MB, PNG/JPEG/WebP/GIF) guardadas en el dispositivo e incluidas en las copias; enlaces https validados. Marcado como “Contenido propio”.
 
@@ -53,6 +58,10 @@ Notas de variante aplicadas (visibles en la ficha): `chest-dips` se usa como **f
 
 Ajustes → Demostraciones sin conexión: “Descargar las de mi rutina (tamaño)”, “Descargar todo el catálogo (≈2 MB)”, tamaño ocupado y “Borrar demostraciones descargadas”. Caché `forja-demos-v1`. El catálogo y las rutinas no dependen de ningún proveedor externo en ejecución: todo va empaquetado.
 
+## Fotos de progreso (contenido de la persona)
+
+Las fotos de progreso son opcionales (desactivadas por defecto), se comprimen en el propio dispositivo (JPEG, lado largo ≤ 1280 px), se guardan solo en IndexedDB y **no** van en las copias salvo que se marque al exportar. No se envían a ningún servidor.
+
 ## Pendiente real
 
-Las 4 variantes de peso corporal sin demostración verificada (afectan a las plantillas “Casa sin material” y “Parque / calistenia”, que lo avisan). Para resolverlo: con acceso a commons.wikimedia.org, revisar las fichas de *Category:Fitness animations* (p. ej. CC BY-SA 4.0) o vídeos CDC de dominio público, verificar licencia y variante, añadirlos con `scripts/build_media.py` (o un script equivalente) y cambiar `demo: 'pendiente'` en el catálogo.
+Quedan 2 variantes sin demostración verificada: **zancada atrás con peso corporal** y **flexiones inclinadas**. Ya no se usan en ninguna plantilla (se sustituyeron por zancada con apoyo y flexiones en la pared, que sí tienen demostración). En Commons no se encontró un fichero con licencia clara que mostrara exactamente esas variantes; se mantienen con instrucciones escritas y referencia aproximada marcada como tal.
