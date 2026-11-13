@@ -341,6 +341,8 @@ export interface SessionExercise {
   superset?: string
   /** Si se sustituyó durante la sesión, id del ejercicio planificado originalmente. */
   replacedFrom?: string
+  /** Ejercicios de peso corporal: el campo de kg es lastre (añadido) o asistencia (restada). */
+  bwMode?: 'added' | 'assist'
 }
 
 export type SessionStatus = 'active' | 'completed' | 'partial' | 'discarded'

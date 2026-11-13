@@ -5,7 +5,7 @@ import { applyRamp } from '../domain/engine/prescription'
 import type {
   ChangeLogEntry, Exercise, Prescription, Profile, Routine, RoutineDay, RoutineExercise, RoutineVersion, ScheduleOverride, Session, SessionExercise, SetEntry, SetKind,
 } from '../domain/types'
-import { addDays, daysBetween, newId, toLocalDate, weekStart, weekdayMon0 } from '../domain/util'
+import { addDays, daysBetween, newId, toLocalDate, weekStart } from '../domain/util'
 import { db } from './db'
 
 // ───────────────────────── Meta ─────────────────────────
@@ -49,7 +49,7 @@ export async function saveCustomExercise(e: Exercise): Promise<void> {
 // ───────────────────────── Rutinas ─────────────────────────
 
 export async function createRoutine(
-  draft: Pick<RoutineDraft, 'name' | 'kind' | 'templateId' | 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings' | 'engineVersion'>,
+  draft: Pick<RoutineDraft, 'name' | 'templateId' | 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings' | 'engineVersion'> & { kind: Routine['kind'] },
   opts: { makeCurrent?: boolean; startedOn?: string; changeNote?: string; isDemo?: boolean } = {},
 ): Promise<Routine> {
   const now = Date.now()
@@ -191,7 +191,8 @@ export function plannedForWeek(version: RoutineVersion, weekMonday: string, over
   return out.sort((a, b) => (a.date < b.date ? -1 : 1))
 }
 
-/** Siguiente día de la rutina: rota tras el último día entrenado; si no hay historial, el planificado hoy o el primero. */
+/** Siguiente día de la rutina: rota tras el último día entrenado. Sin historial, empieza por el primer día
+ *  (se puede empezar cualquier día de la semana; el orden de los días se mantiene). */
 export function nextRoutineDay(version: RoutineVersion, sessions: Session[], routineId: string, today = toLocalDate()): RoutineDay | null {
   if (!version.days.length) return null
   const done = sessions
@@ -202,8 +203,7 @@ export function nextRoutineDay(version: RoutineVersion, sessions: Session[], rou
     const idx = version.days.findIndex((d) => d.id === last.dayId)
     if (idx >= 0) return version.days[(idx + 1) % version.days.length]
   }
-  const todaySched = version.schedule.find((s) => s.weekday === weekdayMon0(today))
-  if (todaySched) return version.days.find((d) => d.id === todaySched.dayId) ?? version.days[0]
+  void today
   return version.days[0]
 }
 

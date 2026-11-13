@@ -53,7 +53,8 @@ const dateFmt = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeri
 const shortFmt = new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' })
 const timeFmt = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' })
 export function formatDateLong(s: string): string {
-  return dateFmt.format(parseLocalDate(s))
+  const t = dateFmt.format(parseLocalDate(s))
+  return t.charAt(0).toUpperCase() + t.slice(1)
 }
 export function formatDateShort(s: string): string {
   return shortFmt.format(parseLocalDate(s))
