@@ -1,0 +1,2045 @@
+{
+ "generatedAt": "2026-11-13",
+ "source": {
+  "repo": "https://github.com/everkinetic/data",
+  "commit": "446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "author": "Everkinetic (Greg Priday)"
+ },
+ "excluded": {
+  "t-bar-rows": "El dibujo no corresponde al ejercicio (muestra un encogimiento sobre fitball).",
+  "hack-squat-machine": "Los dos fotogramas son prácticamente idénticos: no demuestra el movimiento.",
+  "barbell-dead-lifts": "La posición baja muestra la espalda redondeada: no se usa como referencia técnica.",
+  "one-leg-squat-with-barbell": "No se puede confirmar la variante (apoyo trasero no visible).",
+  "single-leg-squat-with-barbell": "Variante poco clara.",
+  "rear-lunges-with-dumbbell": "Idéntico a la zancada al frente: no se distingue la dirección.",
+  "standing-triceps-extension": "Muestra un cable/banda aunque los datos dicen mancuerna.",
+  "tricep-dips-using-body-weight": "Muestra la máquina asistida aunque el título dice peso corporal.",
+  "upright-band-rows": "Es un remo al mentón, no un remo de espalda."
+ },
+ "items": [
+  {
+   "id": "ek-press_banca_barra",
+   "exerciseId": "press_banca_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_banca_barra-1.webp",
+    "media/ek/press_banca_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26532
+  },
+  {
+   "id": "ek-press_banca_mancuernas",
+   "exerciseId": "press_banca_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_banca_mancuernas-1.webp",
+    "media/ek/press_banca_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-press-dumbbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-press-dumbbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 23036
+  },
+  {
+   "id": "ek-press_inclinado_barra",
+   "exerciseId": "press_inclinado_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_inclinado_barra-1.webp",
+    "media/ek/press_inclinado_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/incline-bench-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/incline-bench-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26476
+  },
+  {
+   "id": "ek-press_inclinado_mancuernas",
+   "exerciseId": "press_inclinado_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_inclinado_mancuernas-1.webp",
+    "media/ek/press_inclinado_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/incline-dumbbell-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/incline-dumbbell-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 25168
+  },
+  {
+   "id": "ek-press_pecho_maquina",
+   "exerciseId": "press_pecho_maquina",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_pecho_maquina-1.webp",
+    "media/ek/press_pecho_maquina-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/machine-bench-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/machine-bench-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Máquina de press sentado.",
+   "bytes": 31380
+  },
+  {
+   "id": "ek-press_banca_multipower",
+   "exerciseId": "press_banca_multipower",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_banca_multipower-1.webp",
+    "media/ek/press_banca_multipower-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/smith-machine-bench-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/smith-machine-bench-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 25820
+  },
+  {
+   "id": "ek-flexiones",
+   "exerciseId": "flexiones",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/flexiones-1.webp",
+    "media/ek/flexiones-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/push-ups-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/push-ups-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 37110
+  },
+  {
+   "id": "ek-flexiones_pies_elevados",
+   "exerciseId": "flexiones_pies_elevados",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/flexiones_pies_elevados-1.webp",
+    "media/ek/flexiones_pies_elevados-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/push-up-feet-elevated-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/push-up-feet-elevated-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 34720
+  },
+  {
+   "id": "ek-fondos_asistidos",
+   "exerciseId": "fondos_asistidos",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/fondos_asistidos-1.webp",
+    "media/ek/fondos_asistidos-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/chest-dips-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/chest-dips-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: La ilustración muestra la máquina de fondos asistidos (rodillas apoyadas); el ejercicio se ha definido como esa variante.",
+   "bytes": 23584
+  },
+  {
+   "id": "ek-aperturas_mancuernas",
+   "exerciseId": "aperturas_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/aperturas_mancuernas-1.webp",
+    "media/ek/aperturas_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-flys-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-flys-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 22738
+  },
+  {
+   "id": "ek-cruce_poleas",
+   "exerciseId": "cruce_poleas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/cruce_poleas-1.webp",
+    "media/ek/cruce_poleas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/cable-crossover-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/cable-crossover-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18736
+  },
+  {
+   "id": "ek-contractor_pecho",
+   "exerciseId": "contractor_pecho",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/contractor_pecho-1.webp",
+    "media/ek/contractor_pecho-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/butterfly-machine-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/butterfly-machine-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 24212
+  },
+  {
+   "id": "ek-aperturas_banda",
+   "exerciseId": "aperturas_banda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/aperturas_banda-1.webp",
+    "media/ek/aperturas_banda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/crossover-bands-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/crossover-bands-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20696
+  },
+  {
+   "id": "ek-dominadas",
+   "exerciseId": "dominadas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/dominadas-1.webp",
+    "media/ek/dominadas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/pull-ups-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/pull-ups-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 17220
+  },
+  {
+   "id": "ek-dominadas_supinas",
+   "exerciseId": "dominadas_supinas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/dominadas_supinas-1.webp",
+    "media/ek/dominadas_supinas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/chin-ups-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/chin-ups-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 15180
+  },
+  {
+   "id": "ek-jalon_pecho",
+   "exerciseId": "jalon_pecho",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/jalon_pecho-1.webp",
+    "media/ek/jalon_pecho-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/wide-grip-lat-pull-down-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/wide-grip-lat-pull-down-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Comprobado ampliando el fotograma: la barra baja por delante de la cara (no tras la nuca).",
+   "bytes": 20860
+  },
+  {
+   "id": "ek-jalon_supino",
+   "exerciseId": "jalon_supino",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/jalon_supino-1.webp",
+    "media/ek/jalon_supino-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/underhand-pull-downs-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/underhand-pull-downs-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18298
+  },
+  {
+   "id": "ek-jalon_estrecho",
+   "exerciseId": "jalon_estrecho",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/jalon_estrecho-1.webp",
+    "media/ek/jalon_estrecho-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/v-bar-pull-down-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/v-bar-pull-down-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18112
+  },
+  {
+   "id": "ek-remo_polea_baja",
+   "exerciseId": "remo_polea_baja",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/remo_polea_baja-1.webp",
+    "media/ek/remo_polea_baja-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-cable-rows-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-cable-rows-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 31702
+  },
+  {
+   "id": "ek-remo_barra_supino",
+   "exerciseId": "remo_barra_supino",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/remo_barra_supino-1.webp",
+    "media/ek/remo_barra_supino-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/reverse-grips-bent-over-barbell-rows-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/reverse-grips-bent-over-barbell-rows-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26000
+  },
+  {
+   "id": "ek-remo_mancuerna",
+   "exerciseId": "remo_mancuerna",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/remo_mancuerna-1.webp",
+    "media/ek/remo_mancuerna-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/rear-deltoid-row-dumbbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/rear-deltoid-row-dumbbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: El original se titula “rear deltoid row”, pero el dibujo muestra el remo a una mano apoyado en banco con el codo pegado; se usa para esa variante.",
+   "bytes": 25742
+  },
+  {
+   "id": "ek-remo_invertido",
+   "exerciseId": "remo_invertido",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/remo_invertido-1.webp",
+    "media/ek/remo_invertido-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/body-row-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/body-row-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26942
+  },
+  {
+   "id": "ek-pullover_polea",
+   "exerciseId": "pullover_polea",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/pullover_polea-1.webp",
+    "media/ek/pullover_polea-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/straight-arm-push-down-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/straight-arm-push-down-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 15596
+  },
+  {
+   "id": "ek-pullover_mancuerna",
+   "exerciseId": "pullover_mancuerna",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/pullover_mancuerna-1.webp",
+    "media/ek/pullover_mancuerna-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-bent-arm-pullover-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-bent-arm-pullover-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 30304
+  },
+  {
+   "id": "ek-hiperextensiones",
+   "exerciseId": "hiperextensiones",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/hiperextensiones-1.webp",
+    "media/ek/hiperextensiones-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/hyperextensions-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/hyperextensions-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20392
+  },
+  {
+   "id": "ek-superman",
+   "exerciseId": "superman",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/superman-1.webp",
+    "media/ek/superman-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/supermans-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/supermans-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 25716
+  },
+  {
+   "id": "ek-press_militar_barra_sentado",
+   "exerciseId": "press_militar_barra_sentado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_militar_barra_sentado-1.webp",
+    "media/ek/press_militar_barra_sentado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-military-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-military-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 22712
+  },
+  {
+   "id": "ek-press_hombro_mancuernas",
+   "exerciseId": "press_hombro_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_hombro_mancuernas-1.webp",
+    "media/ek/press_hombro_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-shoulder-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21482
+  },
+  {
+   "id": "ek-press_hombro_maquina",
+   "exerciseId": "press_hombro_maquina",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_hombro_maquina-1.webp",
+    "media/ek/press_hombro_maquina-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-shoulder-press-machine-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-shoulder-press-machine-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 22632
+  },
+  {
+   "id": "ek-press_arnold",
+   "exerciseId": "press_arnold",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_arnold-1.webp",
+    "media/ek/press_arnold-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/arnold-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/arnold-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20560
+  },
+  {
+   "id": "ek-press_hombro_unilateral",
+   "exerciseId": "press_hombro_unilateral",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_hombro_unilateral-1.webp",
+    "media/ek/press_hombro_unilateral-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/one-arm-dumbbell-shoulder-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/one-arm-dumbbell-shoulder-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 16700
+  },
+  {
+   "id": "ek-elevaciones_laterales",
+   "exerciseId": "elevaciones_laterales",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/elevaciones_laterales-1.webp",
+    "media/ek/elevaciones_laterales-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lateral-dumbbell-raises-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lateral-dumbbell-raises-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20368
+  },
+  {
+   "id": "ek-pajaros_tumbado",
+   "exerciseId": "pajaros_tumbado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/pajaros_tumbado-1.webp",
+    "media/ek/pajaros_tumbado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-rear-lateral-raise-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-rear-lateral-raise-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 35092
+  },
+  {
+   "id": "ek-aperturas_posteriores_banda",
+   "exerciseId": "aperturas_posteriores_banda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/aperturas_posteriores_banda-1.webp",
+    "media/ek/aperturas_posteriores_banda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/back-flys-exercise-band-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/back-flys-exercise-band-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 16694
+  },
+  {
+   "id": "ek-encogimientos_mancuernas",
+   "exerciseId": "encogimientos_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/encogimientos_mancuernas-1.webp",
+    "media/ek/encogimientos_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/shoulder-shrugs-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/shoulder-shrugs-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20008
+  },
+  {
+   "id": "ek-curl_barra",
+   "exerciseId": "curl_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_barra-1.webp",
+    "media/ek/curl_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0211-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0211-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26546
+  },
+  {
+   "id": "ek-curl_barra_z",
+   "exerciseId": "curl_barra_z",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_barra_z-1.webp",
+    "media/ek/curl_barra_z-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/ez-bar-curl-with-barbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/ez-bar-curl-with-barbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26770
+  },
+  {
+   "id": "ek-curl_mancuernas",
+   "exerciseId": "curl_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_mancuernas-1.webp",
+    "media/ek/curl_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/biceps-curl-with-dumbbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/biceps-curl-with-dumbbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20526
+  },
+  {
+   "id": "ek-curl_martillo",
+   "exerciseId": "curl_martillo",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_martillo-1.webp",
+    "media/ek/curl_martillo-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0227-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0227-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 19464
+  },
+  {
+   "id": "ek-curl_inclinado",
+   "exerciseId": "curl_inclinado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_inclinado-1.webp",
+    "media/ek/curl_inclinado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0214-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0214-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 24096
+  },
+  {
+   "id": "ek-curl_polea",
+   "exerciseId": "curl_polea",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_polea-1.webp",
+    "media/ek/curl_polea-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/standing-biceps-curl-with-cable-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/standing-biceps-curl-with-cable-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20062
+  },
+  {
+   "id": "ek-curl_banda",
+   "exerciseId": "curl_banda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_banda-1.webp",
+    "media/ek/curl_banda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0261-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0261-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21568
+  },
+  {
+   "id": "ek-curl_concentrado",
+   "exerciseId": "curl_concentrado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_concentrado-1.webp",
+    "media/ek/curl_concentrado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0220-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0220-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 22306
+  },
+  {
+   "id": "ek-extension_triceps_polea",
+   "exerciseId": "extension_triceps_polea",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/extension_triceps_polea-1.webp",
+    "media/ek/extension_triceps_polea-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/triceps-pushdown-with-cable-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/triceps-pushdown-with-cable-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 16014
+  },
+  {
+   "id": "ek-extension_triceps_cuerda",
+   "exerciseId": "extension_triceps_cuerda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/extension_triceps_cuerda-1.webp",
+    "media/ek/extension_triceps_cuerda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/triceps-pushdown-with-rope-and-cable-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/triceps-pushdown-with-rope-and-cable-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 15966
+  },
+  {
+   "id": "ek-press_frances",
+   "exerciseId": "press_frances",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_frances-1.webp",
+    "media/ek/press_frances-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-triceps-press-with-barbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-triceps-press-with-barbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 27536
+  },
+  {
+   "id": "ek-extension_triceps_sobre_cabeza",
+   "exerciseId": "extension_triceps_sobre_cabeza",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/extension_triceps_sobre_cabeza-1.webp",
+    "media/ek/extension_triceps_sobre_cabeza-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-triceps-press-with-dumbbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-triceps-press-with-dumbbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21448
+  },
+  {
+   "id": "ek-patada_triceps",
+   "exerciseId": "patada_triceps",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/patada_triceps-1.webp",
+    "media/ek/patada_triceps-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0204-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0204-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 24158
+  },
+  {
+   "id": "ek-fondos_entre_bancos",
+   "exerciseId": "fondos_entre_bancos",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/fondos_entre_bancos-1.webp",
+    "media/ek/fondos_entre_bancos-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-dips-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bench-dips-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Pies elevados en un segundo banco.",
+   "bytes": 18834
+  },
+  {
+   "id": "ek-flexiones_cerradas",
+   "exerciseId": "flexiones_cerradas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/flexiones_cerradas-1.webp",
+    "media/ek/flexiones_cerradas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/close-triceps-pushup-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/close-triceps-pushup-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18268
+  },
+  {
+   "id": "ek-press_banca_cerrado",
+   "exerciseId": "press_banca_cerrado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/press_banca_cerrado-1.webp",
+    "media/ek/press_banca_cerrado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/close-grip-barbell-bench-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/close-grip-barbell-bench-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 27168
+  },
+  {
+   "id": "ek-sentadilla_barra",
+   "exerciseId": "sentadilla_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_barra-1.webp",
+    "media/ek/sentadilla_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/barbell-squat-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/barbell-squat-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 22548
+  },
+  {
+   "id": "ek-sentadilla_frontal",
+   "exerciseId": "sentadilla_frontal",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_frontal-1.webp",
+    "media/ek/sentadilla_frontal-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/front-squat-with-barbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/front-squat-with-barbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21846
+  },
+  {
+   "id": "ek-sentadilla_mancuernas",
+   "exerciseId": "sentadilla_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_mancuernas-1.webp",
+    "media/ek/sentadilla_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squats-using-dumbbells-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squats-using-dumbbells-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18138
+  },
+  {
+   "id": "ek-sentadilla_banco_mancuernas",
+   "exerciseId": "sentadilla_banco_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_banco_mancuernas-1.webp",
+    "media/ek/sentadilla_banco_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squat-to-bench-with-dumbbells-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squat-to-bench-with-dumbbells-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21028
+  },
+  {
+   "id": "ek-sentadilla_banco_barra",
+   "exerciseId": "sentadilla_banco_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_banco_barra-1.webp",
+    "media/ek/sentadilla_banco_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squat-to-bench-with-barbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squat-to-bench-with-barbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26330
+  },
+  {
+   "id": "ek-sentadilla_multipower",
+   "exerciseId": "sentadilla_multipower",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_multipower-1.webp",
+    "media/ek/sentadilla_multipower-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/smith-machine-squats-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/smith-machine-squats-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21264
+  },
+  {
+   "id": "ek-sentadilla_sumo_mancuerna",
+   "exerciseId": "sentadilla_sumo_mancuerna",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_sumo_mancuerna-1.webp",
+    "media/ek/sentadilla_sumo_mancuerna-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/pile-squat-with-dumbbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/pile-squat-with-dumbbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 19580
+  },
+  {
+   "id": "ek-sentadilla_banda",
+   "exerciseId": "sentadilla_banda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/sentadilla_banda-1.webp",
+    "media/ek/sentadilla_banda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squats-with-exercise-bands-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/squats-with-exercise-bands-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: El fotograma de la posición baja está recortado a la altura de las rodillas en el original.",
+   "bytes": 17896
+  },
+  {
+   "id": "ek-prensa",
+   "exerciseId": "prensa",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/prensa-1.webp",
+    "media/ek/prensa-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/leg-press-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/leg-press-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 41126
+  },
+  {
+   "id": "ek-extension_cuadriceps",
+   "exerciseId": "extension_cuadriceps",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/extension_cuadriceps-1.webp",
+    "media/ek/extension_cuadriceps-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/leg-extensions-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/leg-extensions-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26894
+  },
+  {
+   "id": "ek-curl_femoral_tumbado",
+   "exerciseId": "curl_femoral_tumbado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_femoral_tumbado-1.webp",
+    "media/ek/curl_femoral_tumbado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-leg-curl-machine-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/lying-leg-curl-machine-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 38056
+  },
+  {
+   "id": "ek-curl_femoral_sentado",
+   "exerciseId": "curl_femoral_sentado",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/curl_femoral_sentado-1.webp",
+    "media/ek/curl_femoral_sentado-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-leg-curl-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-leg-curl-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 27544
+  },
+  {
+   "id": "ek-peso_muerto_rumano",
+   "exerciseId": "peso_muerto_rumano",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/peso_muerto_rumano-1.webp",
+    "media/ek/peso_muerto_rumano-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/romanian-dead-lift-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/romanian-dead-lift-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 19148
+  },
+  {
+   "id": "ek-peso_muerto_rumano_mancuernas",
+   "exerciseId": "peso_muerto_rumano_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/peso_muerto_rumano_mancuernas-1.webp",
+    "media/ek/peso_muerto_rumano_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-dead-lifts-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-dead-lifts-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: El original se titula “dumbbell dead lifts”; el dibujo muestra rodillas casi extendidas y bisagra de cadera (peso muerto rumano).",
+   "bytes": 15352
+  },
+  {
+   "id": "ek-zancadas_mancuernas",
+   "exerciseId": "zancadas_mancuernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/zancadas_mancuernas-1.webp",
+    "media/ek/zancadas_mancuernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-lunges-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/dumbbell-lunges-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 20066
+  },
+  {
+   "id": "ek-zancadas_barra",
+   "exerciseId": "zancadas_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/zancadas_barra-1.webp",
+    "media/ek/zancadas_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/barbell-lunges-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/barbell-lunges-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26276
+  },
+  {
+   "id": "ek-zancadas_caminando",
+   "exerciseId": "zancadas_caminando",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/zancadas_caminando-1.webp",
+    "media/ek/zancadas_caminando-2.webp",
+    "media/ek/zancadas_caminando-3.webp",
+    "media/ek/zancadas_caminando-4.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/walking-lunges-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/walking-lunges-2.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/walking-lunges-3.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/walking-lunges-4.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: 4 fotogramas.",
+   "bytes": 39468
+  },
+  {
+   "id": "ek-subidas_banco",
+   "exerciseId": "subidas_banco",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/subidas_banco-1.webp",
+    "media/ek/subidas_banco-2.webp",
+    "media/ek/subidas_banco-3.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/step-ups-with-dumbbells-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/step-ups-with-dumbbells-2.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/step-ups-with-dumbbells-3.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: 3 fotogramas.",
+   "bytes": 27448
+  },
+  {
+   "id": "ek-puente_gluteo",
+   "exerciseId": "puente_gluteo",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/puente_gluteo-1.webp",
+    "media/ek/puente_gluteo-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bridging-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bridging-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 43766
+  },
+  {
+   "id": "ek-patada_gluteo_polea",
+   "exerciseId": "patada_gluteo_polea",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/patada_gluteo_polea-1.webp",
+    "media/ek/patada_gluteo_polea-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/one-legged-cable-kickback-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/one-legged-cable-kickback-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 17550
+  },
+  {
+   "id": "ek-abductores_maquina",
+   "exerciseId": "abductores_maquina",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/abductores_maquina-1.webp",
+    "media/ek/abductores_maquina-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/thigh-abductor-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/thigh-abductor-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21648
+  },
+  {
+   "id": "ek-aductores_maquina",
+   "exerciseId": "aductores_maquina",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/aductores_maquina-1.webp",
+    "media/ek/aductores_maquina-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/thigh-adductor-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/thigh-adductor-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 21648
+  },
+  {
+   "id": "ek-gemelos_maquina_pie",
+   "exerciseId": "gemelos_maquina_pie",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/gemelos_maquina_pie-1.webp",
+    "media/ek/gemelos_maquina_pie-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/standing-calf-raises-using-machine-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/standing-calf-raises-using-machine-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Movimiento pequeño: los fotogramas difieren poco.",
+   "bytes": 19532
+  },
+  {
+   "id": "ek-gemelos_sentado_maquina",
+   "exerciseId": "gemelos_sentado_maquina",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/gemelos_sentado_maquina-1.webp",
+    "media/ek/gemelos_sentado_maquina-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0279-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0279-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Movimiento pequeño: los fotogramas difieren poco.",
+   "bytes": 22806
+  },
+  {
+   "id": "ek-gemelos_prensa",
+   "exerciseId": "gemelos_prensa",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/gemelos_prensa-1.webp",
+    "media/ek/gemelos_prensa-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/calves-press-on-leg-machine-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/calves-press-on-leg-machine-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Movimiento pequeño: los fotogramas difieren poco.",
+   "bytes": 40808
+  },
+  {
+   "id": "ek-gemelos_banda",
+   "exerciseId": "gemelos_banda",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/gemelos_banda-1.webp",
+    "media/ek/gemelos_banda-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0274-relaxation.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/dist/png/0274-tension.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 18142
+  },
+  {
+   "id": "ek-plancha_lateral",
+   "exerciseId": "plancha_lateral",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/plancha_lateral-1.webp",
+    "media/ek/plancha_lateral-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/side-plank-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/side-plank-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio. Nota: Isométrico: dos fotogramas casi iguales.",
+   "bytes": 43664
+  },
+  {
+   "id": "ek-encogimientos_abdominales",
+   "exerciseId": "encogimientos_abdominales",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/encogimientos_abdominales-1.webp",
+    "media/ek/encogimientos_abdominales-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/crunches-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/crunches-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 30696
+  },
+  {
+   "id": "ek-elevacion_cadera_rodillas",
+   "exerciseId": "elevacion_cadera_rodillas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/elevacion_cadera_rodillas-1.webp",
+    "media/ek/elevacion_cadera_rodillas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bent-knee-hip-raise-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/bent-knee-hip-raise-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 23592
+  },
+  {
+   "id": "ek-elevaciones_piernas",
+   "exerciseId": "elevaciones_piernas",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/elevaciones_piernas-1.webp",
+    "media/ek/elevaciones_piernas-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/flat-bench-leg-raises-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/flat-bench-leg-raises-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 24680
+  },
+  {
+   "id": "ek-crunch_polea",
+   "exerciseId": "crunch_polea",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/crunch_polea-1.webp",
+    "media/ek/crunch_polea-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-ab-crunch-with-cable-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/seated-ab-crunch-with-cable-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 16128
+  },
+  {
+   "id": "ek-rueda_abdominal_barra",
+   "exerciseId": "rueda_abdominal_barra",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/rueda_abdominal_barra-1.webp",
+    "media/ek/rueda_abdominal_barra-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/ab-rollout-on-knees-with-barbell-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/ab-rollout-on-knees-with-barbell-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 26012
+  },
+  {
+   "id": "ek-bicicleta_abdominal",
+   "exerciseId": "bicicleta_abdominal",
+   "kind": "frames",
+   "provider": "everkinetic",
+   "frames": [
+    "media/ek/bicicleta_abdominal-1.webp",
+    "media/ek/bicicleta_abdominal-2.webp"
+   ],
+   "sourceUrl": "https://github.com/everkinetic/data/tree/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6",
+   "sourceFiles": [
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/air-bike-1.png",
+    "https://github.com/everkinetic/data/blob/446bb9a3d0c3beb6b84f7c9d77dfc8af707a2ab6/src/images-web/air-bike-2.png"
+   ],
+   "author": "Everkinetic (Greg Priday)",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "attribution": "Ilustración: Everkinetic (Greg Priday), everkinetic/data, CC BY-SA 4.0. Adaptada (escala de grises, WebP, animación alternando fotogramas).",
+   "modifications": "Reescalada a 480 px de alto, convertida a escala de grises y WebP; se anima alternando los fotogramas; en tema oscuro se invierten los colores.",
+   "cachePolicy": "offline_permitido",
+   "checkedAt": "2026-11-13",
+   "verification": "Revisión visual manual de los fotogramas: corresponden a la variante del ejercicio.",
+   "bytes": 29640
+  }
+ ]
+}
