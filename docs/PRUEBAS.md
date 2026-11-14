@@ -40,7 +40,30 @@
 | A21 | Salud y menores conservan restricciones; menores sin tabla adulta | `engine.test.ts` | ✅ |
 | A22 | Chromium móvil y WebKit | arriba (no es un iPhone real) | ✅ |
 | A23 | Build en `/App-ejercicios/`, rutas hash, offline y actualización controlada | prueba de actualización con builds reales; `offline-media.spec.ts` (Chromium) | ✅ |
-| A24 | URL pública verificada tras el despliegue, con versión y commit | ver «Web publicada, versión 1.2» | ver abajo |
+| A24 | URL pública verificada tras el despliegue, con versión y commit | ver «Web publicada, versión 1.2» | ✅ |
+
+### Web publicada, versión 1.2
+
+14-11-2026, https://breoganrozasr-web.github.io/App-ejercicios/ · workflow «Publicar en GitHub Pages» ejecución 8 (pruebas, build y despliegue correctos) · script principal servido `index-B2JYHWfj.js`. La app publicada corresponde al commit **995ce67**; el commit posterior que añade este registro solo cambia documentación y no se despliega (la app no cambia).
+
+Comprobado sobre la URL real con un iPhone 13 emulado (no es un iPhone físico):
+
+| Comprobación | Chromium | WebKit |
+|---|---|---|
+| Ajustes muestra «App 1.2.0 · motor de rutinas 2.0.0 · build 995ce67» = commit subido (A24) | ✅ | ✅ |
+| Propuesta con «Frecuencia real de esta propuesta», sin «unas N veces» (A02) y con «Hoy (familiarización)» visible antes de empezar (A07) | ✅ | ✅ |
+| 20,5 kg + repeticiones 9→11 + RIR 2 + marcar + nota tecleada deprisa + **recarga inmediata**: todo conservado (A16/F8) | ✅ | ✅ |
+| Plancha con segundos y sin RIR (A11) | ✅ | ✅ |
+| Guardar como parcial → aparece primero en Hoy → «Retomar lo pendiente» reabre la misma sesión con 20,5 kg (1 sesión, 1 activa) (A15) | ✅ | ✅ |
+| Zancada atrás: «Demostración local pendiente» + página oficial de University of Wyoming; press de pecho: «Dos posiciones ilustradas · se alternan» + demostración externa con crédito NASM (A19) | ✅ | ✅ |
+| Demostración local de Wikimedia Commons (sentadilla) cargada | ✅ | ✅ |
+| Biblioteca de fuentes con alcance de consulta y artículo «RIR» | ✅ | ✅ |
+| Service worker activo en `/App-ejercicios/sw.js` | ✅ | ✅ |
+| Sin conexión: la app abre desde la caché (A23) | ✅ | no probado (limitación de Playwright con WebKit) |
+| Casa sin material: día A con sentadilla, día B con zancada atrás, aviso de isquiosurales (A04) | ✅ | ✅ |
+| Sin errores de página ni recursos propios fallidos | ✅ | ✅ |
+
+En la primera pasada de Chromium hubo dos avisos de la comprobación, no de la app: la imagen de Commons se evaluó antes de terminar de cargar (con espera, carga en ~0,3 s) y una miniatura (`media/ek/sentadilla_barra-2.webp`) dio `net::ERR_FAILED` durante un cambio de pantalla; el archivo responde 200 (10,8 KB) y en la repetición completa no hubo ningún fallo (18/18).
 
 **Enlaces externos (T1–T9):** desde esta sesión de desarrollo no se pudo abrir nasm.org, acefitness.org, uwyo.edu ni youtube.com (red no permitida; también con la herramienta de lectura web). Los enlaces se usan tal como los da la especificación y la app ofrece la página oficial y «anotar enlace caído» si alguno no abre.
 

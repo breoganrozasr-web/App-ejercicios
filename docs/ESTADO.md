@@ -13,6 +13,8 @@
 - Contenido: «Aprender» (7 artículos), biblioteca E1–E14 / T1–T9 sin conexión, 9 fichas enriquecidas (tres claves + «Aprender este ejercicio»), 2 ejercicios nuevos, demostraciones externas T1–T9 y etiquetas honestas del tipo de demostración.
 - Usabilidad: parcial primero en Hoy, vista opcional de ejercicio actual, descanso +30/+60, panel de volumen con origen, fichas que abren arriba y lista que recupera su posición, semana recalculada al mover una sesión, calorías secundarias y desactivables.
 
+**Publicada y verificada en la web real** el 14-11-2026 (build 995ce67) en Chromium y WebKit; actualización desde la 1.1 con datos probada con las builds reales. Detalle en docs/PRUEBAS.md.
+
 **Pendientes reales:** prueba en iPhone físico; abrir y revisar los enlaces T1–T9 desde un entorno con acceso; demostración local de 4 variantes (tienen referencia externa); revisión técnica de las 86 fichas con estructura migrada; textos completos de las fuentes E1–E14 que solo se consultaron en resumen.
 
 ## Terminado y probado (hasta la versión 1.1)
