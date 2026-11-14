@@ -33,6 +33,15 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
 - **Serie** (`sets[]`): `kind` (`warmup`/`work`), `weightKg`, `reps`, `rir` (null = no anotado), `durationSec`, `distanceM`, `assistKg`, `addedKg`, `bandLabel`, `side`, `completed`.
 - **Significado de `weightKg`** según `loadTypeSnapshot`: `barbell_total` = barra + discos; `dumbbell_each` = una mancuerna; `machine`/`cable` = lo que marca esa máquina; en `assisted` la asistencia va en `assistKg` (más asistencia = más fácil); en `bodyweight` el lastre va en `addedKg`.
 - **Campos de sesión añadidos en el esquema 2** (opcionales): `readiness` (`{ sleep, energy, soreness, at }`, escalas 1–5; `null` = se omitió), `backdated` (registrada a posteriori) y `manualDurationMin` (duración declarada).
+- **Campos opcionales nuevos de la app 1.2 / motor 2** (mismo esquema 2: no cambian las tablas ni los índices; las copias anteriores se importan igual y sus valores originales se conservan aunque ahora se interpreten distinto):
+  - Prescripción: `unit` (`reps` | `time` | `distance`; sin valor = dato antiguo, se deduce del ejercicio) y `reference` (ejercicio de referencia de fuerza).
+  - Ejercicio de rutina: `optional` (accesorio opcional).
+  - Versión de rutina: `familiarization` (`{ sessions, reason }`, por sesiones completadas; las versiones antiguas siguen usando `rampWeeks`) y `plan` (`{ engineVersion, goal, level, desiredFrequency, targetRegions, references, minutes }` para reproducir la propuesta).
+  - Sesión: `partialAction` (`resume` | `next` | `repeat`) y `familiarization` (`{ index, total }`).
+  - Serie: `effort` (esfuerzo percibido 0–10 en isométricos; no es RIR). El RIR antiguo de planchas se conserva como dato legado.
+  - Perfil: `priorityRegions`, `frequencyExtraRegions`, `strengthRefs` (hasta 3) y `returningAdaptation`.
+  - `meta.brokenLinks`: enlaces externos que la persona marcó como caídos.
+- El **diario local de guardado** (`localStorage`, claves `forja-wal:<id>`) no forma parte de la copia: solo protege la sesión activa ante una recarga brusca y se borra al guardarse en IndexedDB.
 - **Medidas** (`measurements`): `{ id, date, site, cm }`; `site` = `waist` | `hips` | `chest` | `arm` | `thigh` | `calf` | `neck`.
 - **Fotos de progreso** (`photos`): `{ id, date, pose (front|side|back), dataUrl (JPEG en base64), bytes, width, height, createdAt }`. **Solo se exportan si se pide** (casilla al exportar); si la tabla no aparece en el archivo, la copia no lleva fotos.
 - **Ajustes por ejercicio** (`exerciseSettings`): `incrementKg`, `restSec` y `note` (nota fija que se ve al entrenar).

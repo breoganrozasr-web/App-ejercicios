@@ -1,29 +1,32 @@
 import { getExercise } from '../catalog'
 import type { Exercise, Increments, LoadType, Prescription, Session, SessionExercise, SetEntry } from '../types'
 import { daysBetween, formatNumber, round2 } from '../util'
-import { MIN_RIR_FOR_INCREASE, RETURN_AFTER_DAYS } from './params'
+import { INCREMENT_REVIEW_FRACTION, RETURN_AFTER_DAYS, STALL_EXPOSURES } from './params'
+import { isTimePrescription } from './prescription'
 
 /**
- * Doble progresión explicable (regla R10, docs/EVIDENCIA.md):
- *  - Si TODAS las series de trabajo requeridas llegan al máximo del rango con la misma carga y con margen
- *    (RIR anotado ≥ 1), se propone el menor incremento disponible y volver al mínimo del rango.
- *  - 12/10/8 en 3×8–12 NO completa el rango: se mantiene la carga y se intenta sumar repeticiones.
- *  - Sin RIR anotado no se inventa: se ofrece la subida como opcional y decides tú.
- *  - Molestia/dolor, perfil fuera de alcance, cambio de ejercicio o datos insuficientes → conservador.
- *  - Nunca modifica sesiones pasadas ni marca series como hechas: solo devuelve una recomendación.
+ * Doble progresión (motor 2, docs/EVIDENCIA.md · R10 y 5.1–5.3 de la especificación):
+ *  - Solo series de TRABAJO comparables del mismo ejercicio y esquema (el calentamiento no cuenta).
+ *  - Todas las series previstas completadas y todas en el límite superior del rango.
+ *  - Si hay RIR en todas, todas ≥ límite inferior del objetivo actual. Sin RIR suficiente: «podrías subir si te quedó margen».
+ *  - Siguiente incremento REAL disponible; si supera el 10 % de la carga actual no se preselecciona (umbral de revisión).
+ *  - Familiarización: sin subidas automáticas. Isométricos: tiempo dentro del rango y luego variante; sin RIR.
+ *  - Nunca modifica datos históricos ni marca series: solo devuelve una recomendación.
  */
 
 export type SuggestionKind =
   | 'first_time'
   | 'increase'
   | 'increase_optional'
+  | 'increment_review'
   | 'repeat'
-  | 'increment_too_large'
   | 'harder_variant'
   | 'reduce_assistance'
   | 'more_time'
   | 'return_after_break'
-  | 'review'
+  | 'stalled'
+  | 'familiarization'
+  | 'scheme_changed'
   | 'paused_pain'
   | 'paused_scope'
 
@@ -32,11 +35,16 @@ export interface Suggestion {
   title: string
   detail: string
   targetWeightKg?: number
+  /** Salto alternativo cuando el siguiente incremento supera el umbral de revisión (se elige a mano). */
+  altWeightKg?: number
+  incrementPct?: number
   targetAssistKg?: number
   targetAddedKg?: number
   targetReps?: [number, number]
   targetTimeSec?: number
   harderExerciseId?: string
+  /** Opciones de ayuda (estancamiento). */
+  options?: string[]
   basedOnDate?: string
 }
 
@@ -74,20 +82,16 @@ export function defaultIncrement(loadType: LoadType, inc: Increments): number {
   }
 }
 
-/** Siguiente carga disponible. Si la carga actual encaja en la rejilla del material, se respeta la rejilla. */
-export function nextLoad(current: number, step: number, loadType: LoadType, inc: Increments): number {
+/** Siguiente carga REALMENTE disponible en la rejilla del material. */
+export function nextLoad(current: number, step: number, loadType: LoadType, _inc?: Increments): number {
   if (step <= 0) return current
-  if (loadType === 'barbell_total') {
-    const k = (current - inc.barKg) / step
-    if (current >= inc.barKg && Math.abs(k - Math.round(k)) < 1e-6) return round2(current + step)
-    return round2(current + step)
-  }
+  if (loadType === 'barbell_total') return round2(current + step)
   const k = current / step
   if (Math.abs(k - Math.round(k)) < 1e-6) return round2((Math.round(k) + 1) * step)
   return round2(Math.ceil(k) * step > current ? Math.ceil(k) * step : current + step)
 }
 
-/** Carga para volver tras una pausa: ~15 % menos, redondeado hacia abajo a la rejilla. Heurística (EVIDENCIA L1–L4). */
+/** Carga para volver tras una pausa: ~15 % menos, redondeado hacia abajo a la rejilla. Heurística. */
 export function returnLoad(current: number, step: number, loadType: LoadType, inc: Increments): number {
   const target = current * 0.85
   if (step <= 0) return round2(target)
@@ -98,14 +102,17 @@ export function returnLoad(current: number, step: number, loadType: LoadType, in
   return round2(Math.max(0, Math.floor(target / step) * step))
 }
 
-/** Repeticiones estimadas con una carga a partir de otra (Epley). Solo para decidir si un salto es razonable. */
+/** Compatibilidad: estimación de repeticiones (Epley). Ya no decide subidas (motor 2 usa el umbral del 10 %). */
 export function predictReps(fromLoad: number, repsPlusRir: number, toLoad: number): number {
   if (fromLoad <= 0 || toLoad <= 0) return repsPlusRir
   const e1rm = fromLoad * (1 + repsPlusRir / 30)
   return 30 * (e1rm / toLoad - 1)
 }
 
-function workSets(ex: SessionExercise): SetEntry[] {
+function workPlanned(ex: SessionExercise): SetEntry[] {
+  return ex.sets.filter((s) => s.kind === 'work')
+}
+function workDone(ex: SessionExercise): SetEntry[] {
   return ex.sets.filter((s) => s.kind === 'work' && s.completed)
 }
 
@@ -113,6 +120,33 @@ function loadOf(s: SetEntry, lt: LoadType): number | null {
   if (lt === 'assisted') return s.assistKg ?? s.weightKg
   if (lt === 'bodyweight') return s.addedKg ?? 0
   return s.weightKg
+}
+
+/** Rendimiento comparable de una exposición (para detectar mejora). */
+function performance(ex: SessionExercise, lt: LoadType, time: boolean): [number, number] {
+  const sets = workDone(ex)
+  if (time) return [0, sets.reduce((a, s) => a + (s.durationSec ?? 0), 0)]
+  const reps = sets.reduce((a, s) => a + (s.reps ?? 0), 0)
+  if (lt === 'band') return [0, reps]
+  const loads = sets.map((s) => loadOf(s, lt)).filter((x): x is number => x !== null)
+  const load = loads.length ? Math.min(...loads) : 0
+  return lt === 'assisted' ? [-load, reps] : [load, reps]
+}
+const better = (a: [number, number], b: [number, number]) => a[0] > b[0] + 1e-9 || (Math.abs(a[0] - b[0]) < 1e-9 && a[1] > b[1])
+
+function sameScheme(a: Prescription | null, b: Prescription, time: boolean): boolean {
+  if (!a) return true
+  if (time) return (a.timeMinSec ?? 0) === (b.timeMinSec ?? 0) && (a.timeMaxSec ?? 0) === (b.timeMaxSec ?? 0)
+  return a.repMin === b.repMin && a.repMax === b.repMax
+}
+
+/** 5.2 · Tres exposiciones comparables sin mejora (disparador de ayuda, no diagnóstico). */
+export function isStalled(history: HistoryItem[], p: Prescription, lt: LoadType, time: boolean): boolean {
+  const comparable = history.filter((h) => sameScheme(h.ex.prescription, p, time)).slice(0, STALL_EXPOSURES).reverse()
+  if (comparable.length < STALL_EXPOSURES) return false
+  const first = performance(comparable[0].ex, lt, time)
+  // Sin mejora: ninguna de las exposiciones siguientes supera a la primera de las tres.
+  return comparable.slice(1).every((h) => !better(performance(h.ex, lt, time), first))
 }
 
 export interface SuggestInput {
@@ -123,6 +157,10 @@ export interface SuggestInput {
   incrementOverride?: number
   today: string
   progressionAllowed: boolean
+  /** Sesión actual dentro de la familiarización (motor 2): sin subidas automáticas. */
+  familiarization?: { index: number; total: number } | null
+  /** ¿Se puede ofrecer esta variante? (material marcado y no excluida). Sin función: se asume que sí. */
+  available?: (exerciseId: string) => boolean
 }
 
 export function suggestNext(input: SuggestInput): Suggestion {
@@ -131,95 +169,135 @@ export function suggestNext(input: SuggestInput): Suggestion {
   if (!input.progressionAllowed) {
     return { kind: 'paused_scope', title: 'Sugerencias de progresión en pausa', detail: 'Tu perfil indica una circunstancia (dolor, lesión, condición médica o embarazo) que queda fuera de lo que puede valorar un generador general. Registra con normalidad y consulta con un profesional antes de subir cargas.' }
   }
+  const time = isTimePrescription(p, ex)
   const last = input.history[0]
-  if (!last || !ex) return firstTime(ex, p)
+  if (!last || !ex) return firstTime(ex, p, time)
   const lt = last.ex.loadTypeSnapshot
   const basedOnDate = last.date
   if (last.ex.painFlag) {
     return { kind: 'paused_pain', title: 'Sin subida: marcaste molestia', detail: 'La última vez marcaste molestia o dolor en este ejercicio. No sugerimos subir carga. Prueba una carga menor, un rango cómodo o una alternativa; si el dolor persiste o empeora, consulta a un profesional sanitario.', basedOnDate }
   }
-  const sets = workSets(last.ex)
+  const done = workDone(last.ex)
+  const planned = workPlanned(last.ex)
   const step = input.incrementOverride ?? defaultIncrement(lt, input.increments)
   const gap = daysBetween(last.date, input.today)
-  const loads = sets.map((s) => loadOf(s, lt)).filter((x): x is number => x !== null)
+  const loads = done.map((s) => loadOf(s, lt)).filter((x): x is number => x !== null)
   const refLoad = loads.length ? Math.min(...loads) : null
+  const keepWeight = lt === 'assisted' || lt === 'bodyweight' || lt === 'band' || time ? undefined : refLoad ?? undefined
+  const keepAssist = lt === 'assisted' ? refLoad ?? undefined : undefined
 
   if (gap > RETURN_AFTER_DAYS) {
     const target = refLoad !== null && (lt === 'barbell_total' || lt === 'dumbbell_each' || lt === 'machine' || lt === 'cable') ? returnLoad(refLoad, step, lt, input.increments) : undefined
     return {
       kind: 'return_after_break',
       title: `Vuelta gradual (${gap} días sin hacerlo)`,
-      detail: `Tras una pausa, empieza con menos: ${target !== undefined ? `unos ${formatNumber(target)} kg (≈15 % menos)` : 'una variante o carga algo más fácil'}, una serie menos y dejando 3–4 repeticiones en reserva. Lo perdido suele recuperarse rápido; ajusta según cómo te sientas.`,
+      detail: `Tras una pausa, empieza con menos: ${target !== undefined ? `unos ${formatNumber(target)} kg (≈15 % menos)` : 'una variante o carga algo más fácil'} y dejando más margen. Lo perdido suele recuperarse rápido; ajusta según cómo te sientas.`,
       targetWeightKg: target,
-      targetReps: [p.repMin, p.repMax],
+      targetReps: time ? undefined : [p.repMin, p.repMax],
       basedOnDate,
     }
   }
 
-  const required = Math.max(1, last.ex.prescription?.sets ?? p.sets)
-  if (sets.length < required) {
+  if (input.familiarization) {
+    return {
+      kind: 'familiarization',
+      title: `Familiarización · sesión ${input.familiarization.index} de ${input.familiarization.total}`,
+      detail: time
+        ? 'Mantén la postura con control y termina antes de perderla. Esta fase es para aprender: no proponemos alargar ni cambiar de variante todavía.'
+        : `Repite o ajusta la carga para que te queden 3–4 repeticiones en reserva. Esta fase es para aprender los movimientos: no proponemos subidas automáticas todavía.`,
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
+      basedOnDate,
+    }
+  }
+
+  const lastRx = last.ex.prescription
+  if (lastRx && !sameScheme(lastRx, p, time)) {
+    return {
+      kind: 'scheme_changed',
+      title: 'Rango distinto al de la última vez',
+      detail: time
+        ? `La última vez el objetivo era ${lastRx.timeMinSec ?? '?'}–${lastRx.timeMaxSec ?? '?'} s y ahora es ${p.timeMinSec}–${p.timeMaxSec} s: no se compara de forma automática. Ajusta con control.`
+        : `La última vez el rango era ${lastRx.repMin}–${lastRx.repMax} y ahora es ${p.repMin}–${p.repMax}: no se compara de forma automática. Usa una carga con la que llegues a ${p.repMin} dejando margen.`,
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
+      basedOnDate,
+    }
+  }
+
+  // Un ejercicio con series pendientes no cumple la regla (aunque la sesión fuese parcial por otros ejercicios).
+  if (done.length < planned.length || done.length === 0) {
     return {
       kind: 'repeat',
-      title: 'Repite la carga',
-      detail: `La última vez completaste ${sets.length} de ${required} series de trabajo. Mantén la carga y completa todas antes de subir.`,
-      targetWeightKg: lt === 'assisted' ? undefined : refLoad ?? undefined,
-      targetAssistKg: lt === 'assisted' ? refLoad ?? undefined : undefined,
-      targetReps: [p.repMin, p.repMax],
+      title: 'Completa las series antes de subir',
+      detail: `La última vez completaste ${done.length} de ${planned.length} series de trabajo de este ejercicio. Mantén la carga y completa todas antes de subir.`,
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
+      targetReps: time ? undefined : [p.repMin, p.repMax],
       basedOnDate,
     }
   }
-  const considered = sets.slice(0, required)
-  const lastRx = last.ex.prescription ?? p
 
-  // Ejercicios por tiempo
-  if (lt === 'time') {
-    const maxT = lastRx.timeMaxSec ?? p.timeMaxSec ?? 40
-    const all = considered.every((s) => (s.durationSec ?? 0) >= maxT)
-    if (all) return { kind: 'more_time', title: 'Puedes alargar', detail: `Mantuviste ${maxT} s en todas las series. Prueba 5–10 s más${ex.harder ? ` o pasa a ${getExercise(ex.harder)?.name.toLowerCase()}` : ''}.`, targetTimeSec: maxT + 5, basedOnDate }
-    return { kind: 'repeat', title: 'Repite el tiempo', detail: `Intenta llegar a ${maxT} s en todas las series con buena postura.`, targetTimeSec: maxT, basedOnDate }
-  }
-
-  const repMax = lastRx.repMax
-  const repMin = lastRx.repMin
-  const sameLoad = loads.length === considered.length && loads.every((l) => Math.abs(l - (refLoad ?? 0)) < 1e-6)
-  const topReached = considered.every((s) => (s.reps ?? 0) >= repMax)
-  const rirs = considered.map((s) => s.rir)
-  const rirKnown = rirs.every((r) => r !== null && r !== undefined)
-  const minRir = rirKnown ? Math.min(...(rirs as number[])) : null
-  const effortOk = rirKnown && (minRir as number) >= MIN_RIR_FOR_INCREASE
-  const repsTxt = considered.map((s) => s.reps ?? 0).join('/')
-
-  if (!topReached) {
-    // ¿Dificultades repetidas? (dos sesiones seguidas por debajo del mínimo con la misma carga)
-    const prev = input.history[1]
-    const below = (h: HistoryItem) => workSets(h.ex).some((s) => (s.reps ?? 0) < repMin)
-    if (prev && below(last) && below(prev)) {
-      const prevLoads = workSets(prev.ex).map((s) => loadOf(s, lt)).filter((x): x is number => x !== null)
-      if (prevLoads.length && refLoad !== null && Math.min(...prevLoads) === refLoad) {
-        return { kind: 'review', title: 'Revisa la carga o la recuperación', detail: `Dos sesiones seguidas por debajo de ${repMin} repeticiones con la misma carga. No es motivo de alarma: revisa si la carga es alta, si descansas lo suficiente entre series y entre días, o baja un 5–10 %. Una sesión floja aislada no requiere cambios.`, targetReps: [repMin, repMax], basedOnDate }
+  // Isométricos (5.3): tiempo dentro del rango y después variante más exigente; no se alarga indefinidamente.
+  if (time) {
+    const maxT = p.timeMaxSec ?? 30
+    const all = done.every((s) => (s.durationSec ?? 0) >= maxT)
+    if (all) {
+      const harder = ex.harder && (input.available?.(ex.harder) ?? true) ? getExercise(ex.harder) : undefined
+      return {
+        kind: 'harder_variant',
+        title: 'Máximo del rango con control',
+        detail: harder ? `Llegaste a ${maxT} s en todas las series. En vez de alargar más, puedes pasar a «${harder.name}» (con tu confirmación) o mantenerlo.` : `Llegaste a ${maxT} s en todas las series. En vez de alargar indefinidamente, mantén el tiempo o prueba una variante más exigente si la tienes.`,
+        harderExerciseId: harder?.id,
+        targetTimeSec: maxT,
+        basedOnDate,
       }
     }
+    if (isStalled(input.history, p, lt, true)) return stalled(basedOnDate)
+    const best = Math.max(...done.map((s) => s.durationSec ?? 0))
+    return { kind: 'more_time', title: 'Suma tiempo dentro del rango', detail: `La última vez: ${done.map((s) => `${s.durationSec ?? 0} s`).join(' / ')}. Intenta acercarte a ${maxT} s en todas las series terminando antes de perder la postura.`, targetTimeSec: Math.min(maxT, Math.max(p.timeMinSec ?? 15, best)), basedOnDate }
+  }
+
+  const repMax = p.repMax
+  const repMin = p.repMin
+  const repsTxt = done.map((s) => s.reps ?? 0).join('/')
+  const topReached = done.every((s) => (s.reps ?? 0) >= repMax)
+  const rirs = done.map((s) => s.rir)
+  const rirKnown = rirs.every((r) => r !== null && r !== undefined)
+  const minRir = rirKnown ? Math.min(...(rirs as number[])) : null
+
+  if (!topReached) {
+    if (isStalled(input.history, p, lt, false)) return stalled(basedOnDate)
+    const sameLoad = loads.length === done.length && loads.every((l) => Math.abs(l - (refLoad ?? 0)) < 1e-6)
     return {
       kind: 'repeat',
       title: 'Mantén la carga y suma repeticiones',
-      detail: `La última vez: ${repsTxt}. El objetivo es llegar a ${repMax} en todas las series${lt === 'assisted' ? ' con la misma asistencia' : ' con la misma carga'} antes de subir.${!sameLoad && loads.length ? ' Usaste cargas distintas entre series: tomamos la más baja como referencia.' : ''}`,
-      targetWeightKg: lt === 'assisted' || lt === 'bodyweight' || lt === 'band' ? undefined : refLoad ?? undefined,
-      targetAssistKg: lt === 'assisted' ? refLoad ?? undefined : undefined,
+      detail: `La última vez: ${repsTxt}. El objetivo es llegar a ${repMax} en todas las series${lt === 'assisted' ? ' con la misma asistencia' : lt === 'band' ? ' con la misma banda' : ' con la misma carga'} antes de subir. Sumar repeticiones también es progresar.${!sameLoad && loads.length ? ' Usaste cargas distintas entre series: tomamos la más baja como referencia.' : ''}`,
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
       targetReps: [repMin, repMax],
       basedOnDate,
     }
   }
 
-  // Rango completado
-  if (rirKnown && !effortOk) {
-    return { kind: 'repeat', title: 'Rango completo, pero sin margen', detail: `Llegaste a ${repMax} pero al fallo (RIR 0). Repite la carga hasta completar el rango dejando al menos ${MIN_RIR_FOR_INCREASE} repetición en reserva.`, targetWeightKg: lt === 'assisted' ? undefined : refLoad ?? undefined, targetReps: [repMin, repMax], basedOnDate }
+  // Rango completado. ¿Con el margen objetivo?
+  if (rirKnown && (minRir as number) < p.rirMin) {
+    return {
+      kind: 'repeat',
+      title: 'Rango completo, pero con menos margen del objetivo',
+      detail: `${repsTxt} con RIR ${rirs.join('/')}; el objetivo es RIR ${p.rirMin}–${p.rirMax}. Repite la carga hasta completar el rango dejando al menos ${p.rirMin} en reserva.`,
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
+      targetReps: [repMin, repMax],
+      basedOnDate,
+    }
   }
   if (lt === 'bodyweight') {
-    const harder = ex.harder ? getExercise(ex.harder) : undefined
+    const harder = ex.harder && (input.available?.(ex.harder) ?? true) ? getExercise(ex.harder) : undefined
     return {
       kind: 'harder_variant',
-      title: 'Rango completado',
-      detail: `${repsTxt} en todas las series. ${harder ? `Puedes pasar a «${harder.name}» (empieza en el mínimo del rango) o ` : 'Puedes '}añadir lastre si tienes cómo${!rirKnown ? '. No anotaste RIR: decide tú si te sobraba margen' : ''}.`,
+      title: rirKnown ? 'Rango completado' : 'Rango completado: podrías avanzar si te quedó margen',
+      detail: `${repsTxt} en todas las series. ${harder ? `Puedes pasar a «${harder.name}» (con tu confirmación; empieza en el mínimo del rango) o ` : 'Puedes '}añadir lastre si tienes cómo.${!rirKnown ? ' No anotaste RIR en todas: decide tú si te sobraba margen.' : ''}`,
       harderExerciseId: harder?.id,
       targetAddedKg: refLoad !== null && refLoad > 0 ? round2(refLoad + step) : undefined,
       targetReps: [repMin, repMax],
@@ -229,30 +307,31 @@ export function suggestNext(input: SuggestInput): Suggestion {
   if (lt === 'assisted') {
     const cur = refLoad ?? 0
     const next = Math.max(0, round2(cur - step))
-    return { kind: 'reduce_assistance', title: 'Reduce la asistencia', detail: `Completaste el rango con ${formatNumber(cur)} kg de asistencia. Menos asistencia = más difícil: prueba ${formatNumber(next)} kg y vuelve a ${repMin} repeticiones.${!rirKnown ? ' Sin RIR anotado: decide tú.' : ''}`, targetAssistKg: next, targetReps: [repMin, repMax], basedOnDate }
+    return { kind: 'reduce_assistance', title: rirKnown ? 'Reduce la asistencia' : 'Podrías reducir la asistencia si te quedó margen', detail: `Completaste el rango con ${formatNumber(cur)} kg de asistencia. Menos asistencia = más difícil: prueba ${formatNumber(next)} kg y vuelve a ${repMin} repeticiones.`, targetAssistKg: next, targetReps: [repMin, repMax], basedOnDate }
   }
   if (lt === 'band') {
-    return { kind: 'harder_variant', title: 'Rango completado', detail: 'Prueba una banda más dura (o acorta la banda) y vuelve al mínimo del rango.', targetReps: [repMin, repMax], basedOnDate }
+    return { kind: 'harder_variant', title: 'Rango completado', detail: 'Prueba una banda más dura (o cambia la configuración) y vuelve al mínimo del rango. Anota la banda y la configuración: las bandas no tienen kilos equivalentes.', targetReps: [repMin, repMax], basedOnDate }
   }
-  if (refLoad === null) return firstTime(ex, p)
+  if (refLoad === null) return firstTime(ex, p, false)
   const target = nextLoad(refLoad, step, lt, input.increments)
-  const predicted = predictReps(refLoad, repMax + (minRir ?? 0), target)
   const pct = refLoad > 0 ? Math.round(((target - refLoad) / refLoad) * 100) : 0
-  if (refLoad > 0 && predicted < repMin - 1) {
+  if (refLoad > 0 && (target - refLoad) / refLoad > INCREMENT_REVIEW_FRACTION + 1e-9) {
     return {
-      kind: 'increment_too_large',
-      title: 'El siguiente salto es grande',
-      detail: `Pasar de ${formatNumber(refLoad)} a ${formatNumber(target)} kg es un +${pct} % y probablemente no llegarías a ${repMin} repeticiones. Opciones: sumar 1–2 repeticiones por encima del rango antes de subir, añadir una serie, o usar un incremento menor si tu material lo permite (configurable en Ajustes).`,
+      kind: 'increment_review',
+      title: 'El siguiente salto es grande: elige tú',
+      detail: `${repsTxt} con ${formatNumber(refLoad)} kg${rirKnown ? '' : ' (sin RIR en todas las series)'}. El siguiente incremento disponible es ${formatNumber(target)} kg (+${pct} %). Puedes mantener ${formatNumber(refLoad)} kg y sumar repeticiones, o elegir el salto. El 10 % es solo un aviso de revisión, no un límite de seguridad.`,
       targetWeightKg: refLoad,
-      targetReps: [repMax, repMax + 2],
+      altWeightKg: target,
+      incrementPct: pct,
+      targetReps: [repMin, repMax],
       basedOnDate,
     }
   }
   if (!rirKnown) {
     return {
       kind: 'increase_optional',
-      title: 'Puedes subir (decide tú)',
-      detail: `${repsTxt} con ${formatNumber(refLoad)} kg: rango completado. No anotaste RIR, así que no sabemos el margen: si te quedaban al menos 1–2 repeticiones con buena técnica, sube a ${formatNumber(target)} kg y vuelve a ${repMin}; si no, repite la carga.`,
+      title: 'Podrías subir si te quedó margen',
+      detail: `${repsTxt} con ${formatNumber(refLoad)} kg: rango completado. Sin RIR en todas las series no sabemos el margen: si te quedaban al menos ${p.rirMin} repeticiones con buena técnica, sube a ${formatNumber(target)} kg y vuelve a ${repMin}; si no, repite la carga.`,
       targetWeightKg: target,
       targetReps: [repMin, repMax],
       basedOnDate,
@@ -260,17 +339,31 @@ export function suggestNext(input: SuggestInput): Suggestion {
   }
   return {
     kind: 'increase',
-    title: `Sube a ${formatNumber(target)} kg`,
-    detail: `${repsTxt} con ${formatNumber(refLoad)} kg y margen (RIR ≥ ${minRir}). Siguiente paso: ${formatNumber(target)} kg (+${pct} %) y vuelve a ${repMin} repeticiones.`,
+    title: `Propuesta: ${formatNumber(target)} kg`,
+    detail: `${repsTxt} con ${formatNumber(refLoad)} kg y RIR ${rirs.join('/')} (objetivo ${p.rirMin}–${p.rirMax}). Siguiente incremento disponible: ${formatNumber(target)} kg (+${pct} %), volviendo a ${repMin} repeticiones.`,
     targetWeightKg: target,
+    incrementPct: pct,
     targetReps: [repMin, repMax],
     basedOnDate,
   }
 }
 
-function firstTime(ex: Exercise | undefined, p: Prescription): Suggestion {
-  if (ex?.loadType === 'bodyweight' || ex?.loadType === 'time') {
-    return { kind: 'first_time', title: 'Primera vez', detail: 'Haz una serie de prueba con buena técnica para ver cuántas repeticiones (o segundos) te salen dejando margen. Si superas el máximo del rango con facilidad, usa una variante más difícil.' }
+function stalled(basedOnDate: string): Suggestion {
+  return {
+    kind: 'stalled',
+    title: 'Llevas varias sesiones parecido',
+    detail: 'Tres sesiones comparables sin mejora. No es un diagnóstico ni hace falta cambiarlo todo. Opciones:',
+    options: ['Mantener la carga y seguir sumando repeticiones', 'Revisar el descanso entre series (puedes añadir +30 o +60 s)', 'Revisar el ajuste de la carga (un poco menos y volver a subir)', 'Cambiar a otra variante (sin trasladar los kilos)'],
+    basedOnDate,
+  }
+}
+
+function firstTime(ex: Exercise | undefined, p: Prescription, time: boolean): Suggestion {
+  if (time) {
+    return { kind: 'first_time', title: 'Primera vez', detail: `Mantén la postura con control y termina antes de perderla o de dejar de respirar con normalidad. Objetivo: ${p.timeMinSec ?? 15}–${p.timeMaxSec ?? 30} s. Puedes anotar el esfuerzo percibido (0–10).` }
+  }
+  if (ex?.loadType === 'bodyweight') {
+    return { kind: 'first_time', title: 'Primera vez', detail: 'Haz una serie con buena técnica para ver cuántas repeticiones te salen dejando margen. Si es demasiado fácil o difícil, cambia de variante (con tu confirmación).', targetReps: [p.repMin, p.repMax] }
   }
   if (ex?.loadType === 'assisted') {
     return { kind: 'first_time', title: 'Primera vez', detail: 'Empieza con bastante asistencia y quítala poco a poco hasta que llegar al rango te deje 2–3 repeticiones en reserva. No es una prueba de máximo.' }
@@ -278,7 +371,9 @@ function firstTime(ex: Exercise | undefined, p: Prescription): Suggestion {
   return {
     kind: 'first_time',
     title: 'Primera vez: busca una carga cómoda',
-    detail: `Sin prueba de máximo: sube poco a poco en las aproximaciones y elige una carga con la que harías ${p.repMax} dejando 2–4 en reserva. Si sobran muchas, sube; si no llegas a ${p.repMin}, baja.`,
+    detail: `Empieza ligero y haz una aproximación. Elige una carga con la que puedas completar ${p.repMin} repeticiones dejando margen y manteniendo el control. Si no llegas, reduce; si resulta muy fácil, ajusta poco a poco. No necesitas probar tu máximo.`,
     targetReps: [p.repMin, p.repMax],
   }
 }
+
+export type { SessionExercise }

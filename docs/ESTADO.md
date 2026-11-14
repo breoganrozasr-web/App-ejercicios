@@ -1,8 +1,21 @@
 # Estado del proyecto (punto de continuación)
 
-Última actualización: **13 de noviembre de 2026**. Rama: `claude/app-from-spec-1c0pa7`.
+Última actualización: **14 de noviembre de 2026** (versión 1.2). Rama: `claude/app-from-spec-1c0pa7`.
 
-## Terminado y probado
+## Versión 1.2 (14/11/2026): motor 2 y mejoras de la especificación
+
+**Terminado y probado (automático, no en iPhone físico):**
+- Motor 2.0.0: contabilidad por familias (principal 1 / secundario 0,5 / estabilizador 0, con origen de cada cifra), deltoides en tres regiones, tronco por tiempo aparte, unilaterales sin duplicar; frecuencia directa e indirecta por separado y grupos objetivo visibles; presupuestos iniciales de volumen; repartos por bloques; tiempo con margen y sin acortar descansos; fuerza por referencias; conflictos con tabla real.
+- Familiarización por 4 sesiones completadas (≥70 %); adaptación opcional tras pausa; dosis de hoy y posterior visibles.
+- Casa sin material exactamente como el apartado 6, con flexión adecuada al nivel y avisos de tirón e isquios.
+- Progresión: doble progresión con RIR objetivo, umbral del 10 % para revisar el salto, estancamiento, isométricos con esfuerzo 0–10 y sin RIR, sesión parcial (retomar / pasar / repetir), variantes más fácil o difícil con confirmación (solo con tu material).
+- F8 reproducido y corregido (diario de guardado). Marcar serie idempotente.
+- Contenido: «Aprender» (7 artículos), biblioteca E1–E14 / T1–T9 sin conexión, 9 fichas enriquecidas (tres claves + «Aprender este ejercicio»), 2 ejercicios nuevos, demostraciones externas T1–T9 y etiquetas honestas del tipo de demostración.
+- Usabilidad: parcial primero en Hoy, vista opcional de ejercicio actual, descanso +30/+60, panel de volumen con origen, fichas que abren arriba y lista que recupera su posición, semana recalculada al mover una sesión, calorías secundarias y desactivables.
+
+**Pendientes reales:** prueba en iPhone físico; abrir y revisar los enlaces T1–T9 desde un entorno con acceso; demostración local de 4 variantes (tienen referencia externa); revisión técnica de las 86 fichas con estructura migrada; textos completos de las fuentes E1–E14 que solo se consultaron en resumen.
+
+## Terminado y probado (hasta la versión 1.1)
 
 - **App completa y utilizable** (PWA): perfil/onboarding, propuesta del generador con razones, conflictos y ajustes de tiempo; 10 plantillas; rutina en blanco y sesión libre; editor con versiones, superseries, sustituciones y calendario; modo entrenamiento completo; catálogo con 93 fichas; progreso (constancia, calendario mensual, series por músculo, evolución, récords, 1RM estimado con límites, peso corporal); ajustes (copias JSON/CSV, restauración con vista previa y transacción, demostraciones offline con tamaño y borrado, persistencia, guía de iPhone, datos de ejemplo, ayuda, licencias, borrado total).
 - **Versión 1.1** (13-11-2026): aviso sonoro del descanso con modos «Siempre» (suena con el iPhone en silencio; usa `navigator.audioSession = 'playback'` solo durante el pitido), «Con música» y «Sin sonido», botón «Probar sonido»; pantalla encendida durante el entrenamiento (Screen Wake Lock); «¿Cómo llegas hoy?» con ajuste conservador; récords en directo y resumen de sesión (duración, series, repeticiones, récords, comparación, calorías en rango); calculadora de discos y calentamiento sugerido; nota fija por ejercicio; registrar sesión pasada y cambiar fecha/hora/duración; medidas corporales; fotos de progreso opcionales (locales, fuera de las copias por defecto); días desde el último entrenamiento por músculo. Esquema de datos v2 (tablas `measurements` y `photos`; la v1 se actualiza sin perder datos: probado en pruebas unitarias y con las builds reales 1.0 → 1.1 en Chromium y WebKit). **Publicada y verificada en la web real** el 13-11-2026.

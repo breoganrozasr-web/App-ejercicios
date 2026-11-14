@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
 import { deleteSession, finishSession, makeSessionExercise, newSet, restoreSession, saveSession, sessionWorkSummary } from '../../data/repo'
-import { getExercise } from '../../domain/catalog'
+import { getExercise, hasEquipment } from '../../domain/catalog'
 import { LOAD_LABEL } from '../../domain/catalog/exercises'
 import { prescriptionFor } from '../../domain/engine/generator'
 import { describePrescription, describeRir } from '../../domain/engine/prescription'
@@ -64,6 +64,10 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const [setMenu, setSetMenu] = useState<{ exUid: string; setId: string } | null>(null)
   const [exMenu, setExMenu] = useState<string | null>(null)
   const [noteFor, setNoteFor] = useState<string | null>(null)
+  const [effortFor, setEffortFor] = useState<{ exUid: string; setId: string } | null>(null)
+  const [view, setView] = useState<'list' | 'focus'>(() => { try { return localStorage.getItem('forja-workout-view') === 'focus' ? 'focus' : 'list' } catch { return 'list' } })
+  const [focusUid, setFocusUid] = useState<string | null>(null)
+  const setViewPref = (v: 'list' | 'focus') => { setView(v); try { localStorage.setItem('forja-workout-view', v) } catch { /* nada */ } }
   const [platesFor_, setPlatesFor] = useState<{ exUid: string; kg: number | null } | null>(null)
   const [busy, setBusy] = useState(false)
   const lock = useRef(0)
@@ -115,6 +119,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const today = toLocalDate()
   const elapsedMs = now - s.startedAt - s.pausedTotalMs - (s.pausedAt ? now - s.pausedAt : 0)
   const currentUid = s.exercises.find((e) => e.sets.some((x) => x.kind === 'work' && !x.completed))?.uid
+  const focusIdx = Math.max(0, s.exercises.findIndex((e) => e.uid === (focusUid ?? currentUid ?? s.exercises[0]?.uid)))
 
   // Descanso: calculado con marcas temporales (sobrevive a bloqueos y recargas).
   const restRemaining = s.rest ? Math.round((s.rest.startedAt + s.rest.durationSec * 1000 - now) / 1000) : null
@@ -128,8 +133,16 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const updEx = (uid: string, f: (e: SessionExercise) => SessionExercise, undo?: string) => update((x) => ({ ...x, exercises: x.exercises.map((e) => (e.uid === uid ? f(e) : e)) }), undo)
   const updSet = (exUid: string, setId: string, patch: Partial<SetEntry>) => updEx(exUid, (e) => ({ ...e, sets: e.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) }))
 
-  const toggleDone = (e: SessionExercise, set: SetEntry, placeholder: Partial<SetEntry>) => {
+  const lastToggle = useRef(new Map<string, number>())
+  const toggleDone = (eStale: SessionExercise, setStale: SetEntry, placeholder: Partial<SetEntry>) => {
     if (!backdated) unlockAudio()
+    // Idempotente: un doble toque sobre la misma serie no la marca y desmarca (ni duplica nada).
+    const nowT = Date.now()
+    if (nowT - (lastToggle.current.get(setStale.id) ?? 0) < 600) return
+    lastToggle.current.set(setStale.id, nowT)
+    // Valores FRESCOS (lo recién escrito puede no haberse pintado todavía): evita pisarlo con los propuestos.
+    const e = sRef.current.exercises.find((x) => x.uid === eStale.uid) ?? eStale
+    const set = e.sets.find((x) => x.id === setStale.id) ?? setStale
     if (set.completed) {
       updSet(e.uid, set.id, { completed: false, completedAt: null })
       return
@@ -219,6 +232,21 @@ function ActiveWorkout({ initial }: { initial: Session }) {
 
   const togglePause = () => update((x) => (x.pausedAt ? { ...x, pausedTotalMs: x.pausedTotalMs + (Date.now() - x.pausedAt), pausedAt: null } : { ...x, pausedAt: Date.now() }))
 
+  /** Variantes ofrecibles: con el material marcado y no excluidas (A05). */
+  const variantAvailable = (id: string) => {
+    const v = getExercise(id)
+    return !!v && (!profile || (hasEquipment(profile.equipment, v) && !profile.excludedExercises.includes(id)))
+  }
+
+  /** Cambiar a una variante más fácil o difícil (con confirmación). Lo hecho se conserva; los kilos no se trasladan. */
+  const switchVariant = async (uid: string, newExId: string) => {
+    const cur = sRef.current.exercises.find((x) => x.uid === uid)
+    const target = getExercise(newExId)
+    if (!cur || !target) return
+    const ok = await confirm({ title: `Cambiar a «${target.name}»`, body: 'Las series ya hechas se conservan con el ejercicio actual; las pendientes pasan a la variante nueva, sin trasladar cargas. Puedes deshacerlo.', confirm: 'Cambiar' })
+    if (ok) replaceExercise(uid, newExId)
+  }
+
   const replaceExercise = (uid: string, newExId: string) => {
     if (!profile) return
     update((x) => {
@@ -251,7 +279,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             <div className="small muted num" aria-live="off">
               {backdated
                 ? `Registro a posteriori · ${formatDateShort(s.date)} · ${s.manualDurationMin ?? 60} min`
-                : <>{formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.rampApplied ? '· familiarización' : ''}</>}
+                : <>{formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.familiarization ? `· familiarización ${s.familiarization.index}/${s.familiarization.total}` : s.rampApplied ? '· familiarización' : ''}</>}
             </div>
           </div>
           {!backdated && <button className="icon-btn soft" onClick={togglePause} aria-label={s.pausedAt ? 'Reanudar' : 'Pausar'}>{s.pausedAt ? <Play /> : <Pause />}</button>}
@@ -279,8 +307,22 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             <p>{backdated ? 'Añade los ejercicios que hiciste.' : 'Sesión libre: añade el primer ejercicio.'}</p>
           </div>
         )}
-        {s.exercises.map((e, i) => (
+        {s.exercises.length > 1 && (
+          <div className="seg" role="group" aria-label="Vista del entrenamiento">
+            <button aria-pressed={view === 'list'} onClick={() => setViewPref('list')}>Lista completa</button>
+            <button aria-pressed={view === 'focus'} onClick={() => setViewPref('focus')}>Ejercicio actual</button>
+          </div>
+        )}
+        {view === 'focus' && focusIdx >= 0 && (
+          <div className="row between small">
+            <button className="btn ghost small" disabled={focusIdx === 0} onClick={() => setFocusUid(s.exercises[focusIdx - 1]?.uid ?? null)}>‹ Anterior</button>
+            <span className="muted">Ejercicio {focusIdx + 1} de {s.exercises.length}</span>
+            <button className="btn ghost small" disabled={focusIdx >= s.exercises.length - 1} onClick={() => setFocusUid(s.exercises[focusIdx + 1]?.uid ?? null)}>Siguiente ›</button>
+          </div>
+        )}
+        {s.exercises.map((e, i) => (view === 'focus' && i !== focusIdx ? null :
           <ExerciseBlock
+            focus={view === 'focus'}
             key={e.uid}
             e={e}
             index={i}
@@ -291,7 +333,9 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             lowReadiness={level === 'low'}
             onPlates={(kg) => setPlatesFor({ exUid: e.uid, kg })}
             onFillWarmup={(plan) => updEx(e.uid, (ee) => { let i = 0; return { ...ee, sets: ee.sets.map((st) => (st.kind === 'warmup' && !st.completed && plan[i] ? { ...st, weightKg: plan[i].kg, reps: plan[i++].reps } : st)) } }, 'Calentamiento rellenado (sin marcar)')}
-            suggestion={e.prescription ? suggestNext({ exerciseId: e.exerciseId, prescription: e.prescription, history: historyFor(e.exerciseId, finished, undefined, s.id), increments, incrementOverride: settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg, today, progressionAllowed: allowProg }) : null}
+            suggestion={e.prescription ? suggestNext({ exerciseId: e.exerciseId, prescription: e.prescription, history: historyFor(e.exerciseId, finished, undefined, s.id), increments, incrementOverride: settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg, today, progressionAllowed: allowProg, familiarization: s.familiarization ?? null, available: variantAvailable }) : null}
+            onEffort={(setId) => setEffortFor({ exUid: e.uid, setId })}
+            onSwitchVariant={(id) => void switchVariant(e.uid, id)}
             onDemo={() => setDemoFor(e.exerciseId)}
             onMenu={() => setExMenu(e.uid)}
             onToggle={toggleDone}
@@ -320,10 +364,11 @@ function ActiveWorkout({ initial }: { initial: Session }) {
               <span className="time" aria-live={restRemaining <= 0 ? 'assertive' : 'off'}>{restRemaining > 0 ? formatDuration(restRemaining) : `+${formatDuration(-restRemaining)}`}</span>
             </div>
             <span className="grow" />
-            <button className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: Math.max(10, x.rest.durationSec - 15) } } : x))} aria-label="Quitar 15 segundos">−15</button>
-            <button className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: x.rest.durationSec + 15 } } : x))} aria-label="Añadir 15 segundos">+15</button>
+            <button className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: x.rest.durationSec + 30 } } : x))} aria-label="Añadir 30 segundos">+30</button>
+            <button className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: x.rest.durationSec + 60 } } : x))} aria-label="Añadir 60 segundos">+60</button>
             <button className="btn" onClick={() => update((x) => ({ ...x, rest: null }))} aria-label="Saltar descanso"><SkipForward size={18} /></button>
           </div>
+          <div className="tiny" style={{ textAlign: 'center', opacity: 0.85, paddingBottom: 2 }}>Descansa más si aún no puedes repetir con control. El cronómetro orienta; no te obliga a empezar.</div>
         </div>
       )}
 
@@ -346,8 +391,21 @@ function ActiveWorkout({ initial }: { initial: Session }) {
         </div>
       </Sheet>
 
+      <Sheet open={!!effortFor} onClose={() => setEffortFor(null)} title="Esfuerzo percibido (0–10)">
+        <div className="stack">
+          <p className="small">Para ejercicios por tiempo (planchas): ¿cuánto te ha costado mantener la postura? 0 = nada, 10 = máximo. Es opcional y <strong>no es RIR</strong>: no se convierte en repeticiones en reserva ni decide la progresión.</p>
+          <div className="row wrap">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <button key={n} className="chip" style={{ minWidth: 48, justifyContent: 'center' }} onClick={() => { if (effortFor) updSet(effortFor.exUid, effortFor.setId, { effort: n }); setEffortFor(null) }}>{n}</button>
+            ))}
+          </div>
+          <button className="btn soft" onClick={() => { if (effortFor) updSet(effortFor.exUid, effortFor.setId, { effort: null }); setEffortFor(null) }}>No anotar</button>
+          <p className="tiny muted">Termina antes de perder la postura o la respiración normal.</p>
+        </div>
+      </Sheet>
+
       <SetMenu target={setMenu} session={s} onClose={() => setSetMenu(null)} update={update} />
-      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} onNote={(id) => { setExMenu(null); setNoteFor(id) }} />
+      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} onNote={(id) => { setExMenu(null); setNoteFor(id) }} onVariant={(uid, id) => { setExMenu(null); void switchVariant(uid, id) }} available={variantAvailable} />
       <PinnedNoteSheet exerciseId={noteFor} onClose={() => setNoteFor(null)} />
       <Sheet open={!!platesFor_} onClose={() => setPlatesFor(null)} title="Discos y calentamiento">
         {platesFor_ && (() => {
@@ -381,6 +439,7 @@ function DemoSheetBody({ exerciseId, onReference }: { exerciseId: string; onRefe
   return (
     <div className="stack">
       <DemoPlayer exerciseId={exerciseId} onOpenReference={onReference} />
+      {ex.keys && <ol className="keys small" aria-label="Tres claves">{ex.keys.map((k) => <li key={k}>{k}</li>)}</ol>}
       {ex.variantNote && <p className="small muted">{ex.variantNote}</p>}
       <div className="stack-sm">
         <h3>Cómo se hace</h3>
@@ -425,6 +484,9 @@ function ExerciseBlock(props: {
   onSetMenu: (setId: string) => void
   onFill: (f: (st: SetEntry, workIdx: number) => Partial<SetEntry>) => void
   onNotes: (n: string) => void
+  onEffort: (setId: string) => void
+  onSwitchVariant: (exerciseId: string) => void
+  focus?: boolean
 }) {
   const { e, suggestion: sug, history } = props
   const ex = getExercise(e.exerciseId)
@@ -460,12 +522,18 @@ function ExerciseBlock(props: {
           {props.pinned && <span className="small pinned"><Pin size={14} aria-hidden /> {props.pinned}</span>}
           {p && (
             <span className="small muted">
-              {describePrescription(p, ex)} · {describeRir(p)} · descanso {formatDuration(p.restSec)}
+              {describePrescription(p, ex)} · {describeRir(p, ex)} · descanso {formatDuration(p.restSec)}
             </span>
           )}
         </div>
         <button className="icon-btn soft" onClick={props.onMenu} aria-label={`Opciones de ${e.nameSnapshot}`}><Ellipsis /></button>
       </div>
+      {props.focus && <div style={{ marginTop: 8 }}><DemoPlayer exerciseId={e.exerciseId} /></div>}
+      {ex?.keys && (
+        <ol className="keys small" aria-label="Tres claves">
+          {ex.keys.map((k) => <li key={k}>{k}</li>)}
+        </ol>
+      )}
       <div className="row wrap" style={{ marginTop: 8, gap: 6 }}>
         <button className="btn soft small" onClick={props.onDemo}>
           <CircleHelp size={16} /> Ver cómo se hace
@@ -490,8 +558,14 @@ function ExerciseBlock(props: {
           <div className="suggestion stack-sm">
             <span className="label"><Lightbulb aria-hidden /> Sugerencia · {sug.title}</span>
             <span className="small">{sug.detail}</span>
+            {sug.options && <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{sug.options.map((o) => <li key={o}>{o}</li>)}</ul>}
             {showIncreaseNote && <span className="small"><strong>Hoy vas con menos margen:</strong> mantener la carga de la última vez también vale.</span>}
-            {(sug.targetWeightKg !== undefined || sug.targetAssistKg !== undefined) && (
+            {sug.kind === 'increment_review' && sug.targetWeightKg !== undefined && sug.altWeightKg !== undefined ? (
+              <div className="row wrap">
+                <button className="btn small soft" onClick={() => props.onFill(() => ({ weightKg: sug.targetWeightKg ?? null }))}>Mantener {formatNumber(sug.targetWeightKg)} kg</button>
+                <button className="btn small soft" onClick={() => props.onFill(() => ({ weightKg: sug.altWeightKg ?? null }))}>Usar {formatNumber(sug.altWeightKg)} kg (+{sug.incrementPct} %)</button>
+              </div>
+            ) : (sug.targetWeightKg !== undefined || sug.targetAssistKg !== undefined) && (
               <button
                 className="btn small soft"
                 style={{ alignSelf: 'flex-start' }}
@@ -499,6 +573,9 @@ function ExerciseBlock(props: {
               >
                 Usar {formatNumber(lt === 'assisted' ? sug.targetAssistKg : sug.targetWeightKg)} kg en las series pendientes
               </button>
+            )}
+            {sug.harderExerciseId && (
+              <button className="btn small soft" style={{ alignSelf: 'flex-start' }} onClick={() => props.onSwitchVariant(sug.harderExerciseId as string)}>Cambiar a {getExercise(sug.harderExerciseId)?.name.toLowerCase()}…</button>
             )}
           </div>
         )}
@@ -525,7 +602,7 @@ function ExerciseBlock(props: {
         <span className="hdr">Serie</span>
         {lt !== 'time' && <span className="hdr" title={LOAD_LABEL[lt].help}>{kgLabel}</span>}
         <span className="hdr">{lt === 'time' ? 'Seg.' : e.unilateralSnapshot ? 'Rep./lado' : 'Rep.'}</span>
-        {lt !== 'time' && <span className="hdr">RIR</span>}
+        {lt !== 'time' ? <span className="hdr">RIR</span> : <span className="hdr" title="Esfuerzo percibido 0–10 (opcional)">Esf.</span>}
         <span className="hdr">Hecha</span>
         {e.sets.map((set, si) => {
           if (set.kind === 'work') workN++
@@ -546,6 +623,7 @@ function ExerciseBlock(props: {
               onSet={(patch) => props.onSet(set.id, patch)}
               onToggle={() => props.onToggle(e, set, ph)}
               onRir={() => props.onRir(set.id)}
+              onEffort={() => props.onEffort(set.id)}
               onMenu={() => props.onSetMenu(set.id)}
             />
           )
@@ -573,14 +651,17 @@ function describeSet(x: SetEntry, lt: LoadType): string {
   return `${formatNumber(x.weightKg)}×${reps}`
 }
 
-function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, onMenu }: { set: SetEntry; setName: string; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onMenu: () => void }) {
+function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, onEffort, onMenu }: { set: SetEntry; setName: string; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onEffort: () => void; onMenu: () => void }) {
   const fmt = (n: number | null | undefined) => (n === null || n === undefined ? '' : formatNumber(n))
   const sideTxt = set.side === 'left' ? ' I' : set.side === 'right' ? ' D' : ''
   return (
     <>
       <button className={`set-tag ${set.kind === 'warmup' ? 'warm' : ''}`} onClick={onMenu} aria-label={`Opciones de ${setName}`}>{tag}{sideTxt}</button>
       {lt === 'time' ? (
-        <DecimalInput label={`Segundos, ${setName}`} integer value={set.durationSec} onChange={(v) => onSet({ durationSec: v })} placeholder={fmt(ph.durationSec)} max={3600} />
+        <>
+          <DecimalInput label={`Segundos, ${setName}`} integer value={set.durationSec} onChange={(v) => onSet({ durationSec: v })} placeholder={fmt(ph.durationSec)} max={3600} />
+          <button className={`rir-btn ${set.effort !== null && set.effort !== undefined ? 'set' : ''}`} onClick={onEffort} aria-label={`Esfuerzo percibido ${setName}: ${set.effort ?? 'sin anotar'}`}>{set.effort === null || set.effort === undefined ? '—' : set.effort}</button>
+        </>
       ) : (
         <>
           {lt === 'band' ? (
@@ -644,7 +725,7 @@ function SetMenu({ target, session, onClose, update }: { target: { exUid: string
   )
 }
 
-function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void; onNote: (exerciseId: string) => void }) {
+function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote, onVariant, available }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void; onNote: (exerciseId: string) => void; onVariant: (uid: string, exerciseId: string) => void; available: (id: string) => boolean }) {
   const idx = session.exercises.findIndex((x) => x.uid === uid)
   const e = session.exercises[idx]
   const isBw = e?.loadTypeSnapshot === 'bodyweight'
@@ -656,6 +737,17 @@ function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote
         <div className="list">
           <button className="list-item" onClick={() => onDemo(e.exerciseId)}><CircleHelp size={20} /> Ver cómo se hace</button>
           <button className="list-item" onClick={() => onReplace(e.uid)}><Repeat size={20} /> Sustituir ejercicio</button>
+          {(() => {
+            const def = getExercise(e.exerciseId)
+            const easier = def?.easier && available(def.easier) ? getExercise(def.easier) : undefined
+            const harder = def?.harder && available(def.harder) ? getExercise(def.harder) : undefined
+            return (
+              <>
+                {easier && <button className="list-item" onClick={() => onVariant(e.uid, easier.id)}><ArrowDown size={20} /> Variante más fácil: {easier.name}</button>}
+                {harder && <button className="list-item" onClick={() => onVariant(e.uid, harder.id)}><ArrowUp size={20} /> Variante más difícil: {harder.name}</button>}
+              </>
+            )
+          })()}
           <button className="list-item" onClick={() => onNote(e.exerciseId)}><Pin size={20} /> Nota fija (asiento, agarre, máquina…)</button>
           <button className="list-item" onClick={() => { update((x) => ({ ...x, exercises: x.exercises.map((ee) => (ee.uid === e.uid ? { ...ee, painFlag: !ee.painFlag } : ee)) })); onClose() }}>
             <HeartPulse size={20} /> {e.painFlag ? 'Quitar marca de molestia' : 'Marcar molestia o dolor'}

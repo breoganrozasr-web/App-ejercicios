@@ -3,14 +3,15 @@ import { ArrowLeft, ChartLine, ChevronLeft, ChevronRight, Flame, Info, Pencil, T
 import { useMemo, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
-import { deleteSession, restoreSession, retimeSession, sessionWorkSummary, updateFinishedSession } from '../../data/repo'
+import { deleteSession, restoreSession, resumeSession, retimeSession, sessionWorkSummary, setPartialAction, updateFinishedSession } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
-import { MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
-import { weeklyTarget } from '../../domain/engine/params'
+import { weeklyBudget } from '../../domain/engine/params'
 import { checkScope } from '../../domain/engine/scope'
 import { bodyweightOn, kcalRange, sessionMinutes } from '../../domain/energy'
 import { READINESS_SCALES, readinessLevel } from '../../domain/readiness'
-import { exerciseTrend, previousComparable, sessionRecords, sessionTotals, sessionsPerWeek, weeklyMuscleSets } from '../../domain/records'
+import { exerciseTrend, previousComparable, sessionRecords, sessionTotals, sessionsPerWeek, weeklyRegionSets } from '../../domain/records'
+import { PANEL_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
+import { priorityRegionsOf } from '../../domain/engine/generator'
 import type { Session, SetEntry } from '../../domain/types'
 import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, formatNumber, formatTime, toLocalDate } from '../../domain/util'
 import { LineChart, WeekBars } from '../components/Charts'
@@ -25,9 +26,9 @@ export function ProgressScreen() {
   const sessions = useLiveQuery(() => db().sessions.toArray(), [], [] as Session[])
   const finished = sessions.filter((s) => s.status === 'completed' || s.status === 'partial').sort((a, b) => b.startedAt - a.startedAt)
   const perWeek = sessionsPerWeek(finished, 12, today)
-  const muscleWeeks = weeklyMuscleSets(finished, 2, today)
-  const thisWeek = muscleWeeks[muscleWeeks.length - 1]?.perMuscle ?? {}
-  const lastWeek = muscleWeeks[0]?.perMuscle ?? {}
+  const regionWeeks = weeklyRegionSets(finished, 2, today)
+  const thisWeek = regionWeeks[regionWeeks.length - 1] ?? { direct: {}, secondary: {} }
+  const lastWeek = regionWeeks[0] ?? { direct: {}, secondary: {} }
   const exIds = useMemo(() => {
     const count = new Map<string, number>()
     for (const s of finished) for (const e of s.exercises) if (e.sets.some((x) => x.kind === 'work' && x.completed)) count.set(e.exerciseId, (count.get(e.exerciseId) ?? 0) + 1)
@@ -60,21 +61,24 @@ export function ProgressScreen() {
             </section>
 
             <section className="card stack">
-              <h3>Series de trabajo por músculo</h3>
-              <p className="tiny muted">Esta semana (lunes a domingo) contando series completadas: directas + media serie por trabajo indirecto (estimación). Entre paréntesis, la semana pasada. Marca: rango orientativo de tu nivel.</p>
+              <h3>Series de trabajo por grupo</h3>
+              <p className="tiny muted">Esta semana (lunes a domingo), series completadas: <strong>directas + indirectas estimadas</strong> (media serie cada una; estimación, el trabajo indirecto no equivale exactamente al directo). Entre paréntesis, las directas de la semana pasada. El tronco por tiempo va aparte.</p>
               <div className="stack-sm">
-                {MAJOR_MUSCLES.map((m) => {
-                  const v = Math.round((thisWeek[m] ?? 0) * 10) / 10
-                  const [lo, hi] = profile ? weeklyTarget(profile.level, m, profile.goal, profile.priorityMuscles.includes(m)) : [6, 10]
-                  const scale = Math.max(16, hi + 2, v)
+                {PANEL_REGIONS.map((r) => {
+                  const d = thisWeek.direct[r] ?? 0
+                  const ind = (thisWeek.secondary[r] ?? 0) * 0.5
+                  const b = profile ? weeklyBudget(r, profile.level, profile.goal, priorityRegionsOf(profile).includes(r)) : null
+                  const scale = Math.max(12, d + ind)
                   return (
-                    <div key={m} className="vol-row">
-                      <span>{MUSCLE_LABEL[m]}</span>
-                      <div className="vol-track" role="img" aria-label={`${MUSCLE_LABEL[m]}: ${v} series esta semana; orientativo ${lo}–${hi}`}>
-                        <div className="vol-fill" style={{ width: `${(v / scale) * 100}%` }} />
-                        <div className="vol-target" style={{ left: `${(lo / scale) * 100}%`, width: `${((hi - lo) / scale) * 100}%` }} />
-                      </div>
-                      <span className="small num" style={{ textAlign: 'right' }}>{formatNumber(v)} <span className="muted">({formatNumber(Math.round((lastWeek[m] ?? 0) * 10) / 10)})</span></span>
+                    <div key={r} className="vol-row">
+                      <span>{REGION_LABEL[r]}</span>
+                      {r === 'core_iso' ? <span className="small muted">{d} {d === 1 ? 'serie' : 'series'} por tiempo</span> : (
+                        <div className="vol-track" role="img" aria-label={`${REGION_LABEL[r]}: ${formatNumber(d)} directas + ${formatNumber(ind)} indirectas estimadas esta semana${b ? `; presupuesto inicial ${b.min}–${b.max}` : ''}`}>
+                          <div className="vol-fill ind" style={{ width: `${((d + ind) / scale) * 100}%` }} />
+                          <div className="vol-fill" style={{ width: `${(d / scale) * 100}%` }} />
+                        </div>
+                      )}
+                      <span className="small num" style={{ textAlign: 'right' }}>{r === 'core_iso' ? '' : `${formatNumber(d)} + ${formatNumber(ind)}`} <span className="muted">({formatNumber(lastWeek.direct[r] ?? 0)})</span></span>
                     </div>
                   )
                 })}
@@ -213,6 +217,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
             </div>
           </section>
         )}
+        {!edit && s.status === 'partial' && !s.partialAction && !s.isDemo && <PartialChoices s={s} />}
         {!edit && <SessionSummary s={s} all={all} bodyKg={bodyweightOn(bw, s.date)} minutes={durMin} />}
         {view.exercises.map((e, ei) => {
           let n = 0
@@ -239,7 +244,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
                   return (
                     <div key={x.id} className={`row small ${x.completed ? '' : 'faint'}`}>
                       <span style={{ width: 110 }} className={x.kind === 'warmup' ? 'muted' : ''}>{tag}</span>
-                      <span className="grow num">{setText(x, e.loadTypeSnapshot)}{x.rir !== null ? ` · RIR ${x.rir}` : ''}</span>
+                      <span className="grow num">{setText(x, e.loadTypeSnapshot)}{x.rir !== null ? (e.loadTypeSnapshot === 'time' ? ` · RIR ${x.rir} (dato antiguo, no se usa)` : ` · RIR ${x.rir}`) : ''}</span>
                       {!x.completed && <span className="badge">No hecha</span>}
                     </div>
                   )
@@ -276,6 +281,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
 /** Resumen al terminar: duración, series, repeticiones, calorías (rango), récords y comparación con la vez anterior. */
 function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[]; bodyKg: number | null; minutes: number }) {
   const t = sessionTotals(s)
+  const showKcal = (() => { try { return localStorage.getItem('forja-show-kcal') !== 'off' } catch { return true } })()
   const kcal = bodyKg && minutes >= 5 ? kcalRange(minutes, bodyKg) : null
   const recs = sessionRecords(s, all, formatNumber)
   const prev = previousComparable(s, all)
@@ -290,14 +296,6 @@ function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[
         <div><span className="tiny muted">Repetic.</span><strong className="num">{t.reps}</strong></div>
         <div><span className="tiny muted">Ejercicios</span><strong className="num">{t.exercises}</strong></div>
       </div>
-      <div className="row small" style={{ alignItems: 'flex-start' }}>
-        <Flame size={18} className="faint" aria-hidden />
-        {kcal ? (
-          <span className="grow">Gasto estimado: <strong className="num">{formatNumber(kcal.lo)}–{formatNumber(kcal.hi)} kcal</strong> <span className="muted">(aprox., con {formatNumber(bodyKg)} kg y {minutes} min; incluye lo que gastarías en reposo)</span></span>
-        ) : (
-          <span className="grow muted">{bodyKg ? 'Sesión demasiado corta para estimar calorías.' : 'Anota tu peso corporal en Progreso para ver un rango aproximado de calorías.'}</span>
-        )}
-      </div>
       {recs.length > 0 && (
         <div className="stack-sm">
           <span className="label"><Trophy size={16} aria-hidden /> Récords en esta sesión</span>
@@ -309,6 +307,16 @@ function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[
       {prev && pt && (
         <p className="small muted">Respecto a la vez anterior ({formatDateShort(prev.date)}): series {delta(t.sets, pt.sets)}, repeticiones {delta(t.reps, pt.reps)}.</p>
       )}
+      {showKcal && (
+        <div className="row tiny muted" style={{ alignItems: 'flex-start' }}>
+          <Flame size={14} aria-hidden />
+          {kcal ? (
+            <span className="grow">Gasto estimado (muy aproximado): {formatNumber(kcal.lo)}–{formatNumber(kcal.hi)} kcal, con {formatNumber(bodyKg)} kg y {minutes} min; incluye lo que gastarías en reposo. No mide la calidad del entrenamiento.</span>
+          ) : (
+            <span className="grow">{bodyKg ? 'Sesión demasiado corta para estimar calorías.' : 'Para ver un rango aproximado de calorías, anota tu peso corporal en Progreso (opcional).'}</span>
+          )}
+        </div>
+      )}
       {s.readiness && (
         <p className="small muted">Cómo llegabas: {READINESS_SCALES.sleep.label.toLowerCase()} {s.readiness.sleep}/5 · {READINESS_SCALES.energy.label.toLowerCase()} {s.readiness.energy}/5 · {READINESS_SCALES.soreness.label.toLowerCase()} {s.readiness.soreness}/5{lvl === 'low' ? ' (con menos margen)' : ''}.</p>
       )}
@@ -316,8 +324,24 @@ function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[
   )
 }
 
+/** Sesión parcial: retomar lo pendiente (misma sesión), cerrar y pasar a la siguiente, o repetir el día otro día. */
+function PartialChoices({ s }: { s: Session }) {
+  const toast = useToast()
+  return (
+    <section className="card stack-sm" aria-label="Qué hacer con esta sesión parcial">
+      <strong>Sesión parcial: ¿qué prefieres?</strong>
+      <button className="btn primary" onClick={async () => { try { const r = await resumeSession(s.id); go(`entreno/${r.id}`) } catch (e) { toast((e as Error).message) } }}>Retomar lo pendiente</button>
+      <div className="row">
+        <button className="btn soft small grow" onClick={async () => { await setPartialAction(s.id, 'next'); toast('Pasamos a la siguiente sesión') }}>Cerrar y pasar a la siguiente</button>
+        <button className="btn soft small grow" onClick={async () => { await setPartialAction(s.id, 'repeat'); toast('La próxima vez se propondrá este mismo día') }}>Repetir esta sesión otro día</button>
+      </div>
+      <span className="tiny muted">Retomar continúa esta misma sesión sin duplicar series ni récords. Repetir crea una sesión nueva más adelante.</span>
+    </section>
+  )
+}
+
 function setText(x: SetEntry, lt: Session['exercises'][number]['loadTypeSnapshot']): string {
-  if (lt === 'time') return `${x.durationSec ?? '—'} s`
+  if (lt === 'time') return `${x.durationSec ?? '—'} s${x.effort !== null && x.effort !== undefined ? ` · esfuerzo ${x.effort}/10` : ''}`
   const reps = x.reps ?? '—'
   if (lt === 'assisted') return `${reps} rep · asistencia ${formatNumber(x.assistKg ?? x.weightKg)} kg`
   if (lt === 'bodyweight') return `${reps} rep${x.addedKg ? ` · +${formatNumber(x.addedKg)} kg lastre` : ''}${x.assistKg ? ` · asistencia ${formatNumber(x.assistKg)} kg` : ''}`

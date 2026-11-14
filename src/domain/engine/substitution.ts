@@ -1,3 +1,4 @@
+import { hasExternalDemo } from '../catalog/external'
 import { allExercises, getExercise, hasEquipment } from '../catalog'
 import { LEVEL_RANK } from '../catalog/exercises'
 import type { EquipmentId, Exercise, Level, Pattern } from '../types'
@@ -52,7 +53,10 @@ export function alternativesFor(exerciseId: string, equipment: EquipmentId[] | n
     else { score -= 10; reasons.push('más técnico para tu nivel') }
     if (ex.loadType === base.loadType) score += 3
     if (ex.demoStatus === 'verificada') score += 4
-    else reasons.push('demostración pendiente')
+    else if (hasExternalDemo(ex.id)) {
+      score += 2
+      reasons.push('demostración externa (requiere internet)')
+    } else reasons.push('demostración pendiente')
     out.push({ exercise: ex, score, reasons, available })
   }
   return out.sort((a, b) => b.score - a.score || a.exercise.name.localeCompare(b.exercise.name, 'es'))

@@ -8,6 +8,9 @@ import { allExercises, getExercise, hasEquipment } from '../../domain/catalog'
 import { EQUIPMENT_LABEL, LOAD_LABEL, MAJOR_MUSCLES, MUSCLE_LABEL, PATTERN_LABEL } from '../../domain/catalog/exercises'
 import { youTubeId } from '../../domain/catalog/media'
 import { checkScope } from '../../domain/engine/scope'
+import { FAMILIES, REGION_LABEL, contributionOf } from '../../domain/engine/contribution'
+import { externalDemoFor } from '../../domain/catalog/external'
+import { SourceChips } from './Learn'
 import { alternativesFor } from '../../domain/engine/substitution'
 import { computeRecords, exerciseTrend } from '../../domain/records'
 import type { EquipmentId, Exercise, LoadType, MuscleId, Pattern, Session } from '../../domain/types'
@@ -102,18 +105,49 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
         </div>
         <DemoPlayer exerciseId={ex.id} onOpenReference={(id) => go(`ejercicios/${id}`)} />
         {ex.variantNote && ex.demoStatus === 'verificada' && <p className="small muted">{ex.variantNote}</p>}
-        <section className="card stack-sm">
-          <div className="row wrap"><strong>Principales:</strong> {ex.primary.map((m) => MUSCLE_LABEL[m]).join(', ')}</div>
-          {ex.secondary.length > 0 && <div className="row wrap small"><strong>Secundarios:</strong> {ex.secondary.map((m) => MUSCLE_LABEL[m]).join(', ')}</div>}
-          <div className="row wrap small"><strong>Material:</strong> {ex.equipment.length ? ex.equipment.map((x) => EQUIPMENT_LABEL[x]).join(', ') : 'ninguno'}</div>
-          <div className="small"><strong>Qué anotar:</strong> {LOAD_LABEL[ex.loadType].help}</div>
-        </section>
-        <section className="card stack-sm">
-          <h3>Cómo se hace</h3>
-          <ol className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.instructions.map((t) => <li key={t}>{t}</li>)}</ol>
-          <h3 style={{ marginTop: 8 }}>Errores habituales</h3>
-          <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.errors.map((t) => <li key={t}>{t}</li>)}</ul>
-          <p className="tiny muted">Movimiento controlado y recorrido cómodo para ti: no hace falta forzar amplitudes que duelan.</p>
+        {ex.keys ? (
+          <section className="card stack-sm">
+            <h3>Tres claves</h3>
+            <ol className="keys small" style={{ marginTop: 0 }} aria-label="Tres claves">{ex.keys.map((k) => <li key={k}>{k}</li>)}</ol>
+          </section>
+        ) : null}
+        <section className="card stack-sm" aria-label="Aprender este ejercicio">
+          <h3>Aprender este ejercicio</h3>
+          {ex.learn ? (
+            <>
+              <span className="label">Preparación y ejecución</span>
+              <p className="small" style={{ margin: 0 }}>{ex.learn.detail}</p>
+            </>
+          ) : (
+            <>
+              <span className="label">Cómo se hace</span>
+              <ol className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.instructions.map((t) => <li key={t}>{t}</li>)}</ol>
+            </>
+          )}
+          {ex.errors.length > 0 && (
+            <>
+              <span className="label">Errores habituales y correcciones</span>
+              <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.errors.map((t) => <li key={t}>{t}</li>)}</ul>
+            </>
+          )}
+          {(ex.learn?.alternatives || ex.easier || ex.harder) && (
+            <>
+              <span className="label">Variantes</span>
+              {ex.learn?.alternatives && <p className="small" style={{ margin: 0 }}>{ex.learn.alternatives}</p>}
+              <div className="row wrap small">
+                {ex.easier && <a href={href(`ejercicios/${ex.easier}`)}>Más fácil: {getExercise(ex.easier)?.name}</a>}
+                {ex.harder && <a href={href(`ejercicios/${ex.harder}`)}>Más difícil: {getExercise(ex.harder)?.name}</a>}
+              </div>
+            </>
+          )}
+          {ex.learn?.notes?.map((n) => <p key={n} className="small note warn" style={{ margin: 0 }}>{n}</p>)}
+          <span className="label">Músculos (cómo cuenta en el panel)</span>
+          <ContributionList exerciseId={ex.id} />
+          <div className="small"><strong>Material:</strong> {ex.equipment.length ? ex.equipment.map((x) => EQUIPMENT_LABEL[x]).join(', ') : 'ninguno'}</div>
+          <div className="small"><strong>Qué carga anotar:</strong> {LOAD_LABEL[ex.loadType].help}</div>
+          {ex.learn ? <SourceChips codes={ex.learn.sources} /> : <p className="tiny muted">Ficha con la estructura común: contenido de Forja anterior, sin revisión técnica nueva.</p>}
+          {externalDemoFor(ex.id) && <p className="tiny muted">Demostración externa: {externalDemoFor(ex.id)?.author} (requiere internet).</p>}
+          <p className="tiny muted">Recorrido que puedas controlar y adecuado para el ejercicio. Una postura concreta no garantiza prevenir lesiones; si duele, para y consulta.</p>
         </section>
 
         {rec && (
@@ -279,6 +313,21 @@ export function NewExerciseScreen() {
         <button className="btn primary big block" disabled={!name.trim() || !primary.length} onClick={() => void save()}>Crear ejercicio</button>
       </main>
     </>
+  )
+}
+
+/** Contribución del ejercicio al panel (principal 1, secundario 0,5, estabilizador 0), con su familia o «heredada». */
+function ContributionList({ exerciseId }: { exerciseId: string }) {
+  const c = contributionOf(exerciseId)
+  const role = { principal: 'principal (cuenta 1)', secundario: 'secundario (cuenta 0,5)', estabilizador: 'estabilización (no se cuenta)' }
+  return (
+    <div className="stack-sm" style={{ gap: 2 }}>
+      <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>
+        {c.items.map((it) => <li key={it.region}>{REGION_LABEL[it.region]}: {role[it.role]}</li>)}
+        {!c.items.length && <li className="muted">Sin clasificación.</li>}
+      </ul>
+      <span className="tiny muted">{c.family ? `Familia «${FAMILIES[c.family].label}» (política de contabilidad de Forja).${c.note ? ` ${c.note}` : ''}` : 'Clasificación heredada de la versión anterior (no revisada con la política de familias).'} No son porcentajes de crecimiento medidos.</span>
+    </div>
   )
 }
 

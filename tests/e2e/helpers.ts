@@ -1,8 +1,9 @@
 import { expect, type Page } from '@playwright/test'
 
-export async function onboard(page: Page, opts: { days?: string[]; freq?: string; home?: boolean } = {}) {
+export async function onboard(page: Page, opts: { days?: string[]; freq?: string; home?: boolean; level?: 'Intermedio' | 'Vuelvo tras una pausa' } = {}) {
   await page.goto('/')
   await page.getByRole('button', { name: /Empezar \(2 minutos\)/ }).click()
+  if (opts.level) await page.getByRole('button', { name: new RegExp(opts.level) }).click()
   await page.getByRole('button', { name: 'Continuar' }).click()
   if (opts.days) {
     for (const d of ['lunes', 'miércoles', 'viernes']) await page.getByRole('button', { name: d, exact: true }).click()

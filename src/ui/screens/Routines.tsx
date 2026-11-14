@@ -9,11 +9,13 @@ import {
   createBlankRoutine, createRoutine, deleteRoutine, duplicateRoutine, getRoutineBundle, moveSession, plannedForWeek, saveRoutineVersion, setCurrentRoutine, setRoutineStatus, startFreeSession,
 } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
-import { dayDuration } from '../../domain/engine/analysis'
-import { buildFromTemplate, generateRoutine, prescriptionFor, type GenerateOptions, type RoutineDraft } from '../../domain/engine/generator'
-import { ENGINE_VERSION } from '../../domain/engine/params'
+import { analyzeRoutine, dayDuration, durationText } from '../../domain/engine/analysis'
+import { REGION_LABEL } from '../../domain/engine/contribution'
+import { buildFromTemplate, generateRoutine, prescriptionFor, priorityRegionsOf, targetRegionsFor, type FrequencyRow, type GenerateOptions, type GenerateResult, type RoutineDraft } from '../../domain/engine/generator'
+import { ENGINE_VERSION, PRIORITY_CEILING, weeklyBudget } from '../../domain/engine/params'
+import { isTimePrescription } from '../../domain/engine/prescription'
 import { TEMPLATES, TEMPLATE_BY_ID } from '../../domain/engine/templates'
-import type { Prescription, Routine, RoutineDay, RoutineVersion } from '../../domain/types'
+import type { Prescription, Region, Routine, RoutineDay, RoutineVersion, ScheduleOverride } from '../../domain/types'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, formatDateShort, newId, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -99,13 +101,40 @@ function RoutineCard({ r, current }: { r: Routine; current: boolean }) {
 
 // ───────────────────────── Propuesta del generador ─────────────────────────
 
+/** Tabla real de frecuencia (días con trabajo directo; aparte, días solo indirectos). */
+function FrequencyTable({ rows, compact = false }: { rows: FrequencyRow[]; compact?: boolean }) {
+  const shown = compact ? rows.filter((r) => r.target) : rows.filter((r) => r.target || r.direct > 0 || r.secondaryOnlyDays > 0)
+  return (
+    <table className="freq-table small">
+      <thead>
+        <tr><th scope="col">Grupo</th><th scope="col">Pedida</th><th scope="col" title="Días con trabajo directo">Días dir.</th><th scope="col" title="Días solo con trabajo indirecto (no se suman)">Solo ind.</th></tr>
+      </thead>
+      <tbody>
+        {shown.map((r) => (
+          <tr key={r.region} className={r.desired !== null && r.directDays < r.desired ? 'short' : ''}>
+            <th scope="row">{REGION_LABEL[r.region]}</th>
+            <td className="num">{r.desired ?? (r.target ? 'auto' : '—')}</td>
+            <td className="num">{r.directDays}</td>
+            <td className="num">{r.secondaryOnlyDays || '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+      <caption className="tiny muted" style={{ captionSide: 'bottom', textAlign: 'left', paddingTop: 4 }}>«Pedida» vacía: grupo sin objetivo de frecuencia (se muestra el resultado real). Las columnas no se suman.</caption>
+    </table>
+  )
+}
+
 export function GenerateScreen() {
   const { profile } = useApp()
   const [options, setOptions] = useState<GenerateOptions>({})
   const [youthOk, setYouthOk] = useState(false)
   const toast = useToast()
   const result = useMemo(() => (profile ? generateRoutine(profile, options) : null), [profile, options])
+  // Para «pedir más trabajo»: la propuesta sin las series extra, para comparar antes/después.
+  const baseResult = useMemo<GenerateResult | null>(() => (profile && options.extraSets ? generateRoutine(profile, { ...options, extraSets: undefined }) : null), [profile, options])
   if (!profile || !result) return null
+  const priorities = priorityRegionsOf(profile)
+  const targets = targetRegionsFor(profile)
   const accept = async (draft: RoutineDraft) => {
     await createRoutine(draft, { makeCurrent: true, changeNote: `Generada por el motor ${ENGINE_VERSION}` })
     toast('Rutina guardada como actual')
@@ -133,17 +162,19 @@ export function GenerateScreen() {
             <p>{result.message}</p>
             <div className="stack-sm">
               {result.alternatives.map((a) => (
-                <button
-                  key={a.label}
-                  className="choice"
-                  onClick={() => {
-                    if (a.profileAction === 'add_days') go('perfil')
-                    else if (a.options) setOptions(a.options)
-                  }}
-                >
-                  <strong>{a.label}</strong>
-                  <span>{a.explanation}</span>
-                </button>
+                <div key={a.label} className="stack-sm">
+                  <button
+                    className="choice"
+                    onClick={() => {
+                      if (a.profileAction) go('perfil')
+                      else if (a.options) setOptions(a.options)
+                    }}
+                  >
+                    <strong>{a.label}</strong>
+                    <span>{a.explanation}{a.maxMinutes ? ` Sesión más larga: ≈${Math.round(a.maxMinutes / 5) * 5} min.` : ''}</span>
+                  </button>
+                  {a.table && <FrequencyTable rows={a.table} compact />}
+                </div>
               ))}
             </div>
           </section>
@@ -158,13 +189,53 @@ export function GenerateScreen() {
             {result.draft.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
             {result.timeAdjustments.length > 0 && (
               <section className="card stack">
-                <h3>Ajustes para que quepa en {profile.minutesPerSession} min</h3>
+                <h3>Si no cabe en {profile.minutesPerSession} min</h3>
+                <p className="small muted">Primero se quitan accesorios opcionales; después, series; por último, otro reparto. Revisa el cambio antes de aceptarlo. Los descansos no se acortan.</p>
                 {result.timeAdjustments.map((t) => (
                   <button key={t.id} className="choice" onClick={() => setOptions(t.options)}>
-                    <strong>{t.label} → ≈{t.maxMinutesAfter} min</strong>
+                    <strong>{t.label} → sesión más larga ≈{Math.round(t.maxMinutesAfter / 5) * 5} min</strong>
                     <span>{t.explanation}</span>
                   </button>
                 ))}
+              </section>
+            )}
+            <section className="card stack-sm">
+              <h3>Frecuencia real de esta propuesta</h3>
+              <p className="small muted">Pedida: {profile.frequency === 'auto' && !options.frequencyOverride ? 'auto (resultado real abajo)' : `${options.frequencyOverride ?? profile.frequency}`}. Se aplica a: {targets.map((r) => REGION_LABEL[r].toLowerCase()).join(', ')}. Hombros y brazos se muestran con su resultado real.</p>
+              <FrequencyTable rows={result.frequency} />
+            </section>
+            {profile.level === 'returning' && !result.draft.youth && (
+              <label className="note info" style={{ alignItems: 'center' }}>
+                <Info aria-hidden />
+                <span className="grow small">Empezar con {4} sesiones de adaptación (mitad de series, RIR 3–4). Puedes quitarla o seguir con tu rutina anterior.</span>
+                <input type="checkbox" className="check" aria-label="Empezar con sesiones de adaptación" checked={!options.skipAdaptation && profile.returningAdaptation !== false} onChange={(e) => setOptions({ ...options, skipAdaptation: !e.target.checked })} />
+              </label>
+            )}
+            {!result.draft.youth && priorities.some((r) => weeklyBudget(r, profile.level, profile.goal, true)) && (
+              <section className="card stack-sm">
+                <h3>¿Quieres más trabajo para una prioridad?</h3>
+                <p className="small muted">Propone +1 serie semanal para ese grupo sin tocar el resto. Verás la comparación antes de aceptar; nunca se aplica solo.</p>
+                <div className="row wrap">
+                  {priorities.filter((r) => weeklyBudget(r, profile.level, profile.goal, true)).map((r) => {
+                    const cur = result.frequency.find((x) => x.region === r)?.direct ?? 0
+                    return (
+                      <button key={r} className="btn soft small" disabled={cur >= PRIORITY_CEILING} onClick={() => setOptions({ ...options, extraSets: { ...(options.extraSets ?? {}), [r]: (options.extraSets?.[r] ?? 0) + 1 } })}>
+                        +1 serie de {REGION_LABEL[r].toLowerCase()}
+                      </button>
+                    )
+                  })}
+                </div>
+                {baseResult?.status === 'ok' && (
+                  <div className="note info small">
+                    <span>
+                      Comparación con la propuesta inicial: {priorities.map((r) => {
+                        const a = baseResult.frequency.find((x) => x.region === r)?.direct ?? 0
+                        const b = result.frequency.find((x) => x.region === r)?.direct ?? 0
+                        return a !== b ? `${REGION_LABEL[r].toLowerCase()} ${a} → ${b} series directas` : null
+                      }).filter(Boolean).join(', ')}. Sesión más larga: ≈{maxMin(baseResult.draft.days)} → ≈{maxMin(result.draft.days)} min (estimación).
+                    </span>
+                  </div>
+                )}
               </section>
             )}
             {Object.keys(options).length > 0 && (
@@ -173,10 +244,10 @@ export function GenerateScreen() {
             <details className="more card flat">
               <summary><Info size={18} aria-hidden /> Por qué esta rutina</summary>
               <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{result.draft.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
-              <p className="tiny muted">Reglas deterministas del motor v{ENGINE_VERSION} (no es inteligencia artificial). Mismo perfil → misma propuesta. Fuentes en la sección Ayuda.</p>
+              <p className="tiny muted">Reglas deterministas del motor v{ENGINE_VERSION} (no es inteligencia artificial). Mismo perfil y misma versión de reglas → misma propuesta. Son valores iniciales de Forja, no cifras óptimas demostradas. <a href={href('aprender')}>Fuentes y artículos</a>.</p>
             </details>
             <RoutineDaysView version={result.draft} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
-            <VolumePanel version={result.draft} level={result.draft.youth ? 'beginner' : profile.level} goal={profile.goal} priority={profile.priorityMuscles} />
+            <VolumePanel version={result.draft} level={result.draft.youth ? 'beginner' : profile.level} goal={profile.goal} priority={priorities} targets={result.draft.plan.targetRegions} />
             {result.draft.youth && (
               <label className="note warn" style={{ alignItems: 'center' }}>
                 <ShieldCheck aria-hidden />
@@ -251,8 +322,8 @@ export function TemplatePreviewScreen({ templateId }: { templateId: string }) {
           <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{built.draft.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
         </details>
         <ScheduleEditor days={built.draft.days} schedule={sched} onChange={setSchedule} />
-        <RoutineDaysView version={{ days: built.draft.days, schedule: sched }} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
-        <VolumePanel version={{ days: built.draft.days, schedule: sched }} level={profile.level} goal={t.goal ?? profile.goal} priority={profile.priorityMuscles} />
+        <RoutineDaysView version={{ days: built.draft.days, schedule: sched, familiarization: built.draft.familiarization }} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
+        <VolumePanel version={{ days: built.draft.days, schedule: sched }} level={profile.level} goal={t.goal ?? profile.goal} priority={priorityRegionsOf(profile)} />
         <button
           className="btn primary big block"
           onClick={async () => {
@@ -311,6 +382,7 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
   const isCurrent = routine.id === currentRoutineId
   const wk = weekStart(toLocalDate())
   const planned = plannedForWeek(version, wk, overrides)
+  const weekCheck = weekWithMoves(version, planned, overrides)
   return (
     <>
       <Header title="Rutina" />
@@ -348,6 +420,13 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
                 <button className="btn ghost small" onClick={() => setMoving({ date: p.originalDate, dayId: p.dayId })}>Mover</button>
               </div>
             ))}
+            {weekCheck && (
+              <div className="note info small" role="status">
+                <span>
+                  Con las sesiones movidas esta semana: {weekCheck.freq}. {weekCheck.warnings.length ? weekCheck.warnings.join(' ') : 'Sin grupos repetidos en días seguidos.'} Duración por sesión sin cambios. Los registros ya hechos no se tocan.
+                </span>
+              </div>
+            )}
             {moving && (
               <div className="stack-sm">
                 <span className="small muted">Mover esta sesión a (solo esta semana; la rutina no cambia):</span>
@@ -367,11 +446,11 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
 
         {version.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
         <RoutineDaysView version={version} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
-        {profile && <VolumePanel version={version} level={profile.level} goal={profile.goal} priority={profile.priorityMuscles} />}
+        {profile && <VolumePanel version={version} level={profile.level} goal={profile.goal} priority={priorityRegionsOf(profile)} targets={version.plan?.targetRegions} />}
         <details className="more card flat">
           <summary><Info size={18} aria-hidden /> Por qué está así</summary>
           <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{version.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
-          {version.rampWeeks > 0 && <p className="small muted">Familiarización: las primeras {version.rampWeeks} semanas desde el {formatDateShort(routine.startedOn)}, cada sesión empieza con una serie menos y RIR 3–4.</p>}
+          {version.familiarization ? <p className="small muted">Familiarización: las primeras {version.familiarization.sessions} sesiones completadas (al menos el 70 % de las series) llevan la mitad de series y RIR 3–4.</p> : version.rampWeeks > 0 && <p className="small muted">Familiarización (motor 1): las primeras {version.rampWeeks} semanas desde el {formatDateShort(routine.startedOn)}, cada sesión empieza con una serie menos y RIR 3–4.</p>}
         </details>
         <details className="more card flat">
           <summary>Historial de versiones ({versions.length})</summary>
@@ -429,7 +508,7 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
               <input className="input grow" aria-label="Nombre del día" value={day.name} maxLength={60} onChange={(e) => updDay(day.id, (x) => ({ ...x, name: e.target.value }))} />
               <button className="icon-btn" aria-label="Eliminar día" onClick={async () => { if (await confirm({ title: `Eliminar «${day.name}»`, confirm: 'Eliminar', danger: true })) setDays(d.filter((x) => x.id !== day.id)) }}><Trash2 /></button>
             </div>
-            <span className="small muted">≈{dayDuration(day).minutes} min</span>
+            <span className="small muted">{durationText(day)}</span>
             {day.exercises.map((re, i) => {
               const ex = getExercise(re.exerciseId)
               const setP = (patch: Partial<Prescription>) => updDay(day.id, (x) => ({ ...x, exercises: x.exercises.map((e) => (e.uid === re.uid ? { ...e, prescription: { ...e.prescription, ...patch } } : e)) }))
@@ -453,8 +532,12 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
                         <Num label="Rep. máx." v={re.prescription.repMax} on={(v) => setP({ repMax: Math.max(re.prescription.repMin, v ?? re.prescription.repMin) })} />
                       </>
                     )}
-                    <Num label="RIR mín." v={re.prescription.rirMin} on={(v) => setP({ rirMin: v ?? 0 })} />
-                    <Num label="RIR máx." v={re.prescription.rirMax} on={(v) => setP({ rirMax: Math.max(re.prescription.rirMin, v ?? 0) })} />
+                    {!isTimePrescription(re.prescription, ex) && (
+                      <>
+                        <Num label="RIR mín." v={re.prescription.rirMin} on={(v) => setP({ rirMin: v ?? 0 })} />
+                        <Num label="RIR máx." v={re.prescription.rirMax} on={(v) => setP({ rirMax: Math.max(re.prescription.rirMin, v ?? 0) })} />
+                      </>
+                    )}
                     <Num label="Desc. (s)" v={re.prescription.restSec} on={(v) => setP({ restSec: Math.max(0, v ?? 90) })} />
                     <Num label="Aprox." v={re.prescription.warmupSets} on={(v) => setP({ warmupSets: Math.max(0, v ?? 0) })} />
                   </div>
@@ -482,7 +565,7 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
         ))}
         <button className="btn soft block" onClick={() => setDays([...d, { id: newId('d').slice(0, 10), name: `Día ${String.fromCharCode(65 + d.length)}`, focus: 'custom', exercises: [] }])}><Plus size={18} /> Añadir día</button>
         <ScheduleEditor days={d} schedule={sched} onChange={setSchedule} />
-        <VolumePanel version={{ days: d, schedule: sched }} level={profile.level} goal={profile.goal} priority={profile.priorityMuscles} />
+        <VolumePanel version={{ days: d, schedule: sched }} level={profile.level} goal={profile.goal} priority={priorityRegionsOf(profile)} targets={bundle.version.plan?.targetRegions} />
       </main>
       <div className="wk-foot">
         <div className="inner">
@@ -516,6 +599,21 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
       />
     </>
   )
+}
+
+function maxMin(days: RoutineDay[]): number {
+  return Math.round(Math.max(0, ...days.map((d) => dayDuration(d).minutes)) / 5) * 5
+}
+
+/** Semana actual con las sesiones movidas: frecuencia directa y días seguidos recalculados (sin tocar el historial). */
+function weekWithMoves(version: RoutineVersion, planned: { date: string; dayId: string; moved: boolean }[], overrides: ScheduleOverride[]): { freq: string; warnings: string[] } | null {
+  if (!planned.some((p) => p.moved) && !overrides.length) return null
+  if (!planned.some((p) => p.moved)) return null
+  const schedule = planned.map((p) => ({ weekday: weekdayMon0(p.date), dayId: p.dayId }))
+  const targets = version.plan?.targetRegions ?? (['chest', 'back', 'quads', 'hamstrings', 'glutes'] as Region[])
+  const a = analyzeRoutine({ days: version.days, schedule }, targets)
+  const freq = targets.map((r) => `${REGION_LABEL[r].toLowerCase()} ${a.volume.find((v) => v.region === r)?.directDays ?? 0} d`).join(', ')
+  return { freq: `frecuencia directa ${freq}`, warnings: a.recoveryWarnings }
 }
 
 function Num({ label, v, on }: { label: string; v: number; on: (v: number | null) => void }) {

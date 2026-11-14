@@ -1,7 +1,7 @@
 import { getExercise } from './catalog'
-import { MAJOR_MUSCLES } from './catalog/exercises'
 import { INDIRECT_WEIGHT } from './engine/analysis'
-import type { LoadType, MuscleId, Session, SetEntry } from './types'
+import { PANEL_REGIONS, contributionOf } from './engine/contribution'
+import type { LoadType, Region, Session, SetEntry } from './types'
 import { addDays, round2, weekStart } from './util'
 
 /**
@@ -139,26 +139,34 @@ export function exerciseTrend(sessions: Session[], exerciseId: string, allowE1rm
   return out.sort((a, b) => (a.date < b.date ? -1 : 1))
 }
 
-/** Series de trabajo completadas por músculo y semana (directas + 0,5 indirectas: estimación). */
-export function weeklyMuscleSets(sessions: Session[], weeks: number, today: string): { week: string; perMuscle: Record<string, number> }[] {
+/** Series de trabajo completadas por región y semana: directas y secundarias por separado (motor 2, política de familias). */
+export function weeklyRegionSets(sessions: Session[], weeks: number, today: string): { week: string; direct: Record<string, number>; secondary: Record<string, number> }[] {
   const start = addDays(weekStart(today), -7 * (weeks - 1))
-  const res = new Map<string, Record<string, number>>()
-  for (let i = 0; i < weeks; i++) res.set(addDays(start, i * 7), {})
+  const res = new Map<string, { direct: Record<string, number>; secondary: Record<string, number> }>()
+  for (let i = 0; i < weeks; i++) res.set(addDays(start, i * 7), { direct: {}, secondary: {} })
   for (const s of sessions) {
     if (s.status !== 'completed' && s.status !== 'partial') continue
-    const wk = weekStart(s.date)
-    const bucket = res.get(wk)
+    const bucket = res.get(weekStart(s.date))
     if (!bucket) continue
     for (const ex of s.exercises) {
-      const def = getExercise(ex.exerciseId)
-      if (!def) continue
       const n = ex.sets.filter((x) => x.kind === 'work' && x.completed).length
       if (!n) continue
-      for (const m of def.primary) bucket[m] = (bucket[m] ?? 0) + n
-      for (const m of def.secondary) if (!def.primary.includes(m)) bucket[m] = (bucket[m] ?? 0) + INDIRECT_WEIGHT * n
+      for (const c of contributionOf(ex.exerciseId).items) {
+        if (c.weight === 1) bucket.direct[c.region] = (bucket.direct[c.region] ?? 0) + n
+        else if (c.weight === 0.5) bucket.secondary[c.region] = (bucket.secondary[c.region] ?? 0) + n
+      }
     }
   }
-  return [...res.entries()].map(([week, perMuscle]) => ({ week, perMuscle }))
+  return [...res.entries()].map(([week, v]) => ({ week, ...v }))
+}
+
+/** Compatibilidad: directas + 0,5 × secundarias por región (estimación). */
+export function weeklyMuscleSets(sessions: Session[], weeks: number, today: string): { week: string; perMuscle: Record<string, number> }[] {
+  return weeklyRegionSets(sessions, weeks, today).map((w) => {
+    const perMuscle: Record<string, number> = {}
+    for (const r of new Set([...Object.keys(w.direct), ...Object.keys(w.secondary)])) perMuscle[r] = (w.direct[r] ?? 0) + INDIRECT_WEIGHT * (w.secondary[r] ?? 0)
+    return { week: w.week, perMuscle }
+  })
 }
 
 export function sessionsPerWeek(sessions: Session[], weeks: number, today: string): { week: string; count: number }[] {
@@ -173,27 +181,30 @@ export function sessionsPerWeek(sessions: Session[], weeks: number, today: strin
   return [...counts.entries()].map(([week, count]) => ({ week, count }))
 }
 
-export const TRACKED_MUSCLES: MuscleId[] = MAJOR_MUSCLES
+export const TRACKED_REGIONS: Region[] = PANEL_REGIONS
 
-// ───────────────────────── Último entrenamiento por músculo ─────────────────────────
+// ───────────────────────── Último entrenamiento por región ─────────────────────────
 
 /**
- * Fecha más reciente con al menos una serie de trabajo completada en la que el músculo es PRINCIPAL
- * (EVIDENCIA, regla R20). Es un dato, no una medida de recuperación.
+ * Fecha más reciente con al menos una serie de trabajo completada con trabajo DIRECTO de la región
+ * (EVIDENCIA, regla R20; política de familias del motor 2). Es un dato, no una medida de recuperación.
  */
-export function lastTrainedByMuscle(sessions: Session[], muscles: MuscleId[] = MAJOR_MUSCLES): Record<string, string | null> {
-  const out: Record<string, string | null> = Object.fromEntries(muscles.map((m) => [m, null]))
+export function lastTrainedByRegion(sessions: Session[], regions: Region[] = PANEL_REGIONS): Record<string, string | null> {
+  const out: Record<string, string | null> = Object.fromEntries(regions.map((m) => [m, null]))
   for (const s of sessions) {
     if (s.status !== 'completed' && s.status !== 'partial') continue
     for (const ex of s.exercises) {
       if (!ex.sets.some((x) => x.kind === 'work' && x.completed)) continue
-      const def = getExercise(ex.exerciseId)
-      if (!def) continue
-      for (const m of def.primary) if (m in out && (out[m] === null || (out[m] as string) < s.date)) out[m] = s.date
+      for (const c of contributionOf(ex.exerciseId).items) {
+        if (c.weight !== 1 || !(c.region in out)) continue
+        if (out[c.region] === null || (out[c.region] as string) < s.date) out[c.region] = s.date
+      }
     }
   }
   return out
 }
+/** Compatibilidad con la versión anterior. */
+export const lastTrainedByMuscle = lastTrainedByRegion
 
 // ───────────────────────── Récords de una serie / sesión ─────────────────────────
 

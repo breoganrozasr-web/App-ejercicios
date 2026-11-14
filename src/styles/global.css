@@ -372,3 +372,21 @@ details.more[open] > summary::after { transform: rotate(180deg); }
 .photo-thumb img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; background: var(--surface-2); }
 label.btn[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
 @media (max-width: 360px) { .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ── Motor 2 / v1.2: claves, tabla de frecuencia, enlaces ── */
+.keys { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 2px; font-weight: 600; }
+.keys li::marker { color: var(--accent-strong); font-weight: 800; }
+.freq-table { width: 100%; border-collapse: collapse; }
+.freq-table th, .freq-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+.freq-table td { text-align: center; }
+.freq-table thead th { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.freq-table tr.short th, .freq-table tr.short td { color: var(--warn); font-weight: 700; }
+.linklike { background: none; border: 0; padding: 0; color: var(--accent-strong); text-decoration: underline; cursor: pointer; font: inherit; min-height: 0; }
+.vol-row > span:first-child { min-width: 0; }
+.accent-border { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.vol-row { grid-template-columns: 112px 1fr 72px; }
+.vol-track { display: block; }
+.vol-fill { display: block; }
+.freq-table { table-layout: fixed; font-size: 0.85rem; }
+.freq-table th:first-child { width: 42%; }
+.freq-table th, .freq-table td { overflow-wrap: anywhere; }

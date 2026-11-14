@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BookOpen, ChartLine, House, ListChecks, RefreshCw } from 'lucide-react'
-import { createContext, useContext, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react'
 import { db } from './data/db'
 import { getActiveSession } from './data/repo'
 import type { Profile, Session } from './domain/types'
@@ -8,6 +8,7 @@ import { OverlayProvider } from './ui/components/overlay'
 import { useNeedRefresh } from './ui/pwa'
 import { go, href, useRoute } from './ui/router'
 import { ExerciseDetailScreen, ExercisesScreen, NewExerciseScreen } from './ui/screens/Exercises'
+import { LearnScreen } from './ui/screens/Learn'
 import { OnboardingScreen } from './ui/screens/Onboarding'
 import { ProgressScreen, SessionDetailScreen } from './ui/screens/Progress'
 import { GenerateScreen, RoutineDetailScreen, RoutineEditScreen, RoutinesScreen, TemplatePreviewScreen, TemplatesScreen } from './ui/screens/Routines'
@@ -36,6 +37,7 @@ export function App() {
   useEffect(() => {
     if (!route.path.length) go('hoy', true)
   }, [route.path.length])
+  useScrollRestoration(route.path.join('/'))
 
   let screen: ReactNode
   let tab: string | null = section ?? 'hoy'
@@ -74,6 +76,10 @@ export function App() {
         screen = <OnboardingScreen editing />
         tab = null
         break
+      case 'aprender':
+        screen = <LearnScreen section={route.path[1]} focus={route.query.get('f')} />
+        tab = null
+        break
       default:
         screen = <TodayScreen />
         tab = 'hoy'
@@ -91,6 +97,56 @@ export function App() {
       </OverlayProvider>
     </AppCtx.Provider>
   )
+}
+
+/**
+ * Posición de desplazamiento por entrada del historial (F7): al entrar en una pantalla nueva (p. ej. una ficha),
+ * arriba del todo; al volver atrás, la posición en la que estabas (p. ej. en la lista de ejercicios).
+ */
+function useScrollRestoration(key: string): void {
+  const positions = useRef(new Map<string, number>())
+  const currentEntry = useRef<string | null>(null)
+  useEffect(() => {
+    try {
+      history.scrollRestoration = 'manual'
+    } catch {
+      /* navegador antiguo */
+    }
+    const onScroll = () => {
+      if (currentEntry.current) positions.current.set(currentEntry.current, window.scrollY)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  useEffect(() => {
+    let entry = (history.state as { forjaKey?: string } | null)?.forjaKey
+    const saved = entry ? positions.current.get(entry) : undefined
+    if (!entry) {
+      entry = `k${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+      try {
+        history.replaceState({ ...(history.state ?? {}), forjaKey: entry }, '')
+      } catch {
+        /* sin history */
+      }
+    }
+    currentEntry.current = entry
+    if (saved === undefined) {
+      window.scrollTo(0, 0)
+      return
+    }
+    // Volver: restaurar cuando el contenido ya tenga altura suficiente (los datos cargan de forma asíncrona).
+    let tries = 0
+    let raf = 0
+    const tick = () => {
+      if (document.documentElement.scrollHeight - window.innerHeight >= saved - 2 || tries++ > 60) {
+        window.scrollTo(0, saved)
+        return
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [key])
 }
 
 function TabBar({ current }: { current: string }) {

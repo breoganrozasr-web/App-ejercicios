@@ -13,7 +13,7 @@ async function finishAll(page: Page) {
 
 test('Preparación del día, récord en directo, resumen con calorías y nota fija', async ({ page }) => {
   const errors = collectErrors(page)
-  await onboard(page)
+  await onboard(page, { level: 'Intermedio' })
   await acceptProposal(page)
 
   // Peso corporal para poder estimar calorías

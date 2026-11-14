@@ -1,15 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CalendarPlus, Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Play, Settings, Wand2 } from 'lucide-react'
+import { CalendarPlus, Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Play, Repeat, Settings, SkipForward, Wand2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
-import { getMeta, getRoutineBundle, localDateTime, nextRoutineDay, plannedForWeek, setMeta, startFreeSession, startSessionFromDay } from '../../data/repo'
+import { familiarizationStatus, getMeta, getRoutineBundle, localDateTime, nextRoutineDay, plannedForWeek, resumeSession, sessionWorkSummary, setMeta, setPartialAction, startFreeSession, startSessionFromDay } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
-import { MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
-import { lastTrainedByMuscle } from '../../domain/records'
-import { dayDuration } from '../../domain/engine/analysis'
+import { BUDGET_REGIONS, REGION_LABEL, directRegions } from '../../domain/engine/contribution'
+import { familiarizationPreview } from '../../domain/engine/generator'
+import { lastTrainedByRegion } from '../../domain/records'
+import { durationText } from '../../domain/engine/analysis'
 import type { ScheduleOverride, Session } from '../../domain/types'
-import type { MuscleId } from '../../domain/types'
+import type { Region } from '../../domain/types'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, daysBetween, formatDateLong, formatDateShort, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { Sheet, useToast } from '../components/overlay'
@@ -77,8 +78,12 @@ export function TodayScreen() {
       setBusy(false)
     }
   }
-  const last = lastTrainedByMuscle(done)
-  const nextMuscles = next ? [...new Set(next.exercises.flatMap((e) => getExercise(e.exerciseId)?.primary ?? []))].filter((m): m is MuscleId => MAJOR_MUSCLES.includes(m)) : []
+  const last = lastTrainedByRegion(done)
+  const nextRegions = next ? [...new Set(next.exercises.flatMap((e) => directRegions(e.exerciseId)))].filter((m): m is Region => BUDGET_REGIONS.includes(m) || m === 'glutes') : []
+  // Sesión parcial más reciente de la rutina actual sin decisión tomada: se muestra PRIMERO (5.4).
+  const lastFinished = done.filter((s) => !s.isDemo).sort((a, b) => b.startedAt - a.startedAt)[0]
+  const openPartial = !activeSession && lastFinished?.status === 'partial' && !lastFinished.partialAction ? lastFinished : null
+  const fam = bundle ? familiarizationStatus(bundle.version, sessions, bundle.routine.id) : null
 
   const showBackup = backupInfo && done.filter((s) => !s.isDemo).length > 0 && (backupInfo.since >= 4 || (backupInfo.last !== null && now - backupInfo.last > 14 * 86400000 && backupInfo.since > 0) || (backupInfo.last === null && backupInfo.since >= 2))
 
@@ -92,6 +97,19 @@ export function TodayScreen() {
         <a className="icon-btn" href={href('ajustes')} aria-label="Ajustes"><Settings /></a>
       </header>
       <main className="page">
+        {openPartial && (
+          <section className="card stack" aria-label="Sesión parcial">
+            <span className="small muted">Sesión parcial · {formatDateShort(openPartial.date)}</span>
+            <div className="hero-day" style={{ fontSize: '1.3rem' }}>{openPartial.title}</div>
+            <span className="small">Hiciste {sessionWorkSummary(openPartial).done} de {sessionWorkSummary(openPartial).planned} series de trabajo. Todo lo hecho está guardado. ¿Qué prefieres?</span>
+            <button className="btn primary block" disabled={busy} onClick={async () => { try { const s = await resumeSession(openPartial.id); go(`entreno/${s.id}`) } catch (e) { toast((e as Error).message) } }}><Play size={18} /> Retomar lo pendiente</button>
+            <div className="row">
+              <button className="btn soft small grow" onClick={() => void setPartialAction(openPartial.id, 'next')}><SkipForward size={16} /> Cerrar y pasar a la siguiente</button>
+              <button className="btn soft small grow" onClick={() => void setPartialAction(openPartial.id, 'repeat')}><Repeat size={16} /> Repetir esta sesión otro día</button>
+            </div>
+            <span className="tiny muted">Retomar continúa la misma sesión (no duplica series ni récords). Repetir propondrá este mismo día como siguiente sesión, que será nueva.</span>
+          </section>
+        )}
         {activeSession ? (
           <section className="card accent stack">
             <span className="small muted">Entrenamiento en curso</span>
@@ -107,16 +125,18 @@ export function TodayScreen() {
             <div className="hero-day">{next.name}</div>
             <a className="small" href={href(`rutinas/${bundle.routine.id}`)} style={{ alignSelf: 'flex-start' }}>{bundle.routine.name}</a>
             <span className="small muted">
-              {next.exercises.length} ejercicios · ≈{dayDuration(next).minutes} min
+              {next.exercises.length} ejercicios · {durationText(next)}
               {!todayPlanned && nextPlannedDate ? ` · planificada el ${WEEKDAY_NAME[weekdayMon0(nextPlannedDate)]}, pero puedes hacerla hoy` : ''}
             </span>
-            {inRamp && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
+            {fam ? (
+              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{bundle.version.familiarization?.reason === 'returning' ? 'Adaptación' : 'Familiarización'}: sesión {fam.index} de {fam.total} · mitad de series y RIR 3–4</span>
+            ) : !bundle.version.familiarization && inRamp && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
-              {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}</li>)}
+              {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}{fam ? ` · hoy ${familiarizationPreview(e).today.split(' · ')[0]}` : ''}</li>)}
               {next.exercises.length > 6 && <li>y {next.exercises.length - 6} más</li>}
             </ul>
-            {done.length > 0 && nextMuscles.length > 0 && (
-              <span className="tiny muted">Última vez: {nextMuscles.map((m) => `${MUSCLE_LABEL[m].toLowerCase()} ${last[m] ? agoShort(daysBetween(last[m] as string, today)) : '(nunca)'}`).join(' · ')}</span>
+            {done.length > 0 && nextRegions.length > 0 && (
+              <span className="tiny muted">Última vez: {nextRegions.map((m) => `${REGION_LABEL[m].toLowerCase()} ${last[m] ? agoShort(daysBetween(last[m] as string, today)) : '(nunca)'}`).join(' · ')}</span>
             )}
             <button className="btn primary big block" disabled={busy || next.exercises.length === 0} onClick={() => void start(next.id)}>
               <Play size={20} /> Empezar
@@ -206,7 +226,7 @@ export function TodayScreen() {
         <div className="list">
           {bundle?.version.days.map((d) => (
             <button key={d.id} className="list-item" onClick={() => { setPickDay(false); void start(d.id) }}>
-              <span className="grow"><strong>{d.name}</strong><br /><span className="small muted">{d.exercises.length} ejercicios · ≈{dayDuration(d).minutes} min</span></span>
+              <span className="grow"><strong>{d.name}</strong><br /><span className="small muted">{d.exercises.length} ejercicios · {durationText(d)}</span></span>
               <Play size={18} aria-hidden />
             </button>
           ))}

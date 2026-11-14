@@ -27,6 +27,8 @@ interface Def {
   demo?: Exercise['demoStatus']
   /** id del medio si no es Everkinetic (p. ej. 'wc-...' de Wikimedia Commons). */
   media?: string
+  keys?: string[]
+  learn?: Exercise['learn']
 }
 
 function ex(d: Def): Exercise {
@@ -51,6 +53,8 @@ function ex(d: Def): Exercise {
     easier: d.easier,
     harder: d.harder,
     variantNote: d.note,
+    ...(d.keys ? { keys: d.keys } : {}),
+    ...(d.learn ? { learn: d.learn } : {}),
   }
 }
 
@@ -92,6 +96,12 @@ export const EXERCISES: Exercise[] = [
     ins: ['Ajusta el asiento para que las asas queden a la altura de la mitad del pecho.', 'Espalda apoyada y omóplatos atrás.', 'Empuja hasta casi estirar los codos y vuelve despacio.'],
     err: ['Asiento demasiado alto o bajo.', 'Separar la espalda del respaldo al empujar.', 'Dejar que el peso choque al volver.'],
     note: 'La carga que marca cada máquina no es comparable con otras máquinas ni con barra.',
+    keys: ['Asiento a la altura de tu pecho', 'Empuja sin perder el apoyo', 'Vuelve con control'],
+    learn: {
+      detail: 'Regula asiento y agarres para iniciar en una posición cómoda. Apoya pies y espalda. Empuja y vuelve dentro de un recorrido que puedas controlar, sin rebotes ni forzar el hombro hacia atrás. Si necesitas despegarte del respaldo, revisa carga y ajuste. Anota la carga indicada y la máquina utilizada.',
+      alternatives: 'Press con mancuernas, barra o flexiones, con nueva carga de referencia.',
+      sources: ['T1', 'E8'],
+    },
   }),
   ex({
     id: 'press_banca_multipower', name: 'Press de banca en multipower', syn: ['press banca smith'],
@@ -104,7 +114,7 @@ export const EXERCISES: Exercise[] = [
   ex({
     id: 'flexiones', name: 'Flexiones', syn: ['push-ups', 'lagartijas'],
     p: ['chest'], s: ['triceps', 'shoulders', 'abs'], eq: [], pattern: 'push_h', cat: 'compound',
-    load: 'bodyweight', reps: 'light', harder: 'flexiones_pies_elevados', easier: 'press_pecho_maquina',
+    load: 'bodyweight', reps: 'light', harder: 'flexiones_pies_elevados', easier: 'flexiones_rodillas',
     ins: ['Manos algo más abiertas que los hombros, cuerpo en línea de cabeza a talones.', 'Baja el pecho hacia el suelo con los codos a unos 45° del tronco.', 'Empuja hasta estirar los brazos manteniendo el abdomen firme.'],
     err: ['Dejar caer la cadera.', 'Mover solo la cabeza en lugar del pecho.', 'Recorrido muy corto.'],
   }),
@@ -516,6 +526,12 @@ export const EXERCISES: Exercise[] = [
     load: 'machine', reps: 'light',
     ins: ['Siéntate con la rodilla alineada con el eje y el rodillo sobre los tobillos.', 'Flexiona las rodillas.', 'Vuelve despacio.'],
     err: ['Despegar la cadera del asiento.', 'Recorrido parcial.'],
+    keys: ['Ajusta el eje a la rodilla', 'Muslos y pelvis estables', 'Dobla y vuelve sin rebote'],
+    learn: {
+      detail: 'Sigue las regulaciones de la máquina, colocando el rodillo distal según su diseño y la sujeción del muslo firme sin dolor. Flexiona las rodillas y controla la vuelta. Si te desplazas en el asiento, revisa el ajuste o reduce carga.',
+      alternatives: 'Curl tumbado. Son opciones útiles; el estudio E11 favoreció la posición sentada en su contexto, sin convertirla en obligatoria.',
+      sources: ['T3', 'E11'],
+    },
   }),
   ex({
     id: 'peso_muerto_rumano', name: 'Peso muerto rumano con barra', syn: ['RDL'],
@@ -530,6 +546,12 @@ export const EXERCISES: Exercise[] = [
     load: 'dumbbell_each', reps: 'moderate',
     ins: ['Mancuernas delante de los muslos, rodillas ligeramente flexionadas.', 'Lleva la cadera atrás con la espalda neutra bajando las mancuernas cerca de las piernas.', 'Sube extendiendo la cadera.'],
     err: ['Redondear la espalda.', 'Bajar más de lo que permite tu movilidad.'],
+    keys: ['Cadera hacia atrás', 'Pesas cerca de las piernas', 'Baja hasta donde controles'],
+    learn: {
+      detail: 'Parte de pie, rodillas algo flexionadas y abdomen activo. Lleva la cadera atrás conservando una postura de tronco controlada. No persigas el suelo ni una altura fija: termina el descenso antes de perder la posición. Vuelve extendiendo la cadera sin inclinarte hacia atrás al acabar. Anota el peso de cada mancuerna como indique la ficha.',
+      alternatives: 'Alternativa de bisagra: rumano con barra; un curl femoral es complemento, no la misma función.',
+      sources: ['T2'],
+    },
   }),
   ex({
     id: 'zancadas_mancuernas', name: 'Zancadas con mancuernas', syn: ['lunges', 'estocadas'],
@@ -566,6 +588,12 @@ export const EXERCISES: Exercise[] = [
     ins: ['Túmbate boca arriba con las rodillas flexionadas y los pies apoyados.', 'Eleva la cadera apretando los glúteos hasta alinear rodillas, cadera y hombros.', 'Baja despacio.'],
     err: ['Arquear la zona lumbar en lugar de extender la cadera.', 'Pies demasiado lejos.'],
     note: 'Se puede añadir carga sobre la cadera; anótala como lastre.',
+    keys: ['Pies apoyados', 'Eleva la cadera', 'No busques altura arqueando la espalda'],
+    learn: {
+      detail: 'Tumbado boca arriba, flexiona rodillas y apoya ambos pies. Eleva la pelvis hasta una posición controlada de cadera y tronco, y baja suavemente. Si se pierde el control, reduce recorrido. Antes de progresar a una pierna o carga, domina la variante y registra el cambio.',
+      notes: ['No es equivalente a un remo ni a un curl femoral.'],
+      sources: ['T7'],
+    },
   }),
   ex({
     id: 'patada_gluteo_polea', name: 'Patada de glúteo en polea',
@@ -705,15 +733,15 @@ export const EXERCISES: Exercise[] = [
   }),
   ex({
     id: 'gemelos_peso_corporal', name: 'Elevación de talones de pie con apoyo', syn: ['gemelos sin peso', 'puntillas'],
-    p: ['calves'], s: [], eq: ['chair'], pattern: 'calves', cat: 'isolation',
+    p: ['calves'], s: [], eq: [], pattern: 'calves', cat: 'isolation',
     load: 'bodyweight', reps: 'light', media: 'wc-gemelos_peso_corporal',
-    ins: ['De pie, con las manos apoyadas en una encimera o respaldo estable.', 'Sube los talones lo más alto que puedas y mantén un instante.', 'Baja despacio. Para hacerlo más difícil, hazlo a una pierna o en el borde de un escalón.'],
+    ins: ['De pie, con los pies a la anchura de la cadera. Si necesitas equilibrio, apoya las manos en una encimera o respaldo estable.', 'Sube los talones lo más alto que puedas y mantén un instante.', 'Baja despacio. Para hacerlo más difícil, hazlo a una pierna o en el borde de un escalón.'],
     err: ['Rebotar.', 'Recorrido corto.'],
-    note: 'Movimiento pequeño: la animación tiene solo dos posiciones.',
+    note: 'Movimiento pequeño: la animación tiene solo dos posiciones y muestra apoyo en una silla, que es opcional (solo para el equilibrio).',
   }),
   ex({
     id: 'flexiones_pared', name: 'Flexiones en la pared', syn: ['wall push-up'],
-    p: ['chest'], s: ['triceps', 'shoulders'], eq: [], pattern: 'push_h', cat: 'compound',
+    p: ['chest'], s: ['triceps', 'shoulders'], eq: ['wall'], pattern: 'push_h', cat: 'compound',
     load: 'bodyweight', reps: 'light', media: 'wc-flexiones_pared', harder: 'flexiones_inclinadas',
     ins: ['De pie frente a una pared, con las manos apoyadas a la altura y anchura de los hombros.', 'Con el cuerpo recto, flexiona los codos y acerca el pecho a la pared.', 'Empuja hasta estirar los brazos. Cuanto más lejos los pies, más difícil.'],
     err: ['Doblar la cadera.', 'Codos muy abiertos.'],
@@ -726,6 +754,11 @@ export const EXERCISES: Exercise[] = [
     ins: ['Apoya antebrazos y puntas de los pies, codos bajo los hombros.', 'Mantén el cuerpo en línea recta apretando abdomen y glúteos.', 'Respira con normalidad.'],
     err: ['Dejar caer la cadera.', 'Elevar mucho los glúteos.', 'Aguantar la respiración.'],
     note: 'Ejercicio isométrico: la ilustración muestra la posición que se mantiene.',
+    keys: ['Codos bajo hombros', 'Tronco estable', 'Sigue respirando'],
+    learn: {
+      detail: 'Apoya antebrazos y pies, manteniendo una posición que puedas sostener sin hundir o elevar excesivamente la cadera. Termina antes de perder control; apoyar rodillas es una regresión. Registra segundos y esfuerzo percibido, no repeticiones en reserva.',
+      sources: ['T8'],
+    },
   }),
 
   // ───────────── SIN DEMOSTRACIÓN VERIFICADA (pendiente real, ver docs/ESTADO.md) ─────────────
@@ -733,24 +766,64 @@ export const EXERCISES: Exercise[] = [
     id: 'zancada_atras_peso_corporal', name: 'Zancada atrás con peso corporal', syn: ['reverse lunge'],
     p: ['quads', 'glutes'], s: ['hamstrings', 'adductors'], eq: [], pattern: 'lunge', cat: 'compound',
     load: 'bodyweight', uni: true, reps: 'light', demo: 'pendiente', easier: 'zancada_apoyo', harder: 'zancadas_mancuernas',
-    ins: ['De pie, da un paso largo hacia atrás.', 'Baja hasta que la rodilla de atrás se acerque al suelo, con el tronco erguido.', 'Vuelve empujando con la pierna delantera. Alterna o completa un lado.'],
-    err: ['Paso demasiado corto.', 'Rodilla delantera hacia dentro.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante exacta. Referencia aproximada: zancada al frente con apoyo.',
+    ins: ['Desde los pies separados cómodamente, lleva uno hacia atrás.', 'Flexiona ambas piernas dentro de un recorrido controlado, con separación lateral suficiente para equilibrarte.', 'Regresa sin impulso brusco. Completa un lado y cambia.'],
+    err: ['Caminar sobre una línea estrecha y perder el equilibrio.', 'Obligarte a tocar el suelo con la rodilla.', 'Volver con un impulso brusco.'],
+    note: 'Demostración local pendiente: no hay ilustración con licencia verificada de esta variante. Hay una demostración externa (requiere internet). No se usa una zancada hacia delante como sustituto.',
+    keys: ['Da el paso hacia atrás', 'Baja con equilibrio', 'Vuelve sin impulso brusco'],
+    learn: {
+      detail: 'Desde los pies separados cómodamente, lleva uno hacia atrás, flexiona ambas piernas dentro de un recorrido controlado y regresa. Deja separación lateral suficiente para equilibrarte, sin caminar sobre una línea estrecha. No obligues a tocar el suelo con la rodilla. Registra repeticiones por lado.',
+      sources: ['T9'],
+    },
   }),
   ex({
     id: 'flexiones_inclinadas', name: 'Flexiones inclinadas (manos elevadas)', syn: ['flexiones en banco', 'incline push-up'],
     p: ['chest'], s: ['triceps', 'shoulders', 'abs'], eq: ['chair'], pattern: 'push_h', cat: 'compound',
+    load: 'bodyweight', reps: 'light', demo: 'pendiente', easier: 'flexiones_pared', harder: 'flexiones_rodillas',
+    ins: ['Coloca las manos sobre una superficie elevada estable y confirmada (banco, encimera), algo más abiertas que los hombros.', 'Con el tronco estable, flexiona los codos con un recorrido cómodo y acerca el pecho al apoyo.', 'Empuja para volver sin dejar caer la cadera. Cuanto más alto el apoyo, más fácil.'],
+    err: ['Apoyo que se mueve o resbala.', 'Dejar caer la cadera.'],
+    note: 'Demostración local pendiente: no hay ilustración con licencia verificada de esta variante. Hay una demostración externa (requiere internet). No confundir con pies elevados: son variantes distintas.',
+    keys: ['Apoyo estable', 'Cuerpo alineado', 'Acerca el pecho al apoyo'],
+    learn: {
+      detail: 'Coloca las manos sobre pared o superficie elevada confirmada, mantén el tronco estable y flexiona los codos con un recorrido cómodo. Empuja para volver sin dejar caer la cadera. Una altura mayor suele facilitar; reducirla aumenta la dificultad. Registra altura o soporte para comparar.',
+      notes: ['No confundir con pies elevados: son variantes distintas.'],
+      sources: ['T5'],
+    },
+  }),
+  ex({
+    id: 'flexiones_rodillas', name: 'Flexiones con rodillas apoyadas', syn: ['flexiones de rodillas', 'bent-knee push-up'],
+    p: ['chest'], s: ['triceps', 'shoulders'], eq: [], pattern: 'push_h', cat: 'compound',
     load: 'bodyweight', reps: 'light', demo: 'pendiente', easier: 'flexiones_pared', harder: 'flexiones',
-    ins: ['Apoya las manos en un banco, mesa o encimera estable, algo más abiertas que los hombros.', 'Con el cuerpo recto, baja el pecho hacia el apoyo.', 'Empuja hasta estirar los brazos. Cuanto más alto el apoyo, más fácil.'],
-    err: ['Apoyo que se mueve.', 'Cadera hundida.'],
-    note: 'Demostración pendiente: no hay ilustración con licencia verificada de esta variante. Referencias aproximadas: flexiones en la pared (más fácil) y flexiones (más difícil).',
+    ins: ['Desde las rodillas, sitúa las manos para mantener un apoyo cómodo.', 'Baja el pecho conservando la alineación de tronco y muslos.', 'Empuja para volver, moviéndote como una unidad.'],
+    err: ['Doblarte por la cadera como sustituto del movimiento de brazos.', 'Perder la alineación de tronco y muslos.', 'Continuar con dolor.'],
+    note: 'Demostración local pendiente: no hay ilustración con licencia verificada de esta variante. Hay una ficha externa con imágenes (requiere internet).',
+    keys: ['Rodillas apoyadas', 'Tronco y muslos alineados', 'Baja y sube como una unidad'],
+    learn: {
+      detail: 'Desde las rodillas, sitúa las manos para mantener un apoyo cómodo. Baja el pecho conservando la alineación y empuja para volver. Evita doblarte por la cadera como sustituto del movimiento de brazos. Acorta recorrido si no puedes controlarlo y no continúes con dolor.',
+      sources: ['T6'],
+    },
+  }),
+  ex({
+    id: 'prensa_sentada', name: 'Prensa sentada (horizontal)', syn: ['seated leg press', 'prensa horizontal'],
+    p: ['quads', 'glutes'], s: ['adductors', 'hamstrings'], eq: ['machine'], pattern: 'squat', cat: 'compound',
+    load: 'machine', reps: 'moderate', demo: 'pendiente',
+    ins: ['Regula el asiento y coloca los pies de forma estable en la plataforma.', 'Flexiona hasta donde puedas conservar espalda y pelvis apoyadas.', 'Vuelve sin rebote ni hiperextensión forzada.'],
+    err: ['Despegar la pelvis o la espalda del asiento.', 'Rebotar al final del descenso.', 'Forzar la extensión de las rodillas.'],
+    note: 'Ficha de la prensa sentada horizontal. No es el manual de las prensas inclinadas de 45° (con seguros distintos): para esas, usa «Prensa de piernas». Demostración local pendiente; hay una ficha externa con imágenes (requiere internet).',
+    keys: ['Espalda y pelvis apoyadas', 'Pies firmes', 'Controla el recorrido'],
+    learn: {
+      detail: 'Regula el asiento y coloca los pies de forma estable. Flexiona hasta donde puedas conservar los apoyos y vuelve sin rebote ni hiperextensión forzada. No impongas una profundidad idéntica a todos. Anota los kilos de esa máquina, indicando si incluyen carro cuando proceda.',
+      alternatives: 'Sentadilla o zancada según material y aprendizaje; no trasladar los kilos.',
+      notes: ['No usar esta ficha como manual de todas las prensas inclinadas con seguros diferentes.'],
+      sources: ['T4'],
+    },
   }),
 ]
 
 /** Para ejercicios con demostración pendiente: ejercicio con demo que sirve de referencia APROXIMADA (otra variante). */
 export const APPROX_REFERENCE: Record<string, string> = {
-  zancada_atras_peso_corporal: 'zancada_apoyo',
+  // La zancada atrás NO usa una zancada al frente como sustituto (especificación 14/11/2026): tiene referencia externa.
   flexiones_inclinadas: 'flexiones_pared',
+  flexiones_rodillas: 'flexiones',
 }
 
 export const EXERCISE_BY_ID: Record<string, Exercise> = Object.fromEntries(EXERCISES.map((e) => [e.id, e]))
@@ -792,6 +865,7 @@ export const EQUIPMENT_LABEL: Record<EquipmentId, string> = {
   hyper_bench: 'Banco de hiperextensiones',
   chair: 'Silla o banco estable',
   step: 'Escalón o escalera',
+  wall: 'Pared despejada (flexiones en pared)',
 }
 
 export const PATTERN_LABEL: Record<Exercise['pattern'], string> = {

@@ -1,7 +1,8 @@
 import { getExercise, setCustomExercises } from '../domain/catalog'
 import type { RoutineDraft } from '../domain/engine/generator'
 import { ENGINE_VERSION } from '../domain/engine/params'
-import { applyRamp } from '../domain/engine/prescription'
+import { FAMILIARIZATION_MIN_COMPLETION } from '../domain/engine/params'
+import { applyFamiliarization, applyRamp } from '../domain/engine/prescription'
 import type {
   ChangeLogEntry, Exercise, Prescription, Profile, Routine, RoutineDay, RoutineExercise, RoutineVersion, ScheduleOverride, Session, SessionExercise, SetEntry, SetKind,
 } from '../domain/types'
@@ -49,7 +50,7 @@ export async function saveCustomExercise(e: Exercise): Promise<void> {
 // ───────────────────────── Rutinas ─────────────────────────
 
 export async function createRoutine(
-  draft: Pick<RoutineDraft, 'name' | 'templateId' | 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings' | 'engineVersion'> & { kind: Routine['kind'] },
+  draft: Pick<RoutineDraft, 'name' | 'templateId' | 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings' | 'engineVersion'> & Partial<Pick<RoutineDraft, 'familiarization' | 'plan'>> & { kind: Routine['kind'] },
   opts: { makeCurrent?: boolean; startedOn?: string; changeNote?: string; isDemo?: boolean } = {},
 ): Promise<Routine> {
   const now = Date.now()
@@ -79,6 +80,8 @@ export async function createRoutine(
     rationale: draft.rationale,
     warnings: draft.warnings,
     changeNote: opts.changeNote ?? 'Versión inicial',
+    ...(draft.familiarization !== undefined ? { familiarization: draft.familiarization } : {}),
+    ...(draft.plan ? { plan: draft.plan } : {}),
   }
   await db().transaction('rw', [db().routines, db().routineVersions, db().meta, db().changelog], async () => {
     await db().routines.add(routine)
@@ -191,8 +194,8 @@ export function plannedForWeek(version: RoutineVersion, weekMonday: string, over
   return out.sort((a, b) => (a.date < b.date ? -1 : 1))
 }
 
-/** Siguiente día de la rutina: rota tras el último día entrenado. Sin historial, empieza por el primer día
- *  (se puede empezar cualquier día de la semana; el orden de los días se mantiene). */
+/** Siguiente día de la rutina: rota tras el último día entrenado. Sin historial, empieza por el primer día.
+ *  Si la última sesión fue parcial y se eligió «repetir otro día», se propone el mismo día. */
 export function nextRoutineDay(version: RoutineVersion, sessions: Session[], routineId: string, today = toLocalDate()): RoutineDay | null {
   if (!version.days.length) return null
   const done = sessions
@@ -201,10 +204,28 @@ export function nextRoutineDay(version: RoutineVersion, sessions: Session[], rou
   const last = done[0]
   if (last) {
     const idx = version.days.findIndex((d) => d.id === last.dayId)
-    if (idx >= 0) return version.days[(idx + 1) % version.days.length]
+    if (idx >= 0) return last.status === 'partial' && last.partialAction === 'repeat' ? version.days[idx] : version.days[(idx + 1) % version.days.length]
   }
   void today
   return version.days[0]
+}
+
+/** Proporción de series de trabajo hechas en una sesión. */
+export function completionRatio(s: Session): number {
+  const { planned, done } = sessionWorkSummary(s)
+  return planned ? done / planned : 0
+}
+
+/**
+ * Familiarización (motor 2): cuenta las sesiones de la rutina terminadas con al menos el 70 % de las series de trabajo.
+ * Sin fecha de caducidad: las ausencias no la consumen. Devuelve la sesión que tocaría (1-based) o null si ya terminó.
+ */
+export function familiarizationStatus(version: Pick<RoutineVersion, 'familiarization'>, sessions: Session[], routineId: string, excludeSessionId?: string): { index: number; total: number; completed: number } | null {
+  const fam = version.familiarization
+  if (!fam) return null
+  const completed = sessions.filter((s) => s.routineId === routineId && s.id !== excludeSessionId && (s.status === 'completed' || s.status === 'partial') && !s.isDemo && completionRatio(s) >= FAMILIARIZATION_MIN_COMPLETION).length
+  if (completed >= fam.sessions) return null
+  return { index: completed + 1, total: fam.sessions, completed }
 }
 
 export async function moveSession(routineId: string, fromDate: string, dayId: string, toDate: string | null): Promise<void> {
@@ -284,7 +305,10 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
     if (!version) throw new Error('Versión no encontrada')
     const day = version.days.find((d) => d.id === dayId)
     if (!day) throw new Error('Día no encontrado')
-    const ramp = isRampWeek(routine, version, date)
+    // Motor 2: familiarización por sesiones completadas. Versiones antiguas: semanas (se conserva su regla).
+    const sessions = await db().sessions.where('routineId').equals(routineId).toArray()
+    const fam = version.familiarization ? familiarizationStatus(version, sessions, routineId) : null
+    const ramp = !version.familiarization && isRampWeek(routine, version, date)
     const now = Date.now()
     const session: Session = {
       id: newId('ses'),
@@ -298,9 +322,10 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
       endedAt: null,
       pausedAt: null,
       pausedTotalMs: 0,
-      exercises: day.exercises.map((re: RoutineExercise) => makeSessionExercise(re.exerciseId, ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset)),
+      exercises: day.exercises.map((re: RoutineExercise) => makeSessionExercise(re.exerciseId, fam ? applyFamiliarization(re.prescription, getExercise(re.exerciseId)) : ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset)),
       notes: '',
-      rampApplied: ramp,
+      rampApplied: ramp || !!fam,
+      familiarization: fam ? { index: fam.index, total: fam.total } : null,
       engineVersion: version.engineVersion,
       updatedAt: now,
       rest: null,
@@ -326,25 +351,122 @@ export async function startFreeSession(date = toLocalDate(), backdate?: Backdate
   })
 }
 
-// Escrituras serializadas: cada cambio se guarda en orden (sin carreras entre escrituras rápidas).
-let writeChain: Promise<unknown> = Promise.resolve()
+// ───────────────────────── Guardado de la sesión activa (F8) ─────────────────────────
+//
+// Problema reproducido (prueba e2e «F8»): con escrituras encadenadas a IndexedDB, una ráfaga de cambios (p. ej. escribir
+// una nota) seguida de una recarga inmediata perdía los últimos caracteres: la cadena iba por detrás y la recarga
+// cortaba escrituras pendientes. Solución:
+//  1) Diario síncrono en localStorage (write-ahead): cada cambio queda guardado antes de devolver el control.
+//  2) Escrituras a IndexedDB coalescentes: si hay una en curso, solo se escribe después la versión más reciente.
+//  3) Al arrancar, recoverJournal() aplica el diario si es más reciente que la base.
+
+const JOURNAL_PREFIX = 'forja-wal:'
+const pendingWrites = new Map<string, Session>()
+let inflight: Promise<void> | null = null
+
+function journalWrite(s: Session): void {
+  try {
+    localStorage.setItem(JOURNAL_PREFIX + s.id, JSON.stringify(s))
+  } catch {
+    /* sin almacenamiento local: queda IndexedDB */
+  }
+}
+function journalClear(id: string, upTo: number): void {
+  try {
+    const raw = localStorage.getItem(JOURNAL_PREFIX + id)
+    if (!raw) return
+    const j = JSON.parse(raw) as Session
+    if ((j.updatedAt ?? 0) <= upTo) localStorage.removeItem(JOURNAL_PREFIX + id)
+  } catch {
+    /* nada */
+  }
+}
+export function journalDrop(id: string): void {
+  try {
+    localStorage.removeItem(JOURNAL_PREFIX + id)
+  } catch {
+    /* nada */
+  }
+}
+
+async function drain(): Promise<void> {
+  let failed: unknown = null
+  while (pendingWrites.size) {
+    const [id, cur] = pendingWrites.entries().next().value as [string, Session]
+    pendingWrites.delete(id)
+    try {
+      await db().sessions.put(cur)
+      if (!pendingWrites.has(id)) journalClear(id, cur.updatedAt)
+    } catch (e) {
+      failed = e
+    }
+  }
+  inflight = null
+  if (failed) throw failed
+}
+
 export function saveSession(s: Session): Promise<void> {
-  const copy: Session = { ...s, updatedAt: Date.now() }
-  const p = writeChain.then(() => db().sessions.put(copy))
-  writeChain = p.catch(() => undefined)
-  return p.then(() => undefined)
+  const copy: Session = { ...s, updatedAt: Math.max(Date.now(), (s.updatedAt ?? 0) + 1) }
+  journalWrite(copy)
+  pendingWrites.set(copy.id, copy)
+  if (!inflight) inflight = drain()
+  return inflight
 }
 export function flushWrites(): Promise<unknown> {
-  return writeChain
+  return (inflight ?? Promise.resolve()).catch(() => undefined)
+}
+
+/** Aplica el diario local si es más reciente que lo guardado en IndexedDB (tras una recarga o cierre brusco). */
+export async function recoverJournal(): Promise<number> {
+  let n = 0
+  let keys: string[] = []
+  try {
+    keys = Object.keys(localStorage).filter((k) => k.startsWith(JOURNAL_PREFIX))
+  } catch {
+    return 0
+  }
+  for (const k of keys) {
+    try {
+      const j = JSON.parse(localStorage.getItem(k) ?? 'null') as Session | null
+      if (!j?.id) {
+        localStorage.removeItem(k)
+        continue
+      }
+      const cur = await db().sessions.get(j.id)
+      if (cur && (cur.updatedAt ?? 0) >= (j.updatedAt ?? 0)) {
+        localStorage.removeItem(k)
+        continue
+      }
+      // Solo se recuperan sesiones que siguen activas (no resucita sesiones terminadas o descartadas).
+      if (!cur && j.status !== 'active') {
+        localStorage.removeItem(k)
+        continue
+      }
+      if (cur && cur.status !== 'active') {
+        localStorage.removeItem(k)
+        continue
+      }
+      await db().sessions.put(j)
+      localStorage.removeItem(k)
+      n++
+    } catch {
+      /* diario dañado: se ignora */
+    }
+  }
+  return n
 }
 
 export async function finishSession(s: Session, status: 'completed' | 'partial'): Promise<Session> {
   await flushWrites()
+  journalDrop(s.id)
   const now = Date.now()
   const pausedExtra = s.pausedAt ? now - s.pausedAt : 0
+  // Al terminar (también tras retomar una parcial) se vuelve a ofrecer la elección si queda parcial.
+  const base: Session = { ...s }
+  delete base.partialAction
   const done: Session = s.backdated
-    ? { ...s, status, endedAt: s.startedAt + (s.manualDurationMin ?? 60) * 60000, pausedAt: null, pausedTotalMs: 0, rest: null, updatedAt: now }
-    : { ...s, status, endedAt: now, pausedAt: null, pausedTotalMs: s.pausedTotalMs + pausedExtra, rest: null, updatedAt: now }
+    ? { ...base, status, endedAt: s.startedAt + (s.manualDurationMin ?? 60) * 60000, pausedAt: null, pausedTotalMs: 0, rest: null, updatedAt: now }
+    : { ...base, status, endedAt: now, pausedAt: null, pausedTotalMs: s.pausedTotalMs + pausedExtra, rest: null, updatedAt: now }
   await db().transaction('rw', [db().sessions, db().meta], async () => {
     await db().sessions.put(done)
     const n = await getMeta<number>('sessionsSinceBackup', 0)
@@ -355,9 +477,37 @@ export async function finishSession(s: Session, status: 'completed' | 'partial')
 
 export async function deleteSession(id: string): Promise<Session | undefined> {
   await flushWrites()
+  journalDrop(id)
   const s = await db().sessions.get(id)
   await db().sessions.delete(id)
   return s
+}
+
+/** Retomar lo pendiente de una sesión parcial: la MISMA sesión vuelve a estar activa (no duplica series ni récords). */
+export async function resumeSession(id: string): Promise<Session> {
+  return db().transaction('rw', [db().sessions, db().changelog], async () => {
+    const active = await db().sessions.where('status').equals('active').first()
+    if (active && active.id !== id) throw new Error('Ya hay un entrenamiento en curso. Termínalo o descártalo antes de retomar otro.')
+    const s = await db().sessions.get(id)
+    if (!s) throw new Error('Sesión no encontrada')
+    if (s.status === 'active') return s
+    const now = Date.now()
+    const gap = s.endedAt ? now - s.endedAt : 0
+    const next: Session = { ...s, status: 'active', endedAt: null, pausedAt: null, pausedTotalMs: s.backdated ? s.pausedTotalMs : s.pausedTotalMs + gap, rest: null, partialAction: 'resume', updatedAt: now }
+    await db().sessions.put(next)
+    await log('session', id, 'Sesión parcial retomada')
+    return next
+  })
+}
+
+/** Decisión sobre una sesión parcial: pasar a la siguiente o repetir el mismo día otro día (crea una sesión nueva al empezar). */
+export async function setPartialAction(id: string, action: 'next' | 'repeat'): Promise<void> {
+  await db().transaction('rw', [db().sessions, db().changelog], async () => {
+    const s = await db().sessions.get(id)
+    if (!s) return
+    await db().sessions.put({ ...s, partialAction: action, updatedAt: Date.now() })
+    await log('session', id, action === 'repeat' ? 'Parcial: repetir esta sesión otro día' : 'Parcial: cerrar y pasar a la siguiente')
+  })
 }
 
 export async function restoreSession(s: Session): Promise<void> {

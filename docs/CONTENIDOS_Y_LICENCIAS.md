@@ -2,14 +2,42 @@
 
 Fecha de comprobación: **13 de noviembre de 2026**. Manifiestos de medios: [`media-manifest.json`](media-manifest.json) (Everkinetic, generado por `scripts/build_media.py`) y [`media-manifest-commons.json`](media-manifest-commons.json) (Wikimedia Commons, generado por `scripts/build_commons_media.py`); copias de los de `src/domain/catalog/`.
 
-## Resultado
+## Versión 1.2 (14/11/2026): demostraciones externas, etiquetas y fichas en dos niveles
+
+### Etiquetas honestas del tipo de demostración (F6)
+Cada demostración local lleva su etiqueta: **«Dos posiciones ilustradas · se alternan»** (82 ejercicios: dos dibujos alternados, no un movimiento continuo), **«N posiciones ilustradas»** (2), **«Animación continua»** (5 animaciones GIF de Wikimedia Commons), **«Imagen»** (1, plancha frontal). Los vídeos externos se etiquetan como vídeo y solo se cargan al tocar.
+
+### Demostraciones externas (requieren internet)
+Fuentes técnicas indicadas en la especificación del 14/11/2026, asociadas al **id exacto** del ejercicio (prueba A19 en `tests/unit/data.test.ts`). En la ficha y durante la sesión aparece **«Ver demostración · requiere internet»** con autor, enlace a la página oficial y, si la página enlaza un vídeo, el reproductor oficial de YouTube en modo de privacidad mejorada, cargado solo al tocar (sin reproducción automática). No se descargan, no se reexportan ni se guardan para uso sin conexión; no se generan vídeos con IA. Si no abre, se ofrece la página oficial y el texto, y se puede **anotar el enlace caído** (solo en el dispositivo; no se sustituye por otra variante).
+
+| Código | Ejercicio (id) | Fuente | Vídeo enlazado por la página |
+|---|---|---|---|
+| T1 | Press de pecho en máquina (`press_pecho_maquina`) | NASM · Chest Press Machine | youtube.com/watch?v=lRo9zZ7EwpM |
+| T2 | Peso muerto rumano con mancuernas (`peso_muerto_rumano_mancuernas`) | NASM · Dumbbell Romanian Deadlift | youtube.com/watch?v=V8Hdl1FiNt4 |
+| T3 | Curl femoral sentado (`curl_femoral_sentado`) | NASM · Seated Leg Curl | youtube.com/watch?v=_2Kd0d-JEUM |
+| T4 | Prensa sentada (`prensa_sentada`, nuevo) | ACE · Seated Leg Press | — (página con imágenes) |
+| T5 | Flexiones inclinadas, manos elevadas (`flexiones_inclinadas`) | NASM · Incline Push-up | youtube.com/watch?v=0JUrOH--Kdk |
+| T6 | Flexiones con rodillas apoyadas (`flexiones_rodillas`, nuevo) | ACE · Bent-knee Push-up | — (página con imágenes) |
+| T7 | Puente de glúteo en el suelo (`puente_gluteo`) | NASM · Floor Bridge | youtube.com/watch?v=Z3cY3d3BBo4 |
+| T8 | Plancha frontal (`plancha_frontal`) | ACE · Front Plank | — (página con imágenes) |
+| T9 | Zancada atrás con peso corporal (`zancada_atras_peso_corporal`) | University of Wyoming Campus Recreation · Exercise Video Library | youtube.com/watch?v=gd1a7i7-CMY («Backward Lunge») |
+
+**Comprobación de enlaces:** desde el entorno de desarrollo **no se pudo abrir ninguno** de estos dominios (nasm.org, acefitness.org, uwyo.edu y youtube.com están fuera de la red permitida de la sesión; también fallaron con la herramienta de lectura web). Los enlaces se incorporan tal como los da la especificación, cuyas fuentes oficiales vinculan esos vídeos a esos ejercicios. **No se ha hecho una revisión fotograma a fotograma ni se tiene permiso de redistribución**: por eso solo se enlazan.
+
+### Fichas: contenido enriquecido, estructura migrada y demostraciones pendientes
+- **Contenido enriquecido (9 fichas)** con la redacción de la especificación: tres claves para la sesión y «Aprender este ejercicio» (preparación y ejecución, variantes, avisos de alcance y fuente): press de pecho en máquina, rumano con mancuernas, curl femoral sentado, prensa sentada, flexiones con manos elevadas, flexiones con rodillas apoyadas, puente de glúteos en suelo, plancha frontal y zancada atrás sin carga.
+- **Estructura migrada (86 fichas):** el resto del catálogo usa la estructura común (cómo se hace, errores, variantes, músculos con su peso en el cómputo, qué carga anotar) con **su contenido anterior**. No se ha hecho una revisión técnica exhaustiva ni se han inventado detalles de variantes no cubiertas; la ficha lo indica («estructura común: contenido de Forja anterior, sin revisión técnica nueva»).
+- **Demostración local pendiente (4):** zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas apoyadas y prensa sentada. Las cuatro tienen **referencia externa** (T9, T5, T6, T4); **no están disponibles sin conexión**. La zancada atrás ya no usa una zancada al frente como «referencia aproximada».
+- La prensa existente («Prensa de piernas», ilustración de prensa inclinada de 45°) conserva su ficha; la de prensa sentada no se usa como manual de prensas inclinadas con seguros diferentes.
+
+## Resultado (v1.1, con la actualización de cifras de la 1.2)
 
 | | Cantidad | Tipo | Sin conexión |
 |---|---|---|---|
-| Ejercicios del catálogo | 93 | — | Fichas, instrucciones y errores: siempre |
+| Ejercicios del catálogo | 95 (93 anteriores + flexiones con rodillas apoyadas y prensa sentada) | — | Fichas, instrucciones y errores: siempre |
 | Con **animación de muñeco verificada** (Everkinetic) | **84** | Dibujo lineal en 2–4 posiciones, animado alternando fotogramas (pausa, paso a paso, velocidad 0,5×/1×/1,5×) | Sí, tras descargarlas (Ajustes → Demostraciones) o tras verlas una vez con conexión |
 | Con **animación verificada de Wikimedia Commons** | **7** | Silueta animada (sentadilla), dibujo fijo (plancha, isométrico) y animaciones a color de los CDC (sentadilla a silla, zancada con apoyo, subida a escalón, gemelos, flexiones en pared) | Igual que las anteriores |
-| Con **demostración pendiente** | **2** | Zancada atrás con peso corporal, flexiones inclinadas | Instrucciones escritas + referencia aproximada marcada como “otra variante” (zancada con apoyo / flexiones en pared). No se usan en ninguna plantilla. |
+| Con **demostración local pendiente** | **4** | Zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas apoyadas, prensa sentada | Instrucciones escritas + demostración EXTERNA (requiere internet). Se usan en «Casa sin material» y «Parque» con aviso. |
 | Vídeos reales incluidos | 0 | — | — |
 | Vídeos externos (YouTube) | Solo los que añada la persona en ejercicios propios | Reproductor oficial en modo privacidad mejorada | **No** (solo con conexión; no se descargan) |
 
@@ -40,7 +68,8 @@ Notas de variante aplicadas (visibles en la ficha): `chest-dips` se usa como **f
 | wger — https://github.com/wger-project/wger | wger project | Código AGPL; datos y medios con licencia **por entrada** (CC BY-SA 3/4, CC BY 4, CC0) | Sí según cada licencia | 🟡 Complemento futuro (wger.de bloqueado en esta sesión; no usado) |
 | AscendAPI / ExerciseDB — https://ascendapi.com, https://github.com/ExerciseDB/exercisedb-api | AscendAPI | Código AGPL, **medios propietarios**; términos prohíben almacenar/cachear (vía buscador) | No | ❌ No usar |
 | yuhonas/free-exercise-db y wrkout/exercises.json | yuhonas / wrkout | Repos “Unlicense”, pero el upstream declara que las fotos se tomaron de internet sin derechos | No | ❌ No usar las imágenes |
-| YouTube (incrustación) — https://developers.google.com/youtube/player_parameters, https://developers.google.com/youtube/terms/developer-policies | Google / autor del vídeo | Términos de YouTube | **No** (prohibido descargar o cachear) | 🟡 Solo para enlaces que añada la persona, a petición y online |
+| YouTube (incrustación) — https://developers.google.com/youtube/player_parameters, https://developers.google.com/youtube/terms/developer-policies | Google / autor del vídeo | Términos de YouTube | **No** (prohibido descargar o cachear) | 🟡 Enlaces que añada la persona y vídeos de las fuentes técnicas T1–T9: solo online, reproductor oficial al tocar |
+| NASM, ACE, University of Wyoming (fuentes técnicas T1–T9) | NASM · ACE · University of Wyoming Campus Recreation | Contenido de terceros, sin permiso de redistribución | **No** | 🟡 Solo enlace externo con autor (requiere internet); texto de las fichas original de Forja |
 | Wikimedia Commons — https://commons.wikimedia.org | Autor de cada fichero | Por fichero (comprobada con la API `extmetadata` de cada ficha) | Sí según ficha | ✅ **Usada para 7 ejercicios de peso corporal** (ver abajo) |
 | Darebee | Darebee | CC BY-NC-ND y prohíbe uso en apps | No | ❌ |
 
@@ -64,4 +93,6 @@ Las fotos de progreso son opcionales (desactivadas por defecto), se comprimen en
 
 ## Pendiente real
 
-Quedan 2 variantes sin demostración verificada: **zancada atrás con peso corporal** y **flexiones inclinadas**. Ya no se usan en ninguna plantilla (se sustituyeron por zancada con apoyo y flexiones en la pared, que sí tienen demostración). En Commons no se encontró un fichero con licencia clara que mostrara exactamente esas variantes; se mantienen con instrucciones escritas y referencia aproximada marcada como tal.
+- **Demostración local** de 4 variantes (zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas apoyadas, prensa sentada): no hay ilustración con licencia verificada. Tienen demostración externa (requiere internet). Para resolverlo: buscar ficheros con licencia clara de esas variantes exactas (p. ej. en Wikimedia Commons), verificar licencia y variante a mano y añadirlos con un script equivalente a `scripts/build_commons_media.py`.
+- **Comprobar los enlaces externos T1–T9** desde un entorno con acceso a nasm.org, acefitness.org, uwyo.edu y youtube.com (no fue posible en esta sesión). Si alguno no abre, la app ya ofrece la página oficial y permite anotar el enlace caído.
+- **Revisión técnica** de las 86 fichas con estructura migrada: no se ha hecho; conservan su contenido anterior.

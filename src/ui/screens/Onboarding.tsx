@@ -4,10 +4,12 @@ import { useApp } from '../../App'
 import { db } from '../../data/db'
 import { saveProfile } from '../../data/repo'
 import { GYM_EQUIPMENT, HOME_BASIC_EQUIPMENT, HOME_NONE_EQUIPMENT, OUTDOOR_EQUIPMENT, allExercises } from '../../domain/catalog'
-import { EQUIPMENT_LABEL, MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
+import { EQUIPMENT_LABEL } from '../../domain/catalog/exercises'
+import { DEFAULT_TARGET_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
+import { priorityRegionsOf, referenceCandidates, targetRegionsFor } from '../../domain/engine/generator'
 import { checkScope } from '../../domain/engine/scope'
 import { defaultProfile } from '../../domain/profile'
-import type { AgeBand, EquipmentId, FrequencyPref, Goal, Level, Location, MuscleId, Profile } from '../../domain/types'
+import type { AgeBand, EquipmentId, FrequencyPref, Goal, Level, Location, Profile, Region } from '../../domain/types'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, newId, toLocalDate } from '../../domain/util'
 import { Chip, Choice, DecimalInput, Segmented, Toggle } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -30,7 +32,9 @@ const AGES: { v: AgeBand; t: string }[] = [
 const LOCS: { v: Location; t: string }[] = [
   { v: 'gym', t: 'Gimnasio' }, { v: 'home', t: 'Casa' }, { v: 'outdoor', t: 'Exterior / parque' },
 ]
-const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'hyper_bench', 'chair', 'step']
+const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'hyper_bench', 'chair', 'step', 'wall']
+const PRIORITY_REGIONS: Region[] = ['chest', 'back', 'delt_front', 'delt_side', 'delt_rear', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core']
+const EXTRA_FREQ_REGIONS: Region[] = ['delt_front', 'delt_side', 'delt_rear', 'biceps', 'triceps', 'calves']
 
 function equipmentFor(locs: Location[], homeBasic: boolean): EquipmentId[] {
   const s = new Set<EquipmentId>()
@@ -188,15 +192,51 @@ export function OnboardingScreen({ editing = false }: { editing?: boolean }) {
             onChange={(v) => set('frequency', (v === 'auto' ? 'auto' : Number(v)) as FrequencyPref)}
             options={[{ value: 'auto', label: 'Auto' }, { value: '1', label: '1×' }, { value: '2', label: '2×' }, { value: '3', label: '3×' }]}
           />
-          <p className="small muted">Cuántas veces por semana se trabaja cada músculo. No es lo mismo que los días que entrenas. “Auto” elige según tus días y nivel.</p>
-          <span className="label">Músculos a priorizar</span>
+          <p className="small muted">Cuántos días por semana recibe trabajo directo cada grupo. No es lo mismo que los días que entrenas. «Auto» elige un reparto manejable y te muestra el resultado real.</p>
+          <p className="small"><strong>Se aplica a:</strong> {targetRegionsFor(p).map((r) => REGION_LABEL[r].toLowerCase()).join(', ')}. No se impone aislamiento de todos los músculos en todos los días: hombros y brazos se muestran con su resultado real.</p>
+          <details className="more">
+            <summary>Avanzado: incluir más grupos en el objetivo de frecuencia</summary>
+            <div className="row wrap" style={{ paddingTop: 8 }}>
+              {EXTRA_FREQ_REGIONS.map((r) => {
+                const on = (p.frequencyExtraRegions ?? []).includes(r)
+                return <Chip key={r} on={on} onClick={() => set('frequencyExtraRegions', on ? (p.frequencyExtraRegions ?? []).filter((x) => x !== r) : [...(p.frequencyExtraRegions ?? []), r])}>{REGION_LABEL[r]}</Chip>
+              })}
+            </div>
+            <p className="tiny muted">Por defecto: {DEFAULT_TARGET_REGIONS.map((r) => REGION_LABEL[r].toLowerCase()).join(', ')} y tus prioridades.</p>
+          </details>
+          <span className="label">Grupos a priorizar</span>
           <div className="row wrap">
-            {MAJOR_MUSCLES.map((m) => (
-              <Chip key={m} on={p.priorityMuscles.includes(m)} onClick={() => set('priorityMuscles', p.priorityMuscles.includes(m) ? p.priorityMuscles.filter((x) => x !== m) : [...p.priorityMuscles, m as MuscleId])}>
-                {MUSCLE_LABEL[m]}
-              </Chip>
-            ))}
+            {PRIORITY_REGIONS.map((r) => {
+              const cur = priorityRegionsOf(p)
+              const on = cur.includes(r)
+              return (
+                <Chip key={r} on={on} onClick={() => set('priorityRegions', on ? cur.filter((x) => x !== r) : [...cur, r])}>
+                  {REGION_LABEL[r]}
+                </Chip>
+              )
+            })}
           </div>
+          <p className="tiny muted">Una prioridad recibe el extremo alto del presupuesto inicial. Más trabajo se pide aparte, serie a serie, viendo antes la comparación.</p>
+          {(p.goal === 'strength' || p.goal === 'mixed') && (
+            <>
+              <span className="label">Ejercicios de referencia (hasta 3, en orden de prioridad)</span>
+              <div className="row wrap">
+                {referenceCandidates(p).map((e) => {
+                  const refs = p.strengthRefs ?? []
+                  const idx = refs.indexOf(e.id)
+                  return (
+                    <Chip key={e.id} on={idx >= 0} onClick={() => set('strengthRefs', idx >= 0 ? refs.filter((x) => x !== e.id) : refs.length >= 3 ? refs : [...refs, e.id])}>
+                      {idx >= 0 ? `${idx + 1}. ` : ''}{e.name}
+                    </Chip>
+                  )
+                })}
+              </div>
+              <p className="tiny muted">Se practican primero y se muestra cuántos días a la semana. Elige solo ejercicios que conozcas: ser intermedio no implica dominar cualquier levantamiento. Si no eliges, Forja propone unas provisionales.</p>
+            </>
+          )}
+          {p.level === 'returning' && (
+            <Toggle checked={p.returningAdaptation !== false} onChange={(v) => set('returningAdaptation', v)} label="Empezar con 4 sesiones de adaptación" desc="Mitad de series y RIR 3–4 en las 4 primeras sesiones completadas. Puedes quitarla." />
+          )}
           <details className="more">
             <summary>Ejercicios que no quiero hacer ({p.excludedExercises.length})</summary>
             <div className="row wrap" style={{ paddingTop: 8 }}>

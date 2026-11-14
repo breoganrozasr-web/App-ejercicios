@@ -1,10 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ExternalLink, Pause, Play, StepForward, TriangleAlert, WifiOff } from 'lucide-react'
+import { ExternalLink, Pause, Play, StepForward, TriangleAlert, Video, WifiOff } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../data/db'
+import { getMeta, setMeta } from '../../data/repo'
 import { getExercise } from '../../domain/catalog'
 import { APPROX_REFERENCE } from '../../domain/catalog/exercises'
+import { externalDemoFor, type ExternalDemo } from '../../domain/catalog/external'
 import { assetUrl, mediaForExercise, youTubeEmbedUrl, youTubeId } from '../../domain/catalog/media'
+import type { MediaItem } from '../../domain/types'
 import { useOnline, useReducedMotion } from '../hooks'
 
 const SPEEDS = [0.5, 1, 1.5] as const
@@ -15,11 +18,40 @@ const SPEEDS = [0.5, 1, 1.5] as const
  *  - Contenido propio: imagen guardada en el dispositivo o enlace (YouTube en modo privacidad, solo con conexión).
  *  - Si falta o falla: aviso claro y enlace alternativo; nunca una ficha vacía.
  */
+/** Tipo de demostración, sin exagerar: dos dibujos alternados no son un vídeo ni una animación continua (F6). */
+export function demoKindLabel(m: MediaItem): string {
+  const n = m.frames?.length ?? 0
+  if (n <= 1) return 'Imagen'
+  if (m.frameDurationsMs && n >= 5) return 'Animación continua'
+  if (n === 2) return 'Dos posiciones ilustradas'
+  return `${n} posiciones ilustradas`
+}
+
 export function DemoPlayer({ exerciseId, onOpenReference }: { exerciseId: string; onOpenReference?: (id: string) => void }) {
   const ex = getExercise(exerciseId)
   const media = mediaForExercise(exerciseId)
+  const external = externalDemoFor(exerciseId)
   const userMedia = useLiveQuery(() => db().userMedia.where('exerciseId').equals(exerciseId).toArray(), [exerciseId])
-  if (media?.frames?.length) return <FramesPlayer key={exerciseId} frames={media.frames.map(assetUrl)} durations={media.frameDurationsMs ?? null} colored={!!media.colored} name={ex?.name ?? ''} credit={media.attribution} sourceUrl={media.sourceUrl} licenseUrl={media.licenseUrl} />
+  if (media?.frames?.length) {
+    return (
+      <div className="stack-sm">
+        <span className="badge" style={{ alignSelf: 'flex-start' }}>{demoKindLabel(media)}{media.frames.length === 2 && !media.frameDurationsMs ? ' · se alternan' : ''}</span>
+        <FramesPlayer key={exerciseId} frames={media.frames.map(assetUrl)} durations={media.frameDurationsMs ?? null} colored={!!media.colored} name={ex?.name ?? ''} credit={media.attribution} sourceUrl={media.sourceUrl} licenseUrl={media.licenseUrl} />
+        {external && <ExternalDemoPanel demo={external} />}
+      </div>
+    )
+  }
+  if (external && !ex?.custom) {
+    return (
+      <div className="stack-sm">
+        <div className="note info" role="status">
+          <Video aria-hidden />
+          <span className="small">Demostración local pendiente: no hay una ilustración con licencia verificada de esta variante. Tienes una demostración externa (requiere internet) y las instrucciones escritas.</span>
+        </div>
+        <ExternalDemoPanel demo={external} open />
+      </div>
+    )
+  }
   const img = userMedia?.find((m) => m.kind === 'image')
   const link = userMedia?.find((m) => m.kind === 'link')
   if (img || link) {
@@ -173,6 +205,40 @@ function FramesPlayer({ frames, durations, colored, name, credit, sourceUrl, lic
       <div className="credit">
         {credit} <a href={sourceUrl} target="_blank" rel="noreferrer">Fuente</a> · <a href={licenseUrl} target="_blank" rel="noreferrer">Licencia</a>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Demostración EXTERNA de la fuente técnica (requiere internet). Botón mínimo: autor + enlace a la página oficial.
+ * Si hay vídeo, el reproductor oficial se carga solo tras tocar (sin reproducción automática ni descarga).
+ * Si no abre, se ofrece la página oficial y se puede anotar el enlace caído (solo en este dispositivo).
+ */
+export function ExternalDemoPanel({ demo, open = false }: { demo: ExternalDemo; open?: boolean }) {
+  const online = useOnline()
+  const [show, setShow] = useState(open)
+  const broken = useLiveQuery(() => getMeta<string[]>('brokenLinks', []), [], [] as string[])
+  const isBroken = broken.includes(demo.videoUrl ?? demo.pageUrl)
+  if (!show) {
+    return (
+      <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={() => setShow(true)}>
+        <Video size={16} /> Ver demostración · requiere internet
+      </button>
+    )
+  }
+  return (
+    <div className="card flat stack-sm" style={{ background: 'var(--surface-2)' }}>
+      <strong className="small">Demostración externa · requiere internet</strong>
+      <span className="small">{demo.author} — «{demo.pageTitle}» (fuente {demo.code}).</span>
+      {!online && <span className="small"><WifiOff size={14} aria-hidden /> Sin conexión: este contenido no se guarda para uso sin conexión.</span>}
+      {demo.videoUrl && online && !isBroken && <ExternalVideo url={demo.videoUrl} name={demo.pageTitle} />}
+      <a className="btn small soft" style={{ alignSelf: 'flex-start' }} href={demo.pageUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Abrir la página oficial</a>
+      {isBroken ? (
+        <span className="tiny muted">Anotaste que este enlace no funcionaba. Usa la página oficial y las instrucciones escritas. <button className="linklike" onClick={() => void setMeta('brokenLinks', broken.filter((x) => x !== (demo.videoUrl ?? demo.pageUrl)))}>Quitar aviso</button></span>
+      ) : (
+        <button className="linklike tiny" style={{ alignSelf: 'flex-start' }} onClick={() => void setMeta('brokenLinks', [...broken, demo.videoUrl ?? demo.pageUrl])}>¿No abre? Anotar enlace caído</button>
+      )}
+      <span className="tiny muted">Contenido de terceros: no se descarga ni se reexporta. La fuente oficial lo vincula a este ejercicio; no se ha revisado fotograma a fotograma.</span>
     </div>
   )
 }

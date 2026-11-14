@@ -14,7 +14,7 @@ import { loadCustomExercises, log, setMeta } from './repo'
 export const BACKUP_FORMAT = 'forja-backup'
 export const BACKUP_FORMAT_VERSION = 1
 export const MAX_BACKUP_BYTES = 100 * 1024 * 1024
-export const APP_VERSION = '1.1.0'
+export const APP_VERSION = '1.2.0'
 
 export interface BackupFile {
   format: string

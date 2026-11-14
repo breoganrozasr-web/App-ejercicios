@@ -76,6 +76,7 @@ export function SettingsScreen({ section }: { section?: string }) {
   const [theme, setTheme] = useState(() => { try { return localStorage.getItem('forja-theme') ?? 'auto' } catch { return 'auto' } })
   const [sound, setSound] = useState<SoundMode>(getSoundMode())
   const [awake, setAwake] = useState(getKeepAwake())
+  const [showKcal, setShowKcal] = useState(() => { try { return localStorage.getItem('forja-show-kcal') !== 'off' } catch { return true } })
   const [withPhotos, setWithPhotos] = useState(false)
   const photoCount = useLiveQuery(() => db().photos.count(), [], 0)
   const plates = useLiveQuery(() => getMeta<number[]>('plates', DEFAULT_PLATES), [], DEFAULT_PLATES)
@@ -173,7 +174,7 @@ export function SettingsScreen({ section }: { section?: string }) {
         </Section>
 
         <Section id="demos" title="Demostraciones sin conexión" icon={<WifiOff aria-hidden />}>
-          <p className="small">Las ilustraciones animadas (Everkinetic, licencia CC BY-SA) se pueden guardar en el dispositivo. Los vídeos externos de YouTube que añadas a ejercicios propios <strong>solo funcionan con conexión</strong> y no se descargan.</p>
+          <p className="small">Las ilustraciones (Everkinetic, CC BY-SA 4.0) y las animaciones de Wikimedia Commons, con permisos documentados, se pueden guardar en el dispositivo. Las <strong>demostraciones externas</strong> (NASM, ACE, University of Wyoming) y los vídeos de YouTube <strong>solo funcionan con conexión</strong>: no se descargan ni se guardan.</p>
           <p className="small">Descargado: <strong>{cache ? `${cache.files} archivos · ${formatBytes(cache.bytes)}` : '…'}</strong> {!online && <span className="badge warn">Sin conexión</span>}</p>
           {bundle && <button className="btn primary" disabled={!!dl || !online} onClick={() => void doDownload(routineExIds)}><Download size={18} /> Descargar las de mi rutina ({formatBytes(demoBytes(routineExIds))})</button>}
           <button className="btn soft" disabled={!!dl || !online} onClick={() => void doDownload(allIds)}><Download size={18} /> Descargar todo el catálogo ({formatBytes(demoBytes(allIds))})</button>
@@ -259,6 +260,15 @@ export function SettingsScreen({ section }: { section?: string }) {
           )}
         </Section>
 
+        <Section id="aprender" title="Aprender y fuentes">
+          <p className="small">Artículos breves (fuerza y músculo, volumen y frecuencia, RIR, descanso, progreso, recorrido y variantes, primera carga) y la biblioteca de fuentes con el alcance real de cada consulta. Funcionan sin conexión.</p>
+          <div className="row wrap">
+            <a className="btn soft small" href={href('aprender')}>Aprender</a>
+            <a className="btn soft small" href={href('aprender/fuentes')}>Biblioteca de fuentes</a>
+          </div>
+          <Toggle checked={showKcal} onChange={(v) => { setShowKcal(v); try { localStorage.setItem('forja-show-kcal', v ? 'on' : 'off') } catch { /* nada */ } }} label="Mostrar estimación de calorías en el resumen" desc="Rango muy aproximado, secundario. No se usa para recomendar dosis ni comida." />
+        </Section>
+
         <Section id="ayuda" title="Ayuda rápida">
           <dl className="small stack-sm" style={{ margin: 0 }}>
             <dt><strong>RIR (repeticiones en reserva)</strong></dt>
@@ -274,7 +284,7 @@ export function SettingsScreen({ section }: { section?: string }) {
             <dt><strong>Dolor</strong></dt>
             <dd style={{ margin: 0 }}>No entrenes con dolor. Marca la molestia en el ejercicio: la app dejará de sugerirte subir carga. Si persiste, consulta a un profesional sanitario.</dd>
           </dl>
-          <p className="tiny muted">Las reglas del motor son deterministas y explicables (no es inteligencia artificial). Se basan en posicionamientos y metaanálisis (ACSM 2026, Currier 2023, Pelland 2025, Robinson 2024, Singer 2024, Refalo 2024…) resumidos en docs/EVIDENCIA.md del proyecto. Son puntos de partida razonables, no fórmulas óptimas para todo el mundo ni promesas de resultados.</p>
+          <p className="tiny muted">Las reglas del motor son deterministas y explicables (no es inteligencia artificial). Se apoyan en las fuentes de la <a href={href('aprender/fuentes')}>biblioteca</a> (ACSM 2026, Currier 2023, Pelland 2025/2026, Robinson 2024, Refalo 2024, Singer 2024…). Son valores iniciales de Forja, no fórmulas óptimas para todo el mundo ni promesas de resultados.</p>
         </Section>
 
         <Section id="licencias" title="Créditos y licencias">
@@ -283,7 +293,7 @@ export function SettingsScreen({ section }: { section?: string }) {
           <p className="small">{ALL_MEDIA.length} ejercicios con demostración verificada a mano; {EXERCISES.filter((e) => e.demoStatus === 'pendiente').length} con demostración pendiente (indicado en cada ficha).</p>
           <p className="small">Vídeos de YouTube que añadas tú: se reproducen con el reproductor oficial en modo de privacidad mejorada (youtube-nocookie.com), bajo las condiciones de YouTube; no se descargan.</p>
           <p className="small">Código de la app: licencia MIT. Fuente tipográfica Bricolage Grotesque (SIL Open Font License). Iconos Lucide (ISC).</p>
-          <p className="tiny muted">App {APP_VERSION} · motor de rutinas {ENGINE_VERSION} · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>
+          <p className="tiny muted">App {APP_VERSION} · motor de rutinas {ENGINE_VERSION} · build <span data-testid="build-commit">{__BUILD_COMMIT__}</span> · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>
         </Section>
 
         <Section id="borrar" title="Borrar todos mis datos">

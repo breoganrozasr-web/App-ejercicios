@@ -1,6 +1,54 @@
 # Pruebas: comandos, resultados reales y comprobaciones pendientes
 
-Última ejecución: **13 de noviembre de 2026** (versión 1.1), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63).
+Última ejecución: **14 de noviembre de 2026** (app 1.2.0, motor 2.0.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+
+## Versión 1.2 (motor 2): resultados y criterios de aceptación A01–A24
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` | ✅ sin errores |
+| `npm test` | ✅ **100/100** (4 ficheros) |
+| `npm run build` | ✅ precache ≈934 KB; demos aparte, bajo demanda |
+| `npm run e2e` (Chromium: iPhone 13, iPhone SE, iPhone 15 Pro Max) | ✅ **28/28** |
+| WebKit 26.6 (`webkit-iphone-13`) | ✅ **21/22** (1 omitida: la prueba sin conexión, por la limitación de Playwright descrita abajo) |
+| Actualización **1.1 publicada → 1.2** con datos (builds reales en `/App-ejercicios/`, Chromium y WebKit) | ✅ con la 1.1: rutina del motor 1 (familiarización por semanas), sesión parcial «52,5 kg × 10». Tras «Actualizar ahora»: la parcial aparece primero en Hoy, «Retomar lo pendiente» reabre la MISMA sesión con 52,5 kg, «Cerrar y pasar a la siguiente» funciona, la rutina antigua conserva su regla de semanas y la propuesta del motor 2 se genera. Sin errores |
+
+**Reproducción previa de los fallos de la revisión (antes de corregir):** F1 (L/X/V principiante: la explicación decía «unas 3 veces» y hombros e isquios tenían 1 día directo), F2 (casa sin material: el día B solo tenía zancadas atrás), F3 (planchas con «RIR 2–3»), F4 (isquios 6,5 series con 3 directas), F5 (fuerza intermedia ofrecía alargar a ~81 min para completar dianas) se reprodujeron con un script sobre el motor 1. **F8 se reprodujo** con una prueba de navegador: tras marcar, escribir una nota con pulsaciones rápidas y recargar al instante, la nota perdía los últimos caracteres («agarre neutro» → «agarre neu»; peso, repeticiones, RIR y serie sí se conservaban). Causa: escrituras encadenadas a IndexedDB que la recarga cortaba. Corrección: diario síncrono en `localStorage` + escrituras coalescentes + recuperación al arrancar; además, marcar una serie usa los valores recién escritos y un doble toque no la marca y desmarca. F6 y F7 se comprobaron en la interfaz.
+
+| # | Criterio | Dónde se prueba | Estado |
+|---|---|---|---|
+| A01 | Mismo perfil, catálogo y reglas → mismo resultado | `engine.test.ts` (5 perfiles + 10 plantillas, JSON idéntico; versión del motor guardada en la propuesta) | ✅ |
+| A02 | La explicación de frecuencia coincide con días y series | `engine.test.ts` (recuento independiente día a día en 5 perfiles; nunca «unas N veces»; F1 corregido: 3 días directos en pecho, espalda, cuádriceps, isquios y glúteos) | ✅ |
+| A03 | 2 días + frecuencia 3 → conflicto; la alternativa se recalcula sin promesas falsas | `engine.test.ts` (tabla real en cada alternativa; sin material de tirón la alternativa no se llama «conseguida»; frecuencia no conseguible → conflicto con tabla), `flows.spec.ts` | ✅ |
+| A04 | Casa sin material, 3 días, 30 min → apartado 6 | `engine.test.ts` (ejercicios, series, rangos y descansos exactos de A/B/C; ≤30 min; ningún día solo de zancadas ni «cuerpo completo»; avisos de tirón e isquios; plantilla equivalente), `motor2.spec.ts` | ✅ |
+| A05 | Material desmarcado o excluido jamás aparece, tampoco en una regresión | `engine.test.ts` (4 objetivos sin máquinas + exclusiones; casa sin pared), `progression.test.ts` (la variante más difícil no se ofrece sin su material) y el menú de variantes filtra por material | ✅ |
+| A06 | Domingo/lunes cuenta como consecutivo | `engine.test.ts` | ✅ |
+| A07 | Familiarización visible antes de empezar; 1/7 series no cuenta | `engine.test.ts` (dosis de hoy y posterior), `data.test.ts` (parcial 1/7 no cuenta; ≥70 % sí; versiones antiguas por semanas), `flows.spec.ts` (se ve en la propuesta) | ✅ |
+| A08 | Fuerza prioriza referencias; no alarga para dianas de hipertrofia | `engine.test.ts` | ✅ |
+| A09 | Cada cifra de volumen muestra origen; la estabilización no suma | `engine.test.ts` (directas = suma de fuentes con peso 1; secundarias con 0,5; estabilizador 0) y panel con desglose por ejercicio | ✅ |
+| A10 | 2 series por pierna no duplican el total semanal, sí el tiempo | `engine.test.ts` | ✅ |
+| A11 | Plancha: segundos y esfuerzo opcional, sin RIR ni kg | `progression.test.ts`, `engine.test.ts`, `motor2.spec.ts` (columna «Esf.», sin botón RIR) | ✅ |
+| A12 | 12/12/12 con margen cumple; 12/10/8 no; RIR bajo no; RIR ausente = incertidumbre | `progression.test.ts` | ✅ |
+| A13 | Ejercicio incompleto no sube; completo dentro de una parcial sí se evalúa | `progression.test.ts` | ✅ |
+| A14 | Incrementos reales, asistencia, bandas y máquina respetan su significado | `progression.test.ts` (rejilla, 10 % de revisión, asistencia, banda sin kg; historial por ejercicio) | ✅ |
+| A15 | Retomar parcial no duplica; repetir genera otra sesión | `data.test.ts`, `motor2.spec.ts` (desde Hoy) | ✅ |
+| A16 | 20,5 + repeticiones/RIR + marcar + nota + recarga rápida conserva datos | `motor2.spec.ts` (3 rondas con recarga inmediata), `data.test.ts` (diario) | ✅ (fallo F8 reproducido y corregido) |
+| A17 | Copias anteriores restauran; editar/migrar no cambia historial | `features.test.ts` (copias de esquema 1 y 2), `data.test.ts`, prueba de actualización 1.1 → 1.2 | ✅ |
+| A18 | Fichas abren arriba y vuelven a la lista | `motor2.spec.ts` (posición de la lista recuperada al volver) | ✅ |
+| A19 | Cada enlace de demostración corresponde al id exacto; online/offline y créditos honestos | `data.test.ts` (T1–T9 ↔ ids y vídeos), `motor2.spec.ts` | ✅ en la app · ⚠️ los enlaces no se pudieron abrir desde aquí (ver abajo) |
+| A20 | Catálogo mantiene sus IDs | `data.test.ts` (93 anteriores intactos + 2 nuevos = 95) | ✅ |
+| A21 | Salud y menores conservan restricciones; menores sin tabla adulta | `engine.test.ts` | ✅ |
+| A22 | Chromium móvil y WebKit | arriba (no es un iPhone real) | ✅ |
+| A23 | Build en `/App-ejercicios/`, rutas hash, offline y actualización controlada | prueba de actualización con builds reales; `offline-media.spec.ts` (Chromium) | ✅ |
+| A24 | URL pública verificada tras el despliegue, con versión y commit | ver «Web publicada, versión 1.2» | ver abajo |
+
+**Enlaces externos (T1–T9):** desde esta sesión de desarrollo no se pudo abrir nasm.org, acefitness.org, uwyo.edu ni youtube.com (red no permitida; también con la herramienta de lectura web). Los enlaces se usan tal como los da la especificación y la app ofrece la página oficial y «anotar enlace caído» si alguno no abre.
+
+---
+
+# Registro anterior (versión 1.1)
+
+Ejecución del **13 de noviembre de 2026** (versión 1.1).
 
 ## Comandos
 

@@ -5,7 +5,10 @@ test('Caso 1/8 · perfil → rutina → entrenar con coma decimal → recargar �
   const errors = collectErrors(page)
   await onboard(page)
   await expect(page.getByText('Propuesta (aún no guardada)')).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Series semanales por músculo' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Series semanales por grupo' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Frecuencia real de esta propuesta' })).toBeVisible()
+  // A07: la familiarización se ve ANTES de empezar, con la dosis de hoy y la posterior
+  await expect(page.getByText(/Hoy \(familiarización\):/).first()).toBeVisible()
   await acceptProposal(page)
   // Doble toque en Empezar: una sola sesión
   const start = page.getByRole('button', { name: /^Empezar$/ })
@@ -58,13 +61,15 @@ test('Caso 3 · dos días con frecuencia 3: conflicto explicado en la interfaz',
   await onboard(page, { days: ['lunes', 'jueves'], freq: '3×' })
   await expect(page.getByText('Hay que decidir algo')).toBeVisible()
   await expect(page.getByText(/solo hay 2 sesiones/)).toBeVisible()
-  await page.getByRole('button', { name: /Frecuencia 2 con 2 sesiones/ }).click()
+  await expect(page.getByText(/imposible por definición/)).toBeVisible()
+  await page.getByRole('button', { name: /Frecuencia 2/ }).click()
   await expect(page.getByText('Propuesta (aún no guardada)')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Frecuencia real de esta propuesta' })).toBeVisible()
 })
 
 test('Caso 2 · casa sin material: sin máquinas y con la carencia de tirón visible', async ({ page }) => {
   await onboard(page, { home: true })
-  await expect(page.getByText(/no hay ningún ejercicio de tirón con carga/)).toBeVisible()
+  await expect(page.getByText(/Falta tirón de espalda con resistencia progresable/)).toBeVisible()
   await expect(page.getByText(/máquina|polea/i)).toHaveCount(0)
 })
 

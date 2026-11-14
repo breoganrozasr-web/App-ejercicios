@@ -2,12 +2,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
 
 // BASE: '/' en local; para GitHub Pages se pasa BASE=/nombre-repo/ en el build.
 const base = process.env.BASE ?? '/'
 
+// Commit de la build (para comprobar que la web publicada es la versión correcta).
+function buildCommit(): string {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() || 'local'
+  } catch {
+    return 'local'
+  }
+}
+
 export default defineConfig({
   base,
+  define: { __BUILD_COMMIT__: JSON.stringify(buildCommit()) },
   build: {
     rollupOptions: {
       output: {

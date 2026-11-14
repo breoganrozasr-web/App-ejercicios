@@ -2,13 +2,14 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { BackupError, exportBackup, parseBackupText, previewBackup, restoreBackup } from '../../src/data/backup'
-import { ForjaDB, useDatabase } from '../../src/data/db'
+import { ForjaDB, db, useDatabase } from '../../src/data/db'
 import { clearDemo, loadDemo } from '../../src/data/demo'
 import {
-  createRoutine, finishSession, getActiveSession, getRoutineBundle, makeSessionExercise, nextRoutineDay, saveRoutineVersion, saveSession, setRoutineStatus, startSessionFromDay,
+  createRoutine, deleteSession, familiarizationStatus, finishSession, flushWrites, getActiveSession, getRoutineBundle, makeSessionExercise, nextRoutineDay, recoverJournal, resumeSession, saveRoutineVersion, saveSession, setPartialAction, setRoutineStatus, startSessionFromDay,
 } from '../../src/data/repo'
+import { EXTERNAL_DEMOS, hasExternalDemo } from '../../src/domain/catalog/external'
 import { getExercise } from '../../src/domain/catalog'
-import { EXERCISES } from '../../src/domain/catalog/exercises'
+import { APPROX_REFERENCE, EXERCISES } from '../../src/domain/catalog/exercises'
 import { ALL_MEDIA, MEDIA_MANIFEST } from '../../src/domain/catalog/media'
 import { buildFromTemplate, generateRoutine } from '../../src/domain/engine/generator'
 import { historyFor, suggestNext } from '../../src/domain/engine/progression'
@@ -60,13 +61,103 @@ describe('Caso 8 · empezar, registrar, cerrar/recargar y reanudar', () => {
     expect(done.status).toBe('partial')
     expect(await getActiveSession()).toBeUndefined()
   })
-  it('la semana de familiarización quita una serie al crear la sesión', async () => {
+  it('A07 · familiarización por sesiones: mitad de series y RIR 3–4; 1/7 series no cuenta para salir de ella', async () => {
+    const routine = await makeRoutine()
+    const b = (await getRoutineBundle(routine.id))!
+    expect(b.version.familiarization).toEqual({ sessions: 4, reason: 'beginner' })
+    const day = b.version.days[0]
+    const s = await startSessionFromDay(routine.id, day.id, '2026-11-03')
+    expect(s.familiarization).toEqual({ index: 1, total: 4 })
+    const base = day.exercises[0].prescription
+    expect(s.exercises[0].sets.filter((x) => x.kind === 'work')).toHaveLength(Math.max(1, Math.ceil(base.sets / 2)))
+    expect(s.exercises[0].prescription!.rirMin).toBe(3)
+    // Parcial con 1 de 7 series: NO cuenta
+    const one = structuredClone(s)
+    one.exercises[0].sets.find((x) => x.kind === 'work')!.completed = true
+    await finishSession(one, 'partial')
+    const s2 = await startSessionFromDay(routine.id, day.id, '2026-11-05')
+    expect(s2.familiarization).toEqual({ index: 1, total: 4 })
+    // Una sesión con ≥70 % de las series sí cuenta (sin fecha de caducidad)
+    const full = structuredClone(s2)
+    for (const e of full.exercises) for (const x of e.sets) if (x.kind === 'work') x.completed = true
+    await finishSession(full, 'completed')
+    const all = await db().sessions.toArray()
+    expect(familiarizationStatus(b.version, all, routine.id)).toMatchObject({ index: 2, completed: 1 })
+  })
+  it('las versiones antiguas (motor 1, por semanas) conservan su regla', async () => {
+    const r = generateRoutine({ ...defaultProfile(0), days: [0, 2, 4] })
+    if (r.status !== 'ok') throw new Error()
+    const legacy = await createRoutine({ ...r.draft, familiarization: undefined, rampWeeks: 2 }, { startedOn: '2026-11-02' })
+    const b = (await getRoutineBundle(legacy.id))!
+    expect(b.version.familiarization).toBeUndefined()
+    const s = await startSessionFromDay(legacy.id, b.version.days[0].id, '2026-11-03')
+    expect(s.rampApplied).toBe(true)
+    expect(s.familiarization).toBeNull()
+    expect(s.exercises[0].sets.filter((x) => x.kind === 'work')).toHaveLength(Math.max(1, b.version.days[0].exercises[0].prescription.sets - 1))
+  })
+})
+
+describe('A15 · sesión parcial: retomar no duplica; repetir crea una nueva', () => {
+  it('retomar reabre la MISMA sesión; «repetir» propone el mismo día y la siguiente es nueva', async () => {
     const routine = await makeRoutine()
     const b = (await getRoutineBundle(routine.id))!
     const s = await startSessionFromDay(routine.id, b.version.days[0].id, '2026-11-03')
-    expect(s.rampApplied).toBe(true)
-    const planned = b.version.days[0].exercises[0].prescription.sets
-    expect(s.exercises[0].sets.filter((x) => x.kind === 'work')).toHaveLength(Math.max(1, planned - 1))
+    const mod = structuredClone(s)
+    mod.exercises[0].sets.find((x) => x.kind === 'work')!.completed = true
+    const partial = await finishSession(mod, 'partial')
+    const resumed = await resumeSession(partial.id)
+    expect(resumed.id).toBe(partial.id)
+    expect(resumed.status).toBe('active')
+    expect(await db().sessions.count()).toBe(1)
+    expect(resumed.exercises[0].sets.filter((x) => x.completed)).toHaveLength(1)
+    const again = await finishSession(resumed, 'partial')
+    await setPartialAction(again.id, 'repeat')
+    const all = await db().sessions.toArray()
+    expect(nextRoutineDay(b.version, all, routine.id)?.id).toBe(b.version.days[0].id)
+    const fresh = await startSessionFromDay(routine.id, b.version.days[0].id, '2026-11-05')
+    expect(fresh.id).not.toBe(partial.id)
+    expect(await db().sessions.count()).toBe(2)
+    // «Cerrar y pasar a la siguiente»
+    await setPartialAction(again.id, 'next')
+    await db().sessions.delete(fresh.id)
+    expect(nextRoutineDay(b.version, await db().sessions.toArray(), routine.id)?.id).toBe(b.version.days[1].id)
+  })
+  it('no se puede retomar una parcial si hay otro entrenamiento en curso', async () => {
+    const routine = await makeRoutine()
+    const b = (await getRoutineBundle(routine.id))!
+    const s = await startSessionFromDay(routine.id, b.version.days[0].id, '2026-11-03')
+    const partial = await finishSession(s, 'partial')
+    await startSessionFromDay(routine.id, b.version.days[1].id, '2026-11-04')
+    await expect(resumeSession(partial.id)).rejects.toThrow(/en curso/)
+  })
+})
+
+describe('F8 · guardado: diario síncrono y escrituras coalescentes', () => {
+  it('lo último escrito sobrevive aunque la escritura a IndexedDB no haya terminado (recarga brusca)', async () => {
+    const routine = await makeRoutine()
+    const b = (await getRoutineBundle(routine.id))!
+    const s = await startSessionFromDay(routine.id, b.version.days[0].id, '2026-11-03')
+    let cur = s
+    for (const ch of 'agarre neutro') {
+      cur = { ...cur, exercises: cur.exercises.map((e, i) => (i === 0 ? { ...e, notes: e.notes + ch } : e)) }
+      void saveSession(cur)
+    }
+    // Simula la recarga: la base aún puede tener una versión antigua; el diario local tiene la última.
+    await db().sessions.put({ ...s, updatedAt: s.updatedAt })
+    expect(localStorage.getItem(`forja-wal:${s.id}`)).toBeTruthy()
+    await recoverJournal()
+    await flushWrites()
+    const back = await db().sessions.get(s.id)
+    expect(back!.exercises[0].notes).toBe('agarre neutro')
+  })
+  it('el diario no resucita una sesión descartada o terminada', async () => {
+    const routine = await makeRoutine()
+    const b = (await getRoutineBundle(routine.id))!
+    const s = await startSessionFromDay(routine.id, b.version.days[0].id, '2026-11-03')
+    void saveSession({ ...s, notes: 'x' })
+    await deleteSession(s.id)
+    await recoverJournal()
+    expect(await db().sessions.get(s.id)).toBeUndefined()
   })
 })
 
@@ -210,15 +301,39 @@ describe('Caso 13 · rutinas incluidas con medios de la variante y atribuciones'
     }
     for (const m of ALL_MEDIA) expect(getExercise(m.exerciseId)?.demoStatus, m.exerciseId).toBe('verificada')
   })
-  it('las rutinas incluidas solo usan ejercicios con demostración verificada', () => {
+  it('las rutinas incluidas usan ejercicios con demostración local verificada o, si está pendiente, con referencia externa declarada', () => {
     for (const t of TEMPLATES) {
       for (const level of ['beginner', 'intermediate'] as const) {
         const { draft } = buildFromTemplate(t, { ...defaultProfile(0), level })
         for (const d of draft.days) for (const e of d.exercises) {
-          expect(getExercise(e.exerciseId)!.demoStatus, `${t.id}: ${e.exerciseId}`).toBe('verificada')
+          const ex = getExercise(e.exerciseId)!
+          expect(ex.demoStatus === 'verificada' || hasExternalDemo(ex.id), `${t.id}: ${e.exerciseId}`).toBe(true)
+          if (ex.demoStatus !== 'verificada') expect(draft.warnings.join(' ').includes(ex.name), `${t.id}: aviso de ${ex.id}`).toBe(true)
         }
       }
     }
+  })
+  it('A19 · cada demostración externa está asociada al ID exacto de la especificación', () => {
+    const expected: Record<string, string> = {
+      T1: 'press_pecho_maquina', T2: 'peso_muerto_rumano_mancuernas', T3: 'curl_femoral_sentado', T4: 'prensa_sentada', T5: 'flexiones_inclinadas',
+      T6: 'flexiones_rodillas', T7: 'puente_gluteo', T8: 'plancha_frontal', T9: 'zancada_atras_peso_corporal',
+    }
+    expect(EXTERNAL_DEMOS).toHaveLength(9)
+    for (const d of EXTERNAL_DEMOS) {
+      expect(d.exerciseId).toBe(expected[d.code])
+      expect(getExercise(d.exerciseId), d.exerciseId).toBeTruthy()
+      expect(d.pageUrl).toMatch(/^https:\/\//)
+    }
+    const videos = Object.fromEntries(EXTERNAL_DEMOS.filter((d) => d.videoUrl).map((d) => [d.code, d.videoUrl]))
+    expect(videos).toEqual({ T1: 'https://www.youtube.com/watch?v=lRo9zZ7EwpM', T2: 'https://www.youtube.com/watch?v=V8Hdl1FiNt4', T3: 'https://www.youtube.com/watch?v=_2Kd0d-JEUM', T5: 'https://www.youtube.com/watch?v=0JUrOH--Kdk', T7: 'https://www.youtube.com/watch?v=Z3cY3d3BBo4', T9: 'https://www.youtube.com/watch?v=gd1a7i7-CMY' })
+    // La zancada atrás no usa una zancada al frente como sustituto
+    expect(APPROX_REFERENCE.zancada_atras_peso_corporal).toBeUndefined()
+  })
+  it('A20 · el catálogo mantiene sus IDs (93 observados + 2 nuevos), sin perder ninguno', () => {
+    const ids = new Set(EXERCISES.map((e) => e.id))
+    for (const id of ['press_banca_barra', 'prensa', 'plancha_frontal', 'zancada_atras_peso_corporal', 'flexiones_inclinadas', 'sentadilla_peso_corporal', 'gemelos_peso_corporal']) expect(ids.has(id)).toBe(true)
+    expect(ids.size).toBe(EXERCISES.length)
+    expect(EXERCISES.length).toBe(95)
   })
   it('el manifiesto de docs coincide con el de la app', () => {
     const docs = JSON.parse(readFileSync(resolve(root, 'docs/media-manifest.json'), 'utf8'))

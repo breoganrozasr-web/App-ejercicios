@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/global.css'
 import { App } from './App'
-import { loadCustomExercises } from './data/repo'
+import { loadCustomExercises, recoverJournal } from './data/repo'
 import { registerPWA } from './ui/pwa'
 
 function applyTheme() {
@@ -21,6 +21,12 @@ async function boot() {
     await loadCustomExercises()
   } catch (e) {
     console.error('No se pudieron cargar los ejercicios propios', e)
+  }
+  try {
+    // Recupera cambios de la sesión activa guardados en el diario local antes de una recarga brusca (F8).
+    await recoverJournal()
+  } catch (e) {
+    console.error('No se pudo revisar el diario local', e)
   }
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

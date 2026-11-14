@@ -3,8 +3,8 @@ import { Camera, Columns2, Ruler, Scale, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { db } from '../../data/db'
 import { getMeta, setMeta } from '../../data/repo'
-import { MAJOR_MUSCLES, MUSCLE_LABEL } from '../../domain/catalog/exercises'
-import { lastTrainedByMuscle } from '../../domain/records'
+import { PANEL_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
+import { lastTrainedByRegion } from '../../domain/records'
 import type { MeasureSite, PhotoPose, ProgressPhoto, Session } from '../../domain/types'
 import { daysBetween, formatDateShort, formatNumber, newId, toLocalDate } from '../../domain/util'
 import { LineChart } from '../components/Charts'
@@ -39,20 +39,20 @@ export function daysAgoText(d: number): string {
 /** Días desde el último entrenamiento directo de cada músculo (dato, no medida de recuperación). */
 export function MuscleRecencyCard({ sessions }: { sessions: Session[] }) {
   const today = toLocalDate()
-  const last = lastTrainedByMuscle(sessions)
-  const rows = MAJOR_MUSCLES.map((m) => ({ m, date: last[m], d: last[m] ? daysBetween(last[m] as string, today) : null })).sort((a, b) => (a.d ?? 9999) - (b.d ?? 9999))
+  const last = lastTrainedByRegion(sessions)
+  const rows = PANEL_REGIONS.map((m) => ({ m, date: last[m], d: last[m] ? daysBetween(last[m] as string, today) : null })).sort((a, b) => (a.d ?? 9999) - (b.d ?? 9999))
   return (
     <section className="card stack">
-      <h3>Último entrenamiento por músculo</h3>
+      <h3>Último entrenamiento por grupo</h3>
       <div className="stack-sm">
         {rows.map(({ m, date, d }) => (
           <div key={m} className="row between small">
-            <span>{MUSCLE_LABEL[m]}</span>
+            <span>{REGION_LABEL[m]}</span>
             <span className={`num ${d === null ? 'muted' : ''}`}>{d === null ? 'sin registros' : `${daysAgoText(d)} · ${formatDateShort(date as string)}`}</span>
           </div>
         ))}
       </div>
-      <p className="tiny muted">Cuenta solo ejercicios donde ese músculo es el principal. Es un dato, no una medida de recuperación: cada persona se recupera a su ritmo y unas agujetas no impiden entrenar. Si vas cargado, usa «¿Cómo llegas hoy?» al empezar la sesión.</p>
+      <p className="tiny muted">Cuenta solo trabajo directo (no el indirecto). Es un dato, no una medida de recuperación: cada persona se recupera a su ritmo y unas agujetas no impiden entrenar. Si vas cargado, usa «¿Cómo llegas hoy?» al empezar la sesión.</p>
     </section>
   )
 }

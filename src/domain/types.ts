@@ -40,6 +40,7 @@ export type EquipmentId =
   | 'hyper_bench' // banco de hiperextensiones
   | 'chair' // silla/sofá estable (casa)
   | 'step' // escalón o escalera firme
+  | 'wall' // pared despejada (flexiones en pared): solo si se confirma
 
 export type Pattern =
   | 'squat' // dominante de rodilla bilateral
@@ -125,6 +126,21 @@ export interface Exercise {
   variantNote?: string
   archived?: boolean
   createdAt?: number
+  /** Tres claves para ver durante la sesión (fichas enriquecidas). */
+  keys?: string[]
+  /** «Aprender este ejercicio» (fichas enriquecidas con la redacción de la especificación del 14/11/2026). */
+  learn?: ExerciseLearn
+}
+
+export interface ExerciseLearn {
+  /** Preparación y ejecución. */
+  detail: string
+  /** Variantes y alternativas. */
+  alternatives?: string
+  /** Avisos de alcance de la ficha. */
+  notes?: string[]
+  /** Códigos de fuente (T1–T9 técnicas, E1–E14 científicas). */
+  sources: string[]
 }
 
 export interface MediaItem {
@@ -180,6 +196,29 @@ export interface Increments {
   barKg: number // peso de la barra vacía
 }
 
+/**
+ * Regiones del panel de volumen (motor 2). No son medidas de crecimiento: es una contabilidad orientativa
+ * (principal 1, secundario 0,5, estabilizador 0; ver docs/EVIDENCIA.md, sección 4 del encargo).
+ */
+export type Region =
+  | 'chest'
+  | 'back'
+  | 'delt_front'
+  | 'delt_side'
+  | 'delt_rear'
+  | 'biceps'
+  | 'triceps'
+  | 'quads'
+  | 'hamstrings'
+  | 'glutes'
+  | 'calves'
+  /** Tronco con repeticiones (encogimientos, etc.). */
+  | 'core'
+  /** Tronco por tiempo (planchas): unidad propia, no se suma con el dinámico. */
+  | 'core_iso'
+  /** Hombro sin región: clasificación antigua de ejercicios no revisados con la política nueva. */
+  | 'delt_unspecified'
+
 export interface Profile {
   id: 'me'
   level: Level
@@ -198,6 +237,14 @@ export interface Profile {
   increments: Increments
   createdAt: number
   updatedAt: number
+  /** Prioridades por región (motor 2). Si falta, se deriva de priorityMuscles. */
+  priorityRegions?: Region[]
+  /** Grupos añadidos al objetivo de frecuencia (opción avanzada). Por defecto: pecho, espalda, cuádriceps, isquios y glúteos. */
+  frequencyExtraRegions?: Region[]
+  /** Fuerza/mixto: hasta 3 ejercicios de referencia, en orden de prioridad. */
+  strengthRefs?: string[]
+  /** Vuelta tras pausa: empezar con 4 sesiones de adaptación (por defecto sí). */
+  returningAdaptation?: boolean
 }
 
 // ───────────────────────── Rutinas ─────────────────────────
@@ -215,6 +262,10 @@ export interface Prescription {
   timeMinSec?: number
   timeMaxSec?: number
   note?: string
+  /** Unidad de la serie (motor 2). Sin valor = dato antiguo: se deduce del ejercicio. */
+  unit?: 'reps' | 'time' | 'distance'
+  /** Ejercicio de referencia de fuerza (se practica primero). */
+  reference?: boolean
 }
 
 export interface RoutineExercise {
@@ -224,6 +275,8 @@ export interface RoutineExercise {
   prescription: Prescription
   /** Grupo de superserie (mismo valor = se alternan). Opción avanzada. */
   superset?: string
+  /** Accesorio opcional: es lo primero que se quita si no hay tiempo. */
+  optional?: boolean
 }
 
 export interface RoutineDay {
@@ -277,6 +330,23 @@ export interface RoutineVersion {
   rationale: string[]
   warnings: string[]
   changeNote: string
+  /** Motor 2: familiarización por sesiones completadas (≥70 % de las series). Sustituye a rampWeeks en versiones nuevas. */
+  familiarization?: { sessions: number; reason: 'beginner' | 'returning' } | null
+  /** Entradas del plan guardadas para reproducirlo (la cobertura real se calcula de days/schedule). */
+  plan?: RoutinePlanInfo
+}
+
+export interface RoutinePlanInfo {
+  engineVersion: string
+  goal: Goal
+  level: Level
+  /** Frecuencia pedida: 'auto' o 1/2/3. */
+  desiredFrequency: FrequencyPref
+  /** Grupos a los que se aplica la frecuencia pedida. */
+  targetRegions: Region[]
+  /** Fuerza/mixto: referencias en orden de prioridad. */
+  references: string[]
+  minutes: number
 }
 
 export type RoutineKind = 'template' | 'generated' | 'custom' | 'blank'
@@ -329,6 +399,8 @@ export interface SetEntry {
   side: 'both' | 'left' | 'right'
   completed: boolean
   completedAt: number | null
+  /** Isométricos: esfuerzo percibido 0–10 (opcional; no es RIR ni se convierte a RIR). */
+  effort?: number | null
 }
 
 export interface SessionExercise {
@@ -381,6 +453,10 @@ export interface Session {
   backdated?: boolean
   /** Duración declarada en minutos (sesiones registradas a posteriori). */
   manualDurationMin?: number
+  /** Qué hacer con una sesión parcial: retomarla, pasar a la siguiente o repetirla otro día. */
+  partialAction?: 'resume' | 'next' | 'repeat'
+  /** Familiarización aplicada al crear la sesión (motor 2): número de sesión dentro de la fase. */
+  familiarization?: { index: number; total: number } | null
 }
 
 /** Autoevaluación 1–5. Sueño y energía: 1 = muy mal/baja, 5 = muy bien/alta. Agujetas: 1 = ninguna, 5 = muchas. */
