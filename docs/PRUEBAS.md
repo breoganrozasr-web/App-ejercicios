@@ -1,6 +1,55 @@
 # Pruebas: comandos, resultados reales y comprobaciones pendientes
 
-Última ejecución: **15 de noviembre de 2026** (app 1.4.0, motor 2.2.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). Las secciones de la 1.2 y la 1.1 se conservan debajo. **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+Última ejecución: **15 de noviembre de 2026** (app 1.5.0, motor 2.3.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). Las secciones de versiones anteriores se conservan debajo. **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+
+## Versión 1.5 (encargo 4: experiencia, mapa muscular y comodidad en el gimnasio): resultados y criterios D01–D25
+
+Ejecución del 15/11/2026 en el contenedor de desarrollo con datos ficticios aislados (nunca sesiones del usuario). **No se ha probado en un iPhone físico** (ni el uso con una mano real, ni VoiceOver, ni Safari instalado como app, ni el sonido o la pantalla encendida en el dispositivo).
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` | ✅ sin errores |
+| `npm test` | ✅ **168/168** (7 ficheros; 14 nuevas en `encargo4.test.ts`) |
+| `npm run build` | ✅ precache ≈1157 KB |
+| E2E Chromium (iPhone 13, SE y 15 Pro Max) + WebKit 26.6 (`webkit-iphone-13`) | ✅ **88 pasan, 1 omitida** (sin conexión en WebKit, limitación de Playwright). Incluye 7 nuevas en `encargo4.spec.ts`. Pasadas previas: en WebKit, D23 encontró desbordamientos con texto al 200 % (etiqueta de la demostración en la ficha y selector «Reparto preferido» del catálogo), corregidos; B08 falló una vez a las 00:10 de Madrid porque el ayudante de fechas de la prueba usaba la fecha UTC de Node y el navegador la de Madrid (fallo del arnés, no de la app): ahora calcula la fecha en Europe/Madrid. La expectativa no cambió |
+| Actualización real **1.4 → 1.5** con datos (`scripts/upgrade-real-14-15.cjs`, builds en `/App-ejercicios/`, Chromium **y** WebKit) | ✅ **30/30 en cada motor**. Datos creados con la 1.4 publicada (build 645b4fe en la subruta): perfil intermedio, rutina antigua (motor 1.0.0 sin plan) y rutina actual (plantilla A15 · sh4), plantilla favorita, sesión completa con un bloque descendente 40×10 → 30×8 y una corrección guardada, sesión parcial con 52,5 kg y nota fija, una foto de progreso (fila sembrada en el formato 1.4, sin cámara) y un **entrenamiento en curso** con un bloque a medias (42,5 × 8). Con la 1.5 publicada y el entrenamiento abierto: aviso «Se aplicará cuando termines el entrenamiento en curso» sin botón, la página no se recarga y sigue el bloque a medias. Al terminar y «Actualizar ahora»: «App 1.5.0 · motor de rutinas 2.3.0»; sesiones, series, versiones, rutinas, nota, favorita, rutina actual, foto y tramos idénticos; la rutina antigua sigue en motor 1 sin regenerar; el tramo 42,5 × 8 se conserva; perfil migrado (intermedio → experiencia intermedia, continuidad sin confirmar). Rutas hash en la subruta (`#/progreso?vista=entreno`, ficha con `?vista=musculos`). La copia de la 1.4 se restaura en una 1.5 limpia sin pérdidas y con el perfil migrado (las fotos no viajan en la copia salvo que se pida, por diseño) |
+| Fallos encontrados por la actualización real y corregidos | (1) Restaurar una copia de la 1.4 dejaba el perfil sin experiencia ni continuidad: ahora la restauración migra el perfil igual que la actualización del esquema (prueba en `encargo4.test.ts`). (2) Si la página no estaba controlada por el service worker (primera visita), «Actualizar ahora» no recargaba: ahora recarga igualmente (solo se ofrece sin entrenamiento en curso) |
+| Revisión visual con capturas | ✅ alta (experiencia y situación), entrenamiento con la barra de descanso ampliada y plegada, Ajustes agrupados (iPhone SE), ficha con esquema frontal/posterior en claro y oscuro, Progreso en tres vistas |
+
+| # | Criterio | Dónde se prueba | Estado |
+|---|---|---|---|
+| D01 | Migración de los tres perfiles antiguos; «vuelvo» no inventa experiencia; aplazar la confirmación no bloquea | `encargo4.test.ts` (mapeo y base del esquema 2 → 3 sin tocar sesiones ni rutinas), `upgrade-real-14-15.cjs` (perfil real 1.4) | ✅ |
+| D02 | Avanzado: misma elegibilidad que intermedio, sin series extra, PPL 6 expreso, edad/salud mandan, sesión activa intacta | `encargo4.test.ts`, `encargo4.spec.ts` (D01–D03) | ✅ |
+| D03 | Persona nueva acepta vuelta gradual con plantilla intermedia; huecos ≠ pausa confirmada | `encargo4.test.ts`, `encargo4.spec.ts` («Preparar mi vuelta», pregunta «¿Has entrenado fuera de Forja?») | ✅ |
+| D04 | Experiencia, fase, readaptación y familiaridad separadas; sin duplicar días válidos | `encargo4.test.ts`, `plantillas.test.ts` (días válidos por fecha) | ✅ |
+| D05 | Mapas de las 99 fichas sin regiones inválidas; propios sin grupos con alternativa; revisión visual | `encargo4.test.ts`, `encargo4.spec.ts`, capturas claro/oscuro | ✅ (revisión visual en emulación) |
+| D06 | Variantes con su papel; roles no cambian factores 1/0,5 ni se muestran como % | `encargo4.test.ts` | ✅ |
+| D07 | Realizado semanal con parcial, unilateral, calentamientos, bloques, ejemplo y sin doble conteo | `encargo4.test.ts` (`doneByRegion`) | ✅ (superserie y corrección: por diseño, cuentan como series normales y con el valor corregido) |
+| D08 | Planificado y realizado separados; semana local domingo → lunes | `encargo4.test.ts`, `encargo4.spec.ts` (Progreso) | ✅ |
+| D09 | Coma decimal, RIR 0, vacíos, kg por mancuerna, asistencia, lastre, bandas, tiempo, lados | Suite previa (`flows`, `motor2`, `tecnicas`, `mejoras`) reejecutada con el nuevo toque en dos pasos | ✅ |
+| D10 | Borrador tras recarga; anterior/sugerido no se completa solo; error de escritura visible | `encargo4.spec.ts` («Usar valores anteriores (sin completar)», recarga), aviso de guardado fallido en el código | ✅ (el error de cuota no se ha forzado en un navegador) |
+| D11 | Doble toque y reintento sin duplicar; deshacer correcto | `tecnicas.spec.ts` (doble toque en tramos), `helpers.markDone` (dos pasos) | ✅ |
+| D12 | Mapa, demostración y notas en hoja sin perder temporizador ni borrador | `encargo4.spec.ts` (hoja con «Qué trabaja» desde la sesión) | ✅ (teclado real de iOS: pendiente en iPhone) |
+| D13 | «Hacer después»: conserva lo hecho, orden original y real; superserie como grupo | `encargo4.test.ts`, `encargo4.spec.ts` | ✅ |
+| D14 | Sustituir hoy sin copiar kg ni cambiar la rutina | `flows.spec.ts` («Sustituir hoy (solo esta sesión)») | ✅ |
+| D15 | Notas persistentes y de sesión distintas; material A/B no se mezcla | `encargo4.test.ts`, `encargo4.spec.ts`, `mejoras.spec.ts` | ✅ |
+| D16 | Grupos por serie con referencia propia; reordenar no cambia identidad; omitidas no cuentan | `encargo4.test.ts`, `encargo4.spec.ts` («Personalizar series») | ✅ |
+| D17 | Temporizador tras recarga; pantalla encendida no soportada no bloquea | Suite previa (`flows`, `tecnicas`) | ✅ en emulación; sonido y suspensión reales: **pendiente en iPhone** |
+| D18 | Sin conexión tras preparar; contador local/externo/sin recurso; externas no bloquean | `encargo4.spec.ts` (estado en Ajustes), `offline-media.spec.ts` (Chromium) | ✅ Chromium; WebKit sin conexión no emulable con Playwright |
+| D19 | Copias 1/2/3 se restauran; 4 ida y vuelta; app anterior rechaza 4; fallo no modifica destino | `encargo4.test.ts`, `tecnicas.test.ts`, `upgrade-real-14-15.cjs` | ✅ |
+| D20 | Actualización real 1.4 → 1.5 con todos los tipos de dato | `upgrade-real-14-15.cjs` (Chromium y WebKit) | ✅ (foto sembrada en el formato 1.4, no tomada con cámara) |
+| D21 | Aviso de actualización durante el entrenamiento sin recarga; al terminar se conserva todo | `upgrade-real-14-15.cjs` | ✅ |
+| D22 | Catálogo con 26, favoritas, comparador, «Ver todas»; lo que no encaja se explica | `plantillas.spec.ts`, `flows.spec.ts` | ✅ |
+| D23 | Claro/oscuro, 320/375/390+, horizontal, texto al 200 %, sin desplazamiento horizontal | `layout.spec.ts` (SE, 13, 15 Pro Max, WebKit), `encargo4.spec.ts` | ✅ en emulación; **VoiceOver: pendiente en iPhone** |
+| D24 | Accesos a medidas, fotos, calculadora, copia, corrección y Aprender; sesión activa accesible | `encargo4.spec.ts`, `mejoras.spec.ts`, `plantillas.spec.ts` | ✅ |
+| D25 | V01–V04 en su variante; apertura expresa; estados de licencia/técnica separados | `data.test.ts`, `encargo4.spec.ts` (V01 en el convencional) | ✅ |
+
+### Expectativas de pruebas anteriores que cambian (y por qué)
+
+- Marcar una serie: un toque con campos vacíos **prepara** los valores y otro confirma (el encargo exige que un anterior o sugerido nunca pase a serie hecha sin confirmación). Las E2E usan `markDone` (toca, y si no quedó hecha, vuelve a tocar). No se cambió ningún valor esperado.
+- La sugerencia tras una pausa ya no propone un porcentaje de la carga anterior (`progression.test.ts`): el encargo lo prohíbe.
+- Versiones: esquema 3, copia formato 4, motor 2.3.0, 13 demostraciones externas (V01–V04 añadidas), columnas nuevas al final del CSV.
+- Textos de la interfaz renombrados: «Sustituir hoy (solo esta sesión)», «Nota de hoy», «Nota para próximas veces», nivel → experiencia («principiante»), Progreso en tres vistas (`?vista=cuerpo`), pregunta tras 21 días («¿Has entrenado fuera de Forja?»).
 
 ## Versión 1.4 (encargo 3: 26 plantillas, dosis explicable, fuerza + hipertrofia): resultados y criterios C01–C22
 

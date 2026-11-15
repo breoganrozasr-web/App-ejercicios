@@ -62,7 +62,8 @@ function SourcesScreen({ focus }: { focus: string | null }) {
     const t = window.setTimeout(() => document.getElementById(`src-${focus}`)?.scrollIntoView({ block: 'start' }), 120)
     return () => window.clearTimeout(t)
   }, [focus])
-  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' | 'f2026' }[] = [
+  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' | 'f2026' | 's2026' }[] = [
+    { title: `Experiencia, vuelta tras una pausa y anatomía (S01–S04, T01–T02, consulta ${SOURCES_CHECKED_F})`, kind: 's2026' },
     { title: `Investigación de plantillas y dosis (F01–F21, consulta ${SOURCES_CHECKED_F})`, kind: 'f2026' },
     { title: 'Fuentes científicas (E1–E14)', kind: 'cientifica' },
     { title: 'Técnicas avanzadas: descendentes, rest-pause y superseries (R1–R5)', kind: 'avanzada' },
@@ -84,7 +85,7 @@ function SourcesScreen({ focus }: { focus: string | null }) {
                 <div className="row"><span className="badge accent">{s.code}</span><strong className="grow small">{s.title}</strong></div>
                 <span className="tiny muted">{s.scope}</span>
                 {s.sameAs && <span className="tiny">Misma publicación que <a href={href(`aprender/fuentes?f=${s.sameAs}`)}>{s.sameAs}</a> (equivalencia; no es una fuente nueva).</span>}
-                {s.kind === 'f2026' && <span className="tiny muted">Consulta hecha por la investigación entregada con el encargo; Forja no ha abierto estos textos desde su entorno.</span>}
+                {(s.kind === 'f2026' || s.kind === 's2026') && <span className="tiny muted">Consulta hecha por la investigación entregada con el encargo; Forja no ha abierto estos textos desde su entorno.</span>}
                 {s.synthesis && <p className="small" style={{ margin: 0 }}><strong>Síntesis:</strong> {s.synthesis}</p>}
                 {s.decision && <p className="small" style={{ margin: 0 }}><strong>Decisión en Forja:</strong> {s.decision}</p>}
                 <div className="row wrap" style={{ gap: 6 }}>

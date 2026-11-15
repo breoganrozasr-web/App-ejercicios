@@ -99,9 +99,9 @@ export function TemplatesScreen() {
           <Chip on={onlyFav} onClick={() => setOnlyFav(!onlyFav)}><Star aria-hidden /> Favoritas</Chip>
         </div>
         <div className="row">
-          <label className="row small grow" style={{ minWidth: 0 }}>
+          <label className="row small grow" style={{ minWidth: 0, flexWrap: 'wrap' }}>
             <span className="tiny muted" style={{ flex: 'none' }}>Reparto preferido</span>
-            <select className="input grow" style={{ minHeight: 44, minWidth: 0 }} aria-label="Reparto preferido" value={profile.splitPref ?? 'none'} onChange={(e) => void saveProfile({ ...profile, splitPref: e.target.value as SplitPref, updatedAt: Date.now() }, 'Reparto preferido actualizado')}>
+            <select className="input" style={{ minHeight: 44, minWidth: 0, flex: '1 1 160px', maxWidth: '100%' }} aria-label="Reparto preferido" value={profile.splitPref ?? 'none'} onChange={(e) => void saveProfile({ ...profile, splitPref: e.target.value as SplitPref, updatedAt: Date.now() }, 'Reparto preferido actualizado')}>
               {(Object.keys(SPLIT_PREF_LABEL) as SplitPref[]).map((k) => <option key={k} value={k}>{SPLIT_PREF_LABEL[k]}</option>)}
             </select>
           </label>

@@ -5,9 +5,9 @@ Archivo JSON (UTF-8) exportado desde Ajustes → Copias de seguridad → Exporta
 ```json
 {
   "format": "forja-backup",
-  "formatVersion": 3,
-  "schemaVersion": 2,
-  "appVersion": "1.4.0",
+  "formatVersion": 4,
+  "schemaVersion": 3,
+  "appVersion": "1.5.0",
   "exportedAt": "2026-11-13T18:00:00.000Z",
   "tables": {
     "profile": [ ... ],
@@ -66,9 +66,21 @@ Aditiva sobre la 2. Novedades:
 
 Las copias 1 y 2 se restauran igual (sin estos campos). **Una app 1.3 o anterior rechaza la versión 3** («copia de una versión más nueva») en lugar de interpretar mal ejercicios o el mapa que no conoce. La restauración sigue siendo transaccional: si la validación falla, no se escribe nada.
 
+## Versión 4 (app 1.5, esquema 3, 15/11/2026)
+
+Aditiva sobre la 3. Novedades:
+- `profile.experience` (`beginner` | `intermediate` | `advanced` | `unconfirmed`) y `profile.continuity` (`regular` | `returning` | `not_started` | `unconfirmed`). `profile.level` se conserva como **nivel efectivo del motor** derivado de la experiencia (principiante → `beginner`; intermedio y avanzado → `intermediate`; sin confirmar → `returning`). «Avanzado» no añade series.
+- **Esquema Dexie 3** (sin tablas ni índices nuevos): migración transaccional del perfil desde cero → principiante + continuidad sin confirmar; intermedio → intermedio + sin confirmar; vuelvo → experiencia sin confirmar + «vuelvo tras una pausa». No se regeneran rutinas ni se tocan sesiones. **Al restaurar una copia 1–3**, el perfil se migra igual.
+- Prescripción (en rutinas y en la copia que guarda cada sesión): `setGroups?: [{ id, label ('principal' | 'complementaria' | null), count, repMin, repMax, rirMin, rirMax, restSec }]` (objetivos por serie; el `id` es estable y la progresión se calcula por grupo). Serie: `groupId?`.
+- Ejercicio de sesión: `plannedIndex?` (orden planificado), `movedLater?` («Hacer después») y `equipmentContext?` (material o máquina concreta usada ese día: «Polea A»). Ajustes por ejercicio: `contexts?` (materiales guardados). La sugerencia de carga solo compara el mismo contexto; sin contexto se usa la clave antigua.
+- `meta.favoriteExercises` (ejercicios favoritos). `meta.program.readaptation`: decisión `trained_outside` («he entrenado fuera de Forja»), `manual?` (vuelta preparada a mano con «Preparar mi vuelta») y `endReviewed?`.
+- Las notas siguen en dos sitios: `exerciseSettings.note` (para próximas veces) y `sessions[].exercises[].note` / `sessions[].note` (solo esa sesión).
+
+Las copias 1, 2 y 3 se restauran igual. **Una app 1.4 o anterior rechaza la versión 4** («copia de una versión más nueva») en lugar de importar un perfil o unos grupos degradados. Contenido derivado que se recalcula (no se guarda): mapa anatómico de cada ejercicio, reparto muscular planificado/realizado, nivel efectivo si faltara.
+
 ## Restauración
 
-1. Se aceptan copias del esquema 1 (versión 1.0) y 2, y de los formatos de copia 1 y 2. Se valida tamaño (≤ 100 MB), JSON, `format`, versiones (no se aceptan copias de versiones más nuevas), identificadores y estructura de sesiones/rutinas.
+1. Se aceptan copias de los esquemas 1, 2 y 3 y de los formatos de copia 1 a 4. Se valida tamaño (≤ 100 MB), JSON, `format`, versiones (no se aceptan copias de versiones más nuevas), identificadores y estructura de sesiones/rutinas.
 2. Se limpian caracteres de control y claves peligrosas (`__proto__`…). Las imágenes deben ser `data:image/(png|jpeg|webp|gif);base64`.
 3. Vista previa: número de sesiones, rango de fechas, rutinas, registros que ya existen.
 4. Modos:
@@ -77,6 +89,8 @@ Las copias 1 y 2 se restauran igual (sin estos campos). **Una app 1.3 o anterior
 5. Todo ocurre en **una transacción**: si algo falla, la base queda exactamente como estaba.
 
 ## CSV de registros
+
+1.5 añade al final `grupo_prescripcion` (`principal`, `complementaria` o vacío), `objetivo_serie` (p. ej. `4–6 · RIR 2–3 · 180 s`, el objetivo del grupo de esa serie) y `contexto_material` (p. ej. `Rack 2`). Las columnas anteriores no cambian de orden ni de significado.
 
 1.4 añade al final las columnas `rango_prescrito` (p. ej. `4–6` o `15–30 s`: contexto de prescripción), `corregida` (`sí` si la serie o el bloque tiene una corrección vigente) y `dificultad_sesion` (si se anotó).
 

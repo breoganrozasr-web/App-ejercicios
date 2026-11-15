@@ -2,6 +2,22 @@
 
 Fecha de comprobación: **13 de noviembre de 2026**. Manifiestos de medios: [`media-manifest.json`](media-manifest.json) (Everkinetic, generado por `scripts/build_media.py`) y [`media-manifest-commons.json`](media-manifest-commons.json) (Wikimedia Commons, generado por `scripts/build_commons_media.py`); copias de los de `src/domain/catalog/`.
 
+## Versión 1.5 (15/11/2026): V01–V04, esquema muscular original y contadores
+
+- **Enlaces externos V01–V04** (los suministró la investigación del encargo 4; el entorno de desarrollo de Forja **no** abrió esos dominios, así que no se ha visto ningún vídeo ni leído ninguna página desde aquí). Se asocian por id real de cada variante, se abren solo al pulsar (sin iframes ni carga automática) y muestran su alcance:
+
+| Código | Ficha (id) | Recurso | Alcance declarado | Licencia | Técnica |
+|---|---|---|---|---|---|
+| V01 | Peso muerto convencional con barra (`peso_muerto_convencional`) | NASM · Barbell Deadlift (página) + vídeo youtu.be/Z6gcRfPNcZo | Página e identificación del enlace/título; sin revisión visual cuadro a cuadro | Solo enlace; sin permiso de redistribución | No revisada por Forja |
+| V02 | Hip thrust con barra (`hip_thrust_barra`) | PureGym · Barbell hip thrust (página con vídeo) | Página, instrucciones y presencia de vídeo; variante con barra y tronco en banco. No se copian sus afirmaciones de beneficios | Solo enlace | No revisada |
+| V03 | Remo con mancuernas y pecho apoyado (`remo_pecho_apoyado`) | PureGym · Incline row (página con vídeo) | Página e instrucciones; banco inclinado y mancuernas. No se trasladan sus series/repeticiones al motor | Solo enlace | No revisada |
+| V04 | Remo de pie con banda y anclaje (`remo_banda_anclaje`) | NASM · «How to do a Standing Tubing Row» (vídeo, 21/11/2018) | Título, canal y descripción recuperados en un índice; apertura directa limitada; vídeo completo no verificado | Solo enlace | No revisada |
+
+  En la app: «Vídeo externo · requiere conexión» o «Página externa · requiere conexión», con el alcance en la propia ficha. Sin conexión se explica la limitación y quedan las claves escritas y el esquema muscular local. Un bloqueo de red del entorno de desarrollo **no** demuestra que un enlace esté roto, así que no se ha deshabilitado ninguno; la persona puede marcar un enlace caído.
+- **Contadores separados** (99 fichas): **91** con demostración local (Everkinetic o Commons; 5 de ellas también con enlace externo), **8** solo con enlace externo (zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas, prensa sentada, peso muerto convencional, hip thrust con barra, remo con pecho apoyado y remo de pie con banda) y **0** sin ningún recurso. Las **8 demostraciones locales siguen pendientes**: añadir enlaces externos no las resuelve. En Ajustes → «Preparar mi rutina sin conexión» se cuentan aparte las locales preparadas, las externas (que necesitan internet; una URL de YouTube nunca cuenta como descargada) y las que no tienen recurso, y se comprueba la caché real y el service worker, no solo `navigator.onLine`.
+- **Esquema muscular**: dibujo SVG **original de Forja** (frente y espalda), sin copiar ilustraciones de terceros; muestra papeles (principal, colabora, estabiliza) con color, trama y texto, y una lista accesible. Orientado con anatomía funcional de referencia (S04, OpenStax); no muestra porcentajes de activación ni recuperación. No es una animación de ejecución: no sustituye a una demostración.
+- Las animaciones de Everkinetic siguen llamándose «Animación de posiciones», con sus atribuciones; los recursos externos T1–T9 se conservan.
+
 ## Versión 1.4 (15/11/2026): fichas nuevas, funciones y estados de las demostraciones
 
 - **Cuatro fichas nuevas** (anexo C): peso muerto convencional con barra, hip thrust con barra, remo con mancuernas y pecho apoyado, remo de pie con banda y anclaje. Antes de crearlas se comprobó que no existía la misma variante con otro id (el catálogo tenía rumano con barra y mancuernas, puente en el suelo, remo a una mano y apertura posterior con banda: variantes distintas que no se fusionan). Textos de Forja basados en las guías del anexo; **no son una certificación profesional de técnica**.
@@ -109,6 +125,6 @@ Las fotos de progreso son opcionales (desactivadas por defecto), se comprimen en
 
 ## Pendiente real
 
-- **Demostración local** de 4 variantes (zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas apoyadas, prensa sentada): no hay ilustración con licencia verificada. Tienen demostración externa (requiere internet). Para resolverlo: buscar ficheros con licencia clara de esas variantes exactas (p. ej. en Wikimedia Commons), verificar licencia y variante a mano y añadirlos con un script equivalente a `scripts/build_commons_media.py`.
-- **Comprobar los enlaces externos T1–T9** desde un entorno con acceso a nasm.org, acefitness.org, uwyo.edu y youtube.com (no fue posible en esta sesión). Si alguno no abre, la app ya ofrece la página oficial y permite anotar el enlace caído.
+- **Demostración local** de 8 variantes (zancada atrás con peso corporal, flexiones inclinadas, flexiones con rodillas apoyadas, prensa sentada, peso muerto convencional, hip thrust con barra, remo con pecho apoyado, remo de pie con banda): no hay ilustración con licencia verificada. Todas tienen enlace externo (requiere internet; T4–T6, T9, V01–V04). Para resolverlo: buscar ficheros con licencia clara de esas variantes exactas (p. ej. en Wikimedia Commons), verificar licencia y variante a mano y añadirlos con un script equivalente a `scripts/build_commons_media.py`.
+- **Comprobar los enlaces externos T1–T9 y V01–V04** desde un entorno con acceso a nasm.org, acefitness.org, uwyo.edu y youtube.com (no fue posible en esta sesión). Si alguno no abre, la app ya ofrece la página oficial y permite anotar el enlace caído.
 - **Revisión técnica** de las 86 fichas con estructura migrada: no se ha hecho; conservan su contenido anterior.

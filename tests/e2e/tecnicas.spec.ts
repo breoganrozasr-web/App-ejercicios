@@ -52,10 +52,13 @@ async function seedHistory(page: Page, dates: string[]): Promise<void> {
   }), dates)
 }
 
+/** Fecha local del navegador de prueba (Europe/Madrid, como en playwright.config), no la del proceso de Node:
+ *  cerca de medianoche UTC ambas difieren en un día. */
 function daysAgo(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+  const d = new Date(`${today}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() - n)
+  return d.toISOString().slice(0, 10)
 }
 
 /** Primer ejercicio de la sesión con carga numérica (admite descendente). */

@@ -32,7 +32,12 @@ export function useNeedRefresh(): [boolean, () => Promise<void>] {
     listeners.add(setV)
     return () => void listeners.delete(setV)
   }, [])
-  return [v, async () => updateFn?.(true)]
+  return [v, async () => {
+    await updateFn?.(true)
+    // Si la página no estaba controlada por el service worker (p. ej., primera visita), no llega el evento
+    // «controlling» y no habría recarga: se recarga igualmente (el aviso solo se ofrece sin entrenamiento en curso).
+    setTimeout(() => window.location.reload(), 2500)
+  }]
 }
 
 export async function requestPersistence(): Promise<boolean | null> {

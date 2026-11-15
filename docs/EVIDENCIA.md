@@ -1,7 +1,35 @@
 # Evidencia científica y decisiones del motor de rutinas
 
-Versión vigente del motor: **2.2.0** (15 de noviembre de 2026, `src/domain/engine/params.ts`). App 1.4.0.
+Versión vigente del motor: **2.3.0** (15 de noviembre de 2026, `src/domain/engine/params.ts`). App 1.5.0.
 Las rutinas guardadas conservan la versión del motor con la que se crearon (`engineVersion` y `plan` en cada versión de rutina): las reglas nuevas solo se aplican a propuestas y versiones nuevas aceptadas; las sesiones pasadas no cambian.
+
+## Ampliación 1.5 (motor 2.3.0): experiencia, vuelta tras una pausa, esquema muscular y comodidad
+
+Procede del **«Prompt 4: experiencia, mapa muscular y comodidad en el gimnasio» (15/11/2026)**. Las consultas (U01–U03, S01–S04, T01–T02, V01–V04) las hizo y declaró quien redactó el encargo, con el alcance que se indica; **el entorno de desarrollo de Forja no abrió esos enlaces** (red restringida). No se afirma haber leído un texto completo ni visto un vídeo.
+
+### Fuentes (también en la app: Aprender → Biblioteca de fuentes, salvo U01–U03)
+
+| Código | Fuente | Alcance declarado | Uso en Forja | Límites |
+|---|---|---|---|---|
+| S01 | ACSM 2026, overview of reviews (PMC12965823, DOI 10.1249/MSS.0000000000003897) | Texto completo; individualización, progresión, limitaciones | **Misma publicación que F01 (y E1)**: no se cuenta como estudio nuevo. Adaptar a objetivo, experiencia y rendimiento; el fallo no es obligatorio | No valida reglas de interfaz ni un «nivel avanzado» automático |
+| S02 | Does Taking a Break Matter?, 2024 (PubMed 39364857; Wiley sms.14739) | Resumen indexado y fragmentos de resultados | Apoya ofrecer una vuelta gradual prudente tras una pausa | Personas no entrenadas al inicio; no fija cuánto tarda alguien ni valida 4 días como readaptación universal; no se extrapola a avanzados |
+| S03 | NSCA/CSCCa, Safe Return to Training, 2019 | Resumen oficial (excepción de antigüedad: transiciones tras inactividad) | Transición prudente | No se trasladan porcentajes, pruebas ni calendario |
+| S04 | OpenStax, Anatomy and Physiology 2e, 11.5 y 11.6 | Texto de ambas secciones | Regiones y acciones del esquema muscular (principal, colabora, estabiliza) | Anatomía de referencia; sin porcentajes de activación ni mapas de recuperación |
+| T01 | Screen Wake Lock (MDN, W3C) | Documentación técnica | Pedir, detectar rechazo/liberación y volver a pedir al recuperar visibilidad | Preferencia dependiente del sistema, no garantía |
+| T02 | WebKit, web push en apps de la pantalla de inicio | Documentación técnica | Forja sigue local y sin push | No promete avisos exactos con la pantalla bloqueada |
+| U01 | Ficha de App Store indexada como «Lifta» (Mateo Tadic) que abre como «CyberBeef» | Ficha pública con discrepancia de nombre | Patrones generales (registro con rendimiento anterior, objetivos, gráficos) | No se identifica con certeza como la app que recuerda el usuario |
+| U02 | Lyfta (Lindberg Development AS): ficha y documentación de registro | Ficha pública y documentación | Continuidad plan → sesión, historial junto al registro, notas y tipos de serie a mano | Sin catálogo enorme ni funciones sociales |
+| U03 | Hevy: páginas de registro, opciones de programación y gráfico | Páginas funcionales | Editar/reordenar/sustituir durante el entrenamiento, notas persistentes frente a de sesión, objetivos por serie, trabajo por grupos | — |
+
+U01–U03 son documentación comercial de sus autores, no pruebas independientes. Se adoptan **patrones de interacción comunes con diseño y código originales**: no se ha extraído código, base de ejercicios, vídeos, imágenes, textos, marcas ni programas. Diferencia expresa de Forja: un dato anterior o sugerido **nunca** se convierte en serie hecha sin confirmación.
+
+### Reglas de producto 1.5 (decisiones de Forja, revisables)
+
+- **P24 · Experiencia y situación actual separadas.** Experiencia (principiante, intermedio, avanzado, sin confirmar) es una autodescripción: no depende de marcas, edad ni días en la app y Forja no la sube sola. Situación actual (entreno con regularidad, vuelvo tras una pausa, aún no he empezado) es independiente. «Avanzado» tiene la misma elegibilidad que intermedio, **no añade series** ni activa técnicas, y PPL 6 sigue siendo elección expresa; edad, salud y consentimiento siguen mandando.
+- **P25 · Vuelta gradual.** Dosis temporal (4 días válidos, prolongable) aceptada por la persona, también sin historial («Preparar mi vuelta», con comparación hoy frente al plan base). Tras 21 días sin registros se **pregunta** «¿Has entrenado fuera de Forja?» en lugar de asumir una pausa. Tras la pausa no se propone un porcentaje de la carga anterior: se muestra la última carga con su fecha y se pide elegir una carga actual con margen.
+- **P26 · Esquema muscular.** Papeles anatómicos por patrón y variante (S04), separados de los factores de cómputo 1/0,5 de los mapas históricos 1 y 2, que no cambian. Planificado (semana tipo) y realizado (semana lunes–domingo local, solo series de trabajo completadas, sin datos de ejemplo, bloques aparte) no se mezclan.
+- **P27 · Registro con una mano.** Tocar ✓ con campos vacíos prepara los valores del día (no completa); otro toque confirma. «Usar valores anteriores (sin completar)». «Hacer después» conserva lo hecho y el orden planificado (una superserie se mueve como grupo). «Sustituir hoy» no cambia la rutina ni copia kg. Notas «para próximas veces» frente a «de hoy». Contexto de material: la sugerencia solo compara el mismo material.
+- **P28 · Objetivos por serie.** Grupos con id estable (p. ej. principal 1×4–6 y complementarias 2×6–8); cada grupo progresa con su propia referencia; reordenar no cambia la identidad; las series omitidas no cuentan como objetivo cumplido.
 
 ## Ampliación 1.4 (motor 2.2.0): 26 plantillas, dosis explicable y fuerza + hipertrofia
 

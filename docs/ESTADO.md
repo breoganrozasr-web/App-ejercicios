@@ -1,6 +1,21 @@
 # Estado del proyecto (punto de continuación)
 
-Última actualización: **15 de noviembre de 2026** (versión 1.4). Rama: `claude/app-from-spec-1c0pa7`.
+Última actualización: **15 de noviembre de 2026** (versión 1.5). Rama: `claude/app-from-spec-1c0pa7`.
+
+## Versión 1.5 (15/11/2026): experiencia, mapa muscular y comodidad en el gimnasio
+
+Encargo: [ENCARGO_4.md](ENCARGO_4.md); avance por bloques: [ESTADO_ENCARGO_4.md](ESTADO_ENCARGO_4.md). App 1.5.0, motor 2.3.0, copia formato 4, esquema Dexie 3.
+
+**Terminado y probado (automático, no en iPhone físico):**
+- **Experiencia y situación actual** separadas (principiante / intermedio / avanzado + entreno con regularidad / vuelvo tras una pausa / aún no he empezado), con migración del perfil y sin regenerar rutinas. Avanzado no añade series. «Preparar mi vuelta» (también sin historial) con comparación hoy frente al plan base; tras 21 días sin registros, pregunta «¿Has entrenado fuera de Forja?»; fin de la vuelta con «Continuar» o «Prolongar 2 días»; sin porcentaje de carga tras la pausa.
+- **Esquema muscular** SVG original (frente/espalda) con papeles principal/colabora/estabiliza y lista accesible; ficha en capas («Cómo hacerlo / Qué trabaja / Historial»); reparto muscular planificado y realizado (semana lunes–domingo) en Progreso y mapa del plan en la vista previa de plantillas.
+- **Entrenamiento con una mano**: toque en dos pasos (preparar y confirmar), «Anterior: … · fecha» por serie, «Usar valores anteriores (sin completar)», aviso visible si falla el guardado, «Hacer después», «Sustituir hoy (solo esta sesión)», notas «para próximas veces» frente a «de hoy», contexto de material con sugerencias separadas, ficha y «Qué trabaja» en hoja sin salir de la sesión, barra de descanso plegable, ejercicios favoritos y recientes.
+- **Objetivos por serie** («Personalizar series»: principal 1×4–6 + complementarias 2×6–8…) con progresión por grupo.
+- **Catálogo compacto** («Encaja · ver por qué»), **Progreso en tres vistas** (Entrenamiento / Ejercicios / Cuerpo), **Ajustes agrupados** (Perfil y programa, Material, Durante el entrenamiento, Apariencia, Sin conexión y datos, Ayuda y versión) y **«Preparar mi rutina sin conexión»** con estado real (caché, service worker, locales/externas/sin recurso).
+- **Demostraciones V01–V04** como enlaces externos con alcance; fuentes S01–S04 y T01–T02 en la biblioteca (S01 ≡ F01).
+- **Copia formato 4** (una 1.4 la rechaza; restaurar copias 1–3 migra el perfil) y CSV con grupo, objetivo por serie y material.
+
+**Pendientes reales:** prueba en iPhone físico (una mano, teclado de iOS, VoiceOver, Safari como app, sonido y pantalla encendida reales); 8 demostraciones locales (solo enlace externo); abrir V01–V04, S01–S04, T01–T02, F01–F21, R1–R5 y T1–T9 desde un entorno con acceso; revisión profesional de fichas y del esquema muscular; la vuelta gradual de 4 días y los umbrales son decisiones de producto sin validación clínica; no hay importación de CSV.
 
 ## Versión 1.4 (15/11/2026): 26 plantillas, dosis explicable y fuerza + hipertrofia
 
