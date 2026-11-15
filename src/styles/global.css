@@ -208,6 +208,7 @@ button.list-item { cursor: pointer; }
 .badge.suggest { background: var(--suggest-soft); color: var(--suggest); }
 .badge.demo { background: repeating-linear-gradient(135deg, var(--warn-soft) 0 6px, transparent 6px 12px); color: var(--warn); border: 1px dashed var(--warn); }
 .badge svg { width: 13px; height: 13px; }
+.badge.wrap { white-space: normal; max-width: 100%; }
 
 /* ───────────── Avisos ───────────── */
 .note { display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-2); font-size: 0.92rem; }
@@ -236,8 +237,8 @@ textarea.input { min-height: 84px; resize: vertical; }
 .choice[aria-pressed='true'], .choice[aria-checked='true'] { border-color: var(--accent); background: var(--accent-soft); }
 .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .weekdays .chip { justify-content: center; padding: 0; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 14px; }
-.seg button { min-height: 40px; border: 0; border-radius: 10px; background: transparent; font-weight: 650; cursor: pointer; font-size: 0.9rem; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 14px; }
+.seg button { flex: 1 1 0; min-width: max-content; max-width: 100%; white-space: normal; padding: 4px 8px; min-height: 40px; border: 0; border-radius: 10px; background: transparent; font-weight: 650; cursor: pointer; font-size: 0.9rem; }
 .seg button[aria-pressed='true'] { background: var(--surface); box-shadow: var(--shadow); color: var(--accent-strong); }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); }
 .check { width: 24px; height: 24px; accent-color: var(--accent); flex: none; }

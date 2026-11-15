@@ -35,7 +35,7 @@ export function DemoPlayer({ exerciseId, onOpenReference }: { exerciseId: string
   if (media?.frames?.length) {
     return (
       <div className="stack-sm">
-        <span className="badge" style={{ alignSelf: 'flex-start' }}>{demoKindLabel(media)}{media.frames.length === 2 && !media.frameDurationsMs ? ' · se alternan' : ''}</span>
+        <span className="badge wrap" style={{ alignSelf: 'flex-start' }}>{demoKindLabel(media)}{media.frames.length === 2 && !media.frameDurationsMs ? ' · se alternan' : ''}</span>
         <FramesPlayer key={exerciseId} frames={media.frames.map(assetUrl)} durations={media.frameDurationsMs ?? null} colored={!!media.colored} name={ex?.name ?? ''} credit={media.attribution} sourceUrl={media.sourceUrl} licenseUrl={media.licenseUrl} />
         {external && <ExternalDemoPanel demo={external} />}
       </div>
