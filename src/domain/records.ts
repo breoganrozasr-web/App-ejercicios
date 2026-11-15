@@ -373,3 +373,55 @@ export function sameStructure(a: Session, b: Session): boolean {
   const sig = (s: Session) => s.exercises.map((e) => `${e.exerciseId}:${contextKey(e, s.exercises)}`).sort().join(';')
   return sig(a) === sig(b)
 }
+
+// ───────────────────────── Realizado por región en una semana (1.5) ─────────────────────────
+
+export interface DoneSource {
+  exerciseId: string
+  name: string
+  date: string
+  /** Series de trabajo convencionales completadas (unilateral: por lado, sin duplicar). */
+  sets: number
+  /** Bloques especiales completados: aparte, sin «series equivalentes». */
+  blocks: number
+  weight: 1 | 0.5 | 0
+}
+
+export interface DoneRegion {
+  region: Region
+  direct: number
+  secondary: number
+  blocks: number
+  days: number
+  sources: DoneSource[]
+}
+
+/**
+ * Trabajo REALIZADO por región en la semana local [lunes, domingo] que empieza en `monday`. Solo series de trabajo
+ * completadas (las parciales aportan lo hecho); sin calentamientos ni datos de ejemplo; cada sesión con el mapa de su
+ * versión; las correcciones ya están aplicadas en los valores guardados. Los bloques van aparte.
+ */
+export function doneByRegion(sessions: Session[], monday: string): DoneRegion[] {
+  const sunday = addDays(monday, 6)
+  const out = new Map<Region, DoneRegion & { dayset: Set<string> }>()
+  const get = (r: Region) => {
+    let v = out.get(r)
+    if (!v) { v = { region: r, direct: 0, secondary: 0, blocks: 0, days: 0, sources: [], dayset: new Set() }; out.set(r, v) }
+    return v
+  }
+  for (const s of sessions) {
+    if ((s.status !== 'completed' && s.status !== 'partial') || s.isDemo || s.date < monday || s.date > sunday) continue
+    for (const ex of s.exercises) {
+      const n = conventionalWork(ex.sets).filter((x) => x.completed).length
+      const b = blocksOf(ex.sets).filter((x) => x.completed || (x.block?.segments.length ?? 0) > 0).length
+      if (!n && !b) continue
+      for (const c of contributionOf(ex.exerciseId, muscleMapFor(s)).items) {
+        if (c.weight === 0) continue
+        const v = get(c.region)
+        if (c.weight === 1) { v.direct += n; v.blocks += b; v.dayset.add(s.date) } else v.secondary += n
+        v.sources.push({ exerciseId: ex.exerciseId, name: ex.nameSnapshot, date: s.date, sets: n, blocks: c.weight === 1 ? b : 0, weight: c.weight })
+      }
+    }
+  }
+  return [...out.values()].map(({ dayset, ...v }) => ({ ...v, days: dayset.size }))
+}

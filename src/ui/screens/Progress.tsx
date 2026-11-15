@@ -9,7 +9,7 @@ import { weeklyBudget } from '../../domain/engine/params'
 import { checkScope } from '../../domain/engine/scope'
 import { bodyweightOn, kcalRange, sessionMinutes } from '../../domain/energy'
 import { READINESS_SCALES, readinessLevel } from '../../domain/readiness'
-import { exerciseTrend, previousComparable, sameStructure, sessionRecords, sessionTotals, sessionsPerWeek, weeklyRegionSets } from '../../domain/records'
+import { doneByRegion, exerciseTrend, previousComparable, sameStructure, sessionRecords, sessionTotals, sessionsPerWeek, weeklyRegionSets } from '../../domain/records'
 import { METHOD_LABEL, blockText, isBlock } from '../../domain/techniques'
 import { PhaseCard } from './Phase'
 import { PANEL_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
@@ -21,13 +21,21 @@ import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, for
 import { LineChart, WeekBars } from '../components/Charts'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
-import { back, go, href } from '../router'
+import { back, go, href, useRoute } from '../router'
+import { Segmented } from '../components/inputs'
+import { VolumeMap, rowsFromDone, rowsFromPlan } from '../components/VolumeMap'
+import { weeklyRegionVolume } from '../../domain/engine/analysis'
+import { getRoutineBundle } from '../../data/repo'
 import { BodyweightCard, MeasurementsCard, MuscleRecencyCard, PhotosCard } from './Body'
 
 export function ProgressScreen() {
-  const { profile } = useApp()
+  const { profile, currentRoutineId } = useApp()
   const today = toLocalDate()
+  const route = useRoute()
+  const view = (route.query.get('vista') as 'entreno' | 'ejercicios' | 'cuerpo' | null) ?? 'entreno'
+  const setView = (v: string) => go(`progreso?vista=${v}`, true)
   const sessions = useLiveQuery(() => db().sessions.toArray(), [], [] as Session[])
+  const bundle = useLiveQuery(async () => (currentRoutineId ? await getRoutineBundle(currentRoutineId) : null), [currentRoutineId])
   const finished = sessions.filter((s) => s.status === 'completed' || s.status === 'partial').sort((a, b) => b.startedAt - a.startedAt)
   const perWeek = sessionsPerWeek(finished, 12, today)
   const regionWeeks = weeklyRegionSets(finished, 2, today)
@@ -39,111 +47,143 @@ export function ProgressScreen() {
     return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id)
   }, [finished])
   const [exSel, setExSel] = useState<string | null>(null)
+  const [mapKind, setMapKind] = useState<'done' | 'plan'>('done')
+  const [weekOffset, setWeekOffset] = useState(0)
+  const monday = addDays(weekStart(today), -7 * weekOffset)
   const sel = exSel ?? exIds[0] ?? null
   const allowE1rm = !profile || checkScope(profile).kind === 'adult'
   const trend = sel ? exerciseTrend(finished, sel, allowE1rm) : []
   const selEx = sel ? getExercise(sel) : undefined
   const hasDemo = finished.some((s) => s.isDemo)
+  const planRows = useMemo(() => (bundle ? rowsFromPlan(weeklyRegionVolume(bundle.version)) : []), [bundle])
+  const doneRows = useMemo(() => rowsFromDone(doneByRegion(sessions, monday)), [sessions, monday])
 
   return (
     <>
       <header className="topbar"><h1 className="grow" style={{ fontSize: '1.6rem' }}>Progreso</h1></header>
       <main className="page">
-        <PhaseCard />
-        {finished.length === 0 ? (
-          <div className="card empty">
-            <ChartLine aria-hidden />
-            <p>Cuando registres sesiones verás aquí tu constancia, tus series por músculo y la evolución de cada ejercicio.</p>
-            <a className="btn soft" href={href('ajustes/demo')}>Ver con datos de ejemplo</a>
-          </div>
-        ) : (
+        <Segmented label="Vista de progreso" value={view} onChange={setView} options={[{ value: 'entreno', label: 'Entrenamiento' }, { value: 'ejercicios', label: 'Ejercicios' }, { value: 'cuerpo', label: 'Cuerpo' }]} />
+        {view === 'entreno' && (
           <>
-            {hasDemo && <div className="note warn"><span className="badge demo">Ejemplo</span><span className="small">Incluye datos de ejemplo. Bórralos en Ajustes → Datos de ejemplo.</span></div>}
-            <section className="card stack">
-              <div className="row between"><h3>Constancia</h3><span className="small muted">{finished.length} {finished.length === 1 ? 'sesión' : 'sesiones'} en total</span></div>
-              <WeekBars data={perWeek.map((w) => ({ week: w.week, value: w.count }))} label="Sesiones por semana" unit="sesiones" />
-              <p className="tiny muted">Sesiones por semana en las últimas 12 semanas. Sin rachas: perder un día no borra nada.</p>
-            </section>
-
-            <section className="card stack">
-              <h3>Series de trabajo por grupo</h3>
-              <p className="tiny muted">Esta semana (lunes a domingo), series completadas: <strong>directas + indirectas estimadas</strong> (media serie cada una; estimación, el trabajo indirecto no equivale exactamente al directo). Entre paréntesis, las directas de la semana pasada. El tronco por tiempo va aparte. Los <strong>bloques especiales</strong> (descendentes, rest-pause) se muestran aparte con sus tramos reales: no se convierten en series.</p>
-              <div className="stack-sm">
-                {PANEL_REGIONS.map((r) => {
-                  const d = thisWeek.direct[r] ?? 0
-                  const ind = (thisWeek.secondary[r] ?? 0) * 0.5
-                  const b = profile ? weeklyBudget(r, profile.level, profile.goal, priorityRegionsOf(profile).includes(r)) : null
-                  const scale = Math.max(12, d + ind)
-                  return (
-                    <div key={r} className="vol-row">
-                      <span>{REGION_LABEL[r]}</span>
-                      {r === 'core_iso' ? <span className="small muted">{d} {d === 1 ? 'serie' : 'series'} por tiempo</span> : (
-                        <div className="vol-track" role="img" aria-label={`${REGION_LABEL[r]}: ${formatNumber(d)} directas + ${formatNumber(ind)} indirectas estimadas esta semana${b ? `; presupuesto inicial ${b.min}–${b.max}` : ''}`}>
-                          <div className="vol-fill ind" style={{ width: `${((d + ind) / scale) * 100}%` }} />
-                          <div className="vol-fill" style={{ width: `${(d / scale) * 100}%` }} />
-                        </div>
-                      )}
-                      <span className="small num" style={{ textAlign: 'right' }}>{r === 'core_iso' ? '' : `${formatNumber(d)} + ${formatNumber(ind)}`} <span className="muted">({formatNumber(lastWeek.direct[r] ?? 0)})</span></span>
-                      {thisWeek.blocks[r] && <span className="tiny muted" style={{ gridColumn: '1 / -1', paddingLeft: 4 }}>+ {thisWeek.blocks[r].blocks} {thisWeek.blocks[r].blocks === 1 ? 'bloque especial' : 'bloques especiales'} ({thisWeek.blocks[r].segments} tramos reales), aparte</span>}
-                    </div>
-                  )
-                })}
+            <PhaseCard />
+            {hasDemo && <div className="note warn"><span className="badge demo">Ejemplo</span><span className="small">Incluye datos de ejemplo (no cuentan en el mapa). Bórralos en Ajustes → Datos de ejemplo.</span></div>}
+            {finished.length === 0 && (
+              <div className="card empty">
+                <ChartLine aria-hidden />
+                <p>Cuando registres sesiones verás aquí tu constancia, el reparto muscular y tu historial.</p>
+                <a className="btn soft" href={href('ajustes/demo')}>Ver con datos de ejemplo</a>
               </div>
-            </section>
-
-            <MuscleRecencyCard sessions={finished} />
-
-            {sel && (
+            )}
+            {finished.length > 0 && (
               <section className="card stack">
-                <div className="field">
-                  <label htmlFor="exsel">Evolución de un ejercicio</label>
-                  <select id="exsel" className="input" value={sel} onChange={(e) => setExSel(e.target.value)}>
-                    {exIds.map((id) => <option key={id} value={id}>{getExercise(id)?.name ?? id}</option>)}
-                  </select>
-                </div>
-                {trend.length >= 2 ? (
-                  <LineChart
-                    points={trend.map((t) => ({ x: t.date, y: selEx?.loadType === 'time' ? t.sec : selEx?.loadType === 'bodyweight' || selEx?.loadType === 'band' ? t.reps : t.topKg }))}
-                    second={allowE1rm && trend.some((t) => t.e1rm) ? trend.map((t) => ({ x: t.date, y: t.e1rm })) : undefined}
-                    yLabel={selEx?.loadType === 'time' ? 's' : selEx?.loadType === 'bodyweight' || selEx?.loadType === 'band' ? 'rep.' : 'kg'}
-                    label={`Evolución de ${selEx?.name ?? ''}`}
-                  />
-                ) : (
-                  <p className="small muted">Hace falta al menos 2 sesiones con este ejercicio para ver una tendencia.</p>
-                )}
-                <a className="btn soft small" style={{ alignSelf: 'flex-start' }} href={href(`ejercicios/${sel}`)}>Récords e historial del ejercicio</a>
-                <p className="tiny muted">Solo se compara el mismo ejercicio y variante: los kilos de máquinas distintas o mancuernas frente a barra no se mezclan.</p>
+                <div className="row between"><h3>Constancia</h3><span className="small muted">{finished.length} {finished.length === 1 ? 'sesión' : 'sesiones'} en total</span></div>
+                <WeekBars data={perWeek.map((w) => ({ week: w.week, value: w.count }))} label="Sesiones por semana" unit="sesiones" />
+                <p className="tiny muted">Sesiones por semana en las últimas 12 semanas. Sin rachas: perder un día no borra nada.</p>
               </section>
             )}
-
-            <MonthCalendar sessions={finished} />
-            <section className="stack-sm">
-              <h2 className="section-title">Historial</h2>
-              <div className="card flat list" style={{ padding: '0 12px' }}>
-                {finished.slice(0, 60).map((s) => {
-                  const sum = sessionWorkSummary(s)
-                  return (
-                    <a key={s.id} className="list-item" href={href(`progreso/sesion/${s.id}`)}>
-                      <span className="grow stack-sm" style={{ gap: 2 }}>
-                        <span style={{ fontWeight: 650 }}>{s.title}</span>
-                        <span className="small muted">{formatDateShort(s.date)} · {sum.done} series{s.status === 'partial' ? ` de ${sum.planned}` : ''}</span>
-                      </span>
-                      {s.status === 'partial' && <span className="badge warn">Parcial</span>}
-                      {s.isDemo && <span className="badge demo">Ejemplo</span>}
-                      <ChevronRight size={18} aria-hidden />
-                    </a>
-                  )
-                })}
-              </div>
+            <section className="card stack" aria-label="Reparto muscular">
+              <h3>Reparto muscular</h3>
+              <Segmented label="Planificado o realizado" value={mapKind} onChange={(v) => setMapKind(v as 'done' | 'plan')} options={[{ value: 'done', label: 'Realizado' }, { value: 'plan', label: 'Planificado' }]} />
+              {mapKind === 'done' ? (
+                <>
+                  <div className="row between">
+                    <button className="btn ghost small" aria-label="Semana anterior" onClick={() => setWeekOffset(weekOffset + 1)}>‹</button>
+                    <span className="small">Semana del {formatDateShort(monday)} al {formatDateShort(addDays(monday, 6))}</span>
+                    <button className="btn ghost small" aria-label="Semana siguiente" disabled={weekOffset === 0} onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}>›</button>
+                  </div>
+                  <VolumeMap rows={doneRows} title="Realizado esta semana" empty="Sin series de trabajo completadas esta semana (lunes a domingo)." />
+                </>
+              ) : (
+                <>
+                  <span className="small muted">{bundle ? `Semana tipo de «${bundle.routine.name}» (v${bundle.version.version}).` : 'Sin rutina actual.'}</span>
+                  <VolumeMap rows={planRows} title="Planificado en tu rutina" empty="Tu rutina no tiene ejercicios con series previstas." />
+                </>
+              )}
             </section>
+            {finished.length > 0 && (
+              <details className="more card flat">
+                <summary>Tabla de series por grupo (esta semana y la anterior)</summary>
+                <div className="stack-sm" style={{ paddingTop: 8 }}>
+                  {PANEL_REGIONS.map((r) => {
+                    const d = thisWeek.direct[r] ?? 0
+                    const ind = (thisWeek.secondary[r] ?? 0) * 0.5
+                    const b = profile ? weeklyBudget(r, profile.level, profile.goal, priorityRegionsOf(profile).includes(r)) : null
+                    const scale = Math.max(12, d + ind)
+                    return (
+                      <div key={r} className="vol-row">
+                        <span>{REGION_LABEL[r]}</span>
+                        {r === 'core_iso' ? <span className="small muted">{d} {d === 1 ? 'serie' : 'series'} por tiempo</span> : (
+                          <div className="vol-track" role="img" aria-label={`${REGION_LABEL[r]}: ${formatNumber(d)} directas + ${formatNumber(ind)} indirectas estimadas esta semana${b ? `; presupuesto inicial ${b.min}–${b.max}` : ''}`}>
+                            <div className="vol-fill ind" style={{ width: `${((d + ind) / scale) * 100}%` }} />
+                            <div className="vol-fill" style={{ width: `${(d / scale) * 100}%` }} />
+                          </div>
+                        )}
+                        <span className="small num" style={{ textAlign: 'right' }}>{r === 'core_iso' ? '' : `${formatNumber(d)} + ${formatNumber(ind)}`} <span className="muted">({formatNumber(lastWeek.direct[r] ?? 0)})</span></span>
+                        {thisWeek.blocks[r] && <span className="tiny muted" style={{ gridColumn: '1 / -1', paddingLeft: 4 }}>+ {thisWeek.blocks[r].blocks} {thisWeek.blocks[r].blocks === 1 ? 'bloque especial' : 'bloques especiales'} ({thisWeek.blocks[r].segments} tramos reales), aparte</span>}
+                      </div>
+                    )
+                  })}
+                  <p className="tiny muted">Directas + indirectas estimadas (media serie); entre paréntesis, las directas de la semana pasada. Bloques aparte con sus tramos.</p>
+                </div>
+              </details>
+            )}
+            {finished.length > 0 && <MuscleRecencyCard sessions={finished} />}
+            {finished.length > 0 && <MonthCalendar sessions={finished} />}
+            {finished.length > 0 && (
+              <section className="stack-sm">
+                <h2 className="section-title">Historial</h2>
+                <div className="card flat list" style={{ padding: '0 12px' }}>
+                  {finished.slice(0, 60).map((s) => {
+                    const sum = sessionWorkSummary(s)
+                    return (
+                      <a key={s.id} className="list-item" href={href(`progreso/sesion/${s.id}`)}>
+                        <span className="grow stack-sm" style={{ gap: 2 }}>
+                          <span style={{ fontWeight: 650 }}>{s.title}</span>
+                          <span className="small muted">{formatDateShort(s.date)} · {sum.done} series{s.status === 'partial' ? ` de ${sum.planned}` : ''}</span>
+                        </span>
+                        {s.status === 'partial' && <span className="badge warn">Parcial</span>}
+                        {s.isDemo && <span className="badge demo">Ejemplo</span>}
+                        <ChevronRight size={18} aria-hidden />
+                      </a>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
           </>
         )}
-
-        <h2 className="section-title">Cuerpo</h2>
-        <BodyweightCard />
-        <MeasurementsCard />
-        <PhotosCard />
-        <div className="note info"><Info aria-hidden /><span className="small">Ninguna app puede medir el músculo que ganas ni tu “recuperación” con estos datos. Aquí ves lo que sí se registra (cargas, series, medidas, fotos y días desde el último entrenamiento) y, en cada sesión, un <strong>rango aproximado</strong> de calorías.</span></div>
+        {view === 'ejercicios' && (
+          sel ? (
+            <section className="card stack">
+              <div className="field">
+                <label htmlFor="exsel">Evolución de un ejercicio</label>
+                <select id="exsel" className="input" value={sel} onChange={(e) => setExSel(e.target.value)}>
+                  {exIds.map((id) => <option key={id} value={id}>{getExercise(id)?.name ?? id}</option>)}
+                </select>
+              </div>
+              {trend.length >= 2 ? (
+                <LineChart
+                  points={trend.map((t) => ({ x: t.date, y: selEx?.loadType === 'time' ? t.sec : selEx?.loadType === 'bodyweight' || selEx?.loadType === 'band' ? t.reps : t.topKg }))}
+                  second={allowE1rm && trend.some((t) => t.e1rm) ? trend.map((t) => ({ x: t.date, y: t.e1rm })) : undefined}
+                  yLabel={selEx?.loadType === 'time' ? 's' : selEx?.loadType === 'bodyweight' || selEx?.loadType === 'band' ? 'rep.' : 'kg'}
+                  label={`Evolución de ${selEx?.name ?? ''}`}
+                />
+              ) : (
+                <p className="small muted">Hace falta al menos 2 sesiones con este ejercicio para ver una tendencia.</p>
+              )}
+              <a className="btn soft small" style={{ alignSelf: 'flex-start' }} href={href(`ejercicios/${sel}?vista=historial`)}>Récords e historial del ejercicio</a>
+              <p className="tiny muted">Solo se compara el mismo ejercicio y variante: los kilos de máquinas distintas o mancuernas frente a barra no se mezclan. Los récords usan solo series de trabajo convencionales; los bloques especiales no cuentan.</p>
+            </section>
+          ) : <div className="card empty"><ChartLine aria-hidden /><p>Cuando registres ejercicios verás aquí su evolución y sus récords.</p></div>
+        )}
+        {view === 'cuerpo' && (
+          <>
+            <BodyweightCard />
+            <MeasurementsCard />
+            <PhotosCard />
+            <div className="note info"><Info aria-hidden /><span className="small">Datos opcionales. Ninguna app puede medir el músculo que ganas ni tu “recuperación” con estos datos; las fotos no calculan grasa ni músculo. Cada sesión muestra un <strong>rango aproximado</strong> de calorías.</span></div>
+          </>
+        )}
       </main>
     </>
   )

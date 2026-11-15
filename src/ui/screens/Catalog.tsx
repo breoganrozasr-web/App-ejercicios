@@ -18,6 +18,7 @@ import { useToast } from '../components/overlay'
 import { FrequencyTable, RoutineDaysView, ScheduleEditor, VolumePanel } from '../components/RoutineParts'
 import { back, go, href } from '../router'
 import { useProgram } from './Phase'
+import { VolumeMap, rowsFromPlan } from '../components/VolumeMap'
 
 function Header({ title, onBack = () => back('rutinas') }: { title: string; onBack?: () => void }) {
   return (
@@ -362,6 +363,10 @@ export function TemplatePreviewScreen({ templateId }: { templateId: string }) {
           <button className="btn soft block" onClick={() => setSchedule(spacedSchedule)}>Probar días separados: {spacedSchedule.map((s) => WEEKDAY_NAME[s.weekday]).join(', ')}</button>
         )}
         <RoutineDaysView version={version} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
+        <section className="card stack-sm" aria-label="Mapa del plan">
+          <h3>Mapa del plan (semana tipo)</h3>
+          <VolumeMap rows={rowsFromPlan(b.volume)} title={`Planificado en ${r.name}`} empty="Sin series previstas." />
+        </section>
         <VolumePanel version={version} level={profile.level} goal={r.goals[0]} priority={profile.priorityRegions ?? []} />
         {blockedReason && <div className="note warn"><TriangleAlert aria-hidden /><span className="small">{blockedReason}</span></div>}
         {b.blocked && f.conflicts.some((c) => c.kind === 'blocked') && <a className="btn soft block" href={href('rutinas/generar')}>Ver la propuesta adecuada a mi perfil</a>}

@@ -13,6 +13,8 @@ import { externalDemoFor } from '../../domain/catalog/external'
 import { SourceChips } from './Learn'
 import { alternativesFor } from '../../domain/engine/substitution'
 import { functionText } from '../../domain/content/functions'
+import { ANAT_LABEL, anatomyOf, regionsByRole, type AnatRegion } from '../../domain/catalog/anatomy'
+import { BodyMap } from '../components/BodyMap'
 import { computeRecords, exerciseTrend } from '../../domain/records'
 import type { EquipmentId, Exercise, LoadType, MuscleId, Pattern, Session } from '../../domain/types'
 import { formatDateShort, formatNumber, newId } from '../../domain/util'
@@ -20,7 +22,7 @@ import { defaultIncrement, historyFor } from '../../domain/engine/progression'
 import { DEFAULT_INCREMENTS } from '../../domain/profile'
 import { LineChart } from '../components/Charts'
 import { DemoPlayer } from '../components/DemoPlayer'
-import { Chip, DecimalInput } from '../components/inputs'
+import { Chip, DecimalInput, Segmented } from '../components/inputs'
 import { useToast } from '../components/overlay'
 import { Thumb } from '../components/RoutineParts'
 import { getProgramState, updateProgramState } from '../../data/repo'
@@ -85,6 +87,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
   const sessions = useLiveQuery(() => db().sessions.toArray(), [], [] as Session[])
   const userMedia = useLiveQuery(() => db().userMedia.where('exerciseId').equals(exerciseId).toArray(), [exerciseId], [])
   const toast = useToast()
+  const [tab, setTab] = useState<'como' | 'trabaja' | 'historial'>(() => (new URLSearchParams(location.hash.split('?')[1] ?? '').get('vista') as 'trabaja' | 'historial' | null) ?? 'como')
   if (!ex) return <main className="page"><p>Ejercicio no encontrado.</p></main>
   const allowE1rm = !profile || checkScope(profile).kind === 'adult'
   const rec = computeRecords(sessions, ex.id, allowE1rm)
@@ -106,109 +109,107 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
             {ex.custom && <span className="badge">Contenido propio</span>}
           </div>
         </div>
+        <span className="small"><strong>Qué anotar:</strong> {LOAD_LABEL[ex.loadType].field}{ex.unilateral ? ' (por lado)' : ''}</span>
         <DemoPlayer exerciseId={ex.id} onOpenReference={(id) => go(`ejercicios/${id}`)} />
         {ex.variantNote && (ex.demoStatus === 'verificada' || !ex.variantNote.startsWith('Demostración')) && <p className="small muted">{ex.variantNote}</p>}
+        <MusclesSummary ex={ex} />
         {ex.keys ? (
           <section className="card stack-sm">
             <h3>Tres claves</h3>
             <ol className="keys small" style={{ marginTop: 0 }} aria-label="Tres claves">{ex.keys.map((k) => <li key={k}>{k}</li>)}</ol>
           </section>
         ) : null}
-        <section className="card stack-sm" aria-label="Aprender este ejercicio">
-          <h3>Aprender este ejercicio</h3>
-          {functionText(ex) && (
-            <>
-              <span className="label">Qué aporta</span>
-              <p className="small" style={{ margin: 0 }}>{functionText(ex)}</p>
-            </>
-          )}
-          {ex.learn ? (
-            <>
-              <span className="label">Preparación y ejecución</span>
-              <p className="small" style={{ margin: 0 }}>{ex.learn.detail}</p>
-            </>
-          ) : (
-            <>
-              <span className="label">Cómo se hace</span>
-              <ol className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.instructions.map((t) => <li key={t}>{t}</li>)}</ol>
-            </>
-          )}
-          {ex.errors.length > 0 && (
-            <>
-              <span className="label">Errores habituales y correcciones</span>
-              <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.errors.map((t) => <li key={t}>{t}</li>)}</ul>
-            </>
-          )}
-          {(ex.learn?.alternatives || ex.easier || ex.harder) && (
-            <>
-              <span className="label">Variantes</span>
-              {ex.learn?.alternatives && <p className="small" style={{ margin: 0 }}>{ex.learn.alternatives}</p>}
-              <div className="row wrap small">
-                {ex.easier && <a href={href(`ejercicios/${ex.easier}`)}>Más fácil: {getExercise(ex.easier)?.name}</a>}
-                {ex.harder && <a href={href(`ejercicios/${ex.harder}`)}>Más difícil: {getExercise(ex.harder)?.name}</a>}
+        <Segmented label="Sección de la ficha" value={tab} onChange={setTab} options={[{ value: 'como', label: 'Cómo hacerlo' }, { value: 'trabaja', label: 'Qué trabaja' }, { value: 'historial', label: 'Historial' }]} />
+        {tab === 'como' && (
+          <>
+            <section className="card stack-sm" aria-label="Aprender este ejercicio">
+              <h3>Cómo hacerlo</h3>
+              {ex.learn ? (
+                <p className="small" style={{ margin: 0 }}>{ex.learn.detail}</p>
+              ) : (
+                <ol className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.instructions.map((t) => <li key={t}>{t}</li>)}</ol>
+              )}
+              {ex.errors.length > 0 && (
+                <>
+                  <span className="label">Errores habituales y correcciones</span>
+                  <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.errors.map((t) => <li key={t}>{t}</li>)}</ul>
+                </>
+              )}
+              {ex.learn?.notes?.map((n) => <p key={n} className="small note warn" style={{ margin: 0 }}>{n}</p>)}
+              <div className="small"><strong>Material:</strong> {ex.equipment.length ? ex.equipment.map((x) => EQUIPMENT_LABEL[x]).join(', ') : 'ninguno'}</div>
+              <div className="small"><strong>Qué carga anotar:</strong> {LOAD_LABEL[ex.loadType].help}</div>
+              {(ex.learn?.alternatives || ex.easier || ex.harder) && (
+                <details className="more">
+                  <summary>Variantes</summary>
+                  {ex.learn?.alternatives && <p className="small" style={{ margin: 0 }}>{ex.learn.alternatives}</p>}
+                  <div className="row wrap small">
+                    {ex.easier && <a href={href(`ejercicios/${ex.easier}`)}>Más fácil: {getExercise(ex.easier)?.name}</a>}
+                    {ex.harder && <a href={href(`ejercicios/${ex.harder}`)}>Más difícil: {getExercise(ex.harder)?.name}</a>}
+                  </div>
+                </details>
+              )}
+              <details className="more">
+                <summary>Fuentes y límites</summary>
+                {ex.learn ? <SourceChips codes={ex.learn.sources} /> : <p className="tiny muted">Ficha con la estructura común: contenido de Forja anterior, sin revisión técnica nueva.</p>}
+                {externalDemoFor(ex.id) && <p className="tiny muted">Recurso externo: {externalDemoFor(ex.id)?.author} (requiere conexión).</p>}
+                <p className="tiny muted">Recorrido que puedas controlar y adecuado para el ejercicio. Una postura concreta no garantiza prevenir lesiones; si duele, para y consulta. Guía de Forja, no revisión profesional de la técnica.</p>
+              </details>
+            </section>
+            <section className="card stack-sm">
+              <h3>Alternativas</h3>
+              <div className="list">
+                {alts.map((a) => (
+                  <a key={a.exercise.id} className="list-item" href={href(`ejercicios/${a.exercise.id}`)}>
+                    <Thumb exerciseId={a.exercise.id} />
+                    <span className="grow stack-sm" style={{ gap: 2 }}>
+                      <span style={{ fontWeight: 650 }}>{a.exercise.name}</span>
+                      <span className="tiny muted">{a.reasons.join(' · ')}</span>
+                    </span>
+                  </a>
+                ))}
               </div>
-            </>
-          )}
-          {ex.learn?.notes?.map((n) => <p key={n} className="small note warn" style={{ margin: 0 }}>{n}</p>)}
-          <span className="label">Músculos (cómo cuenta en el panel)</span>
-          <ContributionList exerciseId={ex.id} />
-          <div className="small"><strong>Material:</strong> {ex.equipment.length ? ex.equipment.map((x) => EQUIPMENT_LABEL[x]).join(', ') : 'ninguno'}</div>
-          <div className="small"><strong>Qué carga anotar:</strong> {LOAD_LABEL[ex.loadType].help}</div>
-          {ex.learn ? <SourceChips codes={ex.learn.sources} /> : <p className="tiny muted">Ficha con la estructura común: contenido de Forja anterior, sin revisión técnica nueva.</p>}
-          {externalDemoFor(ex.id) && <p className="tiny muted">Demostración externa: {externalDemoFor(ex.id)?.author} (requiere internet).</p>}
-          <p className="tiny muted">Recorrido que puedas controlar y adecuado para el ejercicio. Una postura concreta no garantiza prevenir lesiones; si duele, para y consulta.</p>
-        </section>
-
-        {rec && (
-          <section className="card stack">
-            <h3>Tu historial</h3>
-            {trend.length >= 2 && (
-              <LineChart
-                points={trend.map((t) => ({ x: t.date, y: ex.loadType === 'time' ? t.sec : ex.loadType === 'bodyweight' || ex.loadType === 'band' ? t.reps : t.topKg }))}
-                yLabel={ex.loadType === 'time' ? 's' : ex.loadType === 'bodyweight' || ex.loadType === 'band' ? 'rep.' : 'kg'}
-                second={allowE1rm && trend.some((t) => t.e1rm) ? trend.map((t) => ({ x: t.date, y: t.e1rm })) : undefined}
-                label={`Evolución de ${ex.name}`}
-              />
-            )}
-            {rec.bestLoadForReps.length > 0 && (
-              <div className="stack-sm">
-                <span className="small muted">Mejor carga para N repeticiones (solo series de trabajo de este mismo ejercicio):</span>
-                <div className="row wrap">
-                  {rec.bestLoadForReps.map((r) => <span key={r.reps} className="badge ok num">{r.reps} rep: {formatNumber(r.kg)} kg</span>)}
-                </div>
-              </div>
-            )}
-            {rec.bestE1rm && (
-              <p className="small">
-                <strong>1RM estimado: {formatNumber(rec.bestE1rm.kg)} kg</strong> <span className="badge suggest">Estimación</span>
-                <br />
-                <span className="muted tiny">Fórmula de Epley a partir de {formatNumber(rec.bestE1rm.fromKg)} kg × {rec.bestE1rm.reps} ({formatDateShort(rec.bestE1rm.date)}). Solo con series de 1–10 repeticiones; puede desviarse varios kilos. No hace falta probar tu máximo real.</span>
-              </p>
-            )}
-            {rec.bestReps && <p className="small">Más repeticiones en una serie: <strong>{rec.bestReps.reps}</strong>{rec.bestReps.extraKg ? ` (con +${formatNumber(rec.bestReps.extraKg)} kg)` : ''} · {formatDateShort(rec.bestReps.date)}</p>}
-            {rec.minAssist && <p className="small">Menor asistencia usada: <strong>{formatNumber(rec.minAssist.kg)} kg</strong> ({rec.minAssist.reps} rep.) · {formatDateShort(rec.minAssist.date)}. Menos asistencia = más difícil.</p>}
-            {rec.bestTimeSec && <p className="small">Mayor tiempo: <strong>{rec.bestTimeSec.sec} s</strong> · {formatDateShort(rec.bestTimeSec.date)}</p>}
-          </section>
+            </section>
+          </>
         )}
-
-        <FamiliarityCard exerciseId={ex.id} sessions={sessions} />
-        <ExerciseHistory exerciseId={ex.id} sessions={sessions} />
-        {(ex.loadType !== 'time' && ex.loadType !== 'band') && <ExerciseSettingsCard exerciseId={ex.id} />}
-
-        <section className="card stack-sm">
-          <h3>Alternativas</h3>
-          <div className="list">
-            {alts.map((a) => (
-              <a key={a.exercise.id} className="list-item" href={href(`ejercicios/${a.exercise.id}`)}>
-                <Thumb exerciseId={a.exercise.id} />
-                <span className="grow stack-sm" style={{ gap: 2 }}>
-                  <span style={{ fontWeight: 650 }}>{a.exercise.name}</span>
-                  <span className="tiny muted">{a.reasons.join(' · ')}</span>
-                </span>
-              </a>
-            ))}
-          </div>
-        </section>
+        {tab === 'trabaja' && <WhatItWorks ex={ex} />}
+        {tab === 'historial' && (
+          <>
+            {rec ? (
+              <section className="card stack">
+                <h3>Tu historial</h3>
+                {trend.length >= 2 && (
+                  <LineChart
+                    points={trend.map((t) => ({ x: t.date, y: ex.loadType === 'time' ? t.sec : ex.loadType === 'bodyweight' || ex.loadType === 'band' ? t.reps : t.topKg }))}
+                    yLabel={ex.loadType === 'time' ? 's' : ex.loadType === 'bodyweight' || ex.loadType === 'band' ? 'rep.' : 'kg'}
+                    second={allowE1rm && trend.some((t) => t.e1rm) ? trend.map((t) => ({ x: t.date, y: t.e1rm })) : undefined}
+                    label={`Evolución de ${ex.name}`}
+                  />
+                )}
+                {rec.bestLoadForReps.length > 0 && (
+                  <div className="stack-sm">
+                    <span className="small muted">Mejor carga para N repeticiones (solo series de trabajo de este mismo ejercicio):</span>
+                    <div className="row wrap">
+                      {rec.bestLoadForReps.map((r) => <span key={r.reps} className="badge ok num">{r.reps} rep: {formatNumber(r.kg)} kg</span>)}
+                    </div>
+                  </div>
+                )}
+                {rec.bestE1rm && (
+                  <p className="small">
+                    <strong>1RM estimado: {formatNumber(rec.bestE1rm.kg)} kg</strong> <span className="badge suggest">Estimación</span>
+                    <br />
+                    <span className="muted tiny">Fórmula de Epley a partir de {formatNumber(rec.bestE1rm.fromKg)} kg × {rec.bestE1rm.reps} ({formatDateShort(rec.bestE1rm.date)}). Solo con series de 1–10 repeticiones; puede desviarse varios kilos. No hace falta probar tu máximo real.</span>
+                  </p>
+                )}
+                {rec.bestReps && <p className="small">Más repeticiones en una serie: <strong>{rec.bestReps.reps}</strong>{rec.bestReps.extraKg ? ` (con +${formatNumber(rec.bestReps.extraKg)} kg)` : ''} · {formatDateShort(rec.bestReps.date)}</p>}
+                {rec.minAssist && <p className="small">Menor asistencia usada: <strong>{formatNumber(rec.minAssist.kg)} kg</strong> ({rec.minAssist.reps} rep.) · {formatDateShort(rec.minAssist.date)}. Menos asistencia = más difícil.</p>}
+                {rec.bestTimeSec && <p className="small">Mayor tiempo: <strong>{rec.bestTimeSec.sec} s</strong> · {formatDateShort(rec.bestTimeSec.date)}</p>}
+              </section>
+            ) : <p className="small muted">Aún no hay registros de este ejercicio.</p>}
+            <FamiliarityCard exerciseId={ex.id} sessions={sessions} />
+            <ExerciseHistory exerciseId={ex.id} sessions={sessions} />
+            {(ex.loadType !== 'time' && ex.loadType !== 'band') && <ExerciseSettingsCard exerciseId={ex.id} />}
+          </>
+        )}
 
         {ex.custom && (
           <section className="card stack-sm">
@@ -429,5 +430,39 @@ function ExerciseSettingsCard({ exerciseId }: { exerciseId: string }) {
         <textarea key={setting?.note ?? ''} className="input" aria-label="Nota fija del ejercicio" maxLength={300} defaultValue={setting?.note ?? ''} placeholder="Ej.: asiento en 4, agarre ancho" onBlur={(ev) => { const v = ev.target.value.trim(); if (v !== (setting?.note ?? '')) void save({ note: v || undefined }) }} />
       </label>
     </details>
+  )
+}
+
+/** Primera lectura: principales y colaboradores en texto + esquema corporal compacto (sin la lista larga). */
+export function MusclesSummary({ ex }: { ex: Exercise }) {
+  const m = anatomyOf(ex)
+  const prim = regionsByRole(m, 'primary').map((r) => ANAT_LABEL[r].toLowerCase())
+  const sec = regionsByRole(m, 'secondary').map((r) => ANAT_LABEL[r].toLowerCase())
+  if (m.source === 'sin-mapa') return <p className="small muted">{m.note}</p>
+  return (
+    <section className="card stack-sm" aria-label="Músculos">
+      <span className="small"><strong>Principales:</strong> {prim.join(', ') || '—'}{sec.length ? <> · <strong>colaboran:</strong> {sec.join(', ')}</> : null}</span>
+      <BodyMap mode={{ kind: 'roles', roles: m.roles }} title={`Músculos de ${ex.name}`} showList={false} maxWidth={260} />
+    </section>
+  )
+}
+
+/** «Qué trabaja»: roles anatómicos (principal / colabora / estabiliza), función y, aparte, cómo se cuenta en el panel. */
+export function WhatItWorks({ ex }: { ex: Exercise }) {
+  const m = anatomyOf(ex)
+  const [sel, setSel] = useState<AnatRegion | null>(null)
+  return (
+    <section className="card stack-sm" aria-label="Qué trabaja">
+      <h3>Qué trabaja</h3>
+      {functionText(ex) && <p className="small" style={{ margin: 0 }}>{functionText(ex)}</p>}
+      {m.note && <p className="small muted" style={{ margin: 0 }}>{m.note}</p>}
+      <BodyMap mode={{ kind: 'roles', roles: m.roles }} title={`Músculos de ${ex.name}`} selected={sel} onSelect={setSel} />
+      <p className="tiny muted">Procedencia: {m.source === 'ficha-revisada' ? 'variante revisada en la ficha' : m.source === 'patron' ? 'acción principal del patrón de movimiento' : m.source === 'grupos-propios' ? 'grupos que elegiste' : 'sin mapa'}. Orientación funcional (anatomía de referencia), no porcentajes de activación ni una medida de cuánto crece cada zona.</p>
+      <details className="more">
+        <summary>Cómo se calcula en el panel de series</summary>
+        <ContributionList exerciseId={ex.id} />
+        <p className="tiny muted">«Cuenta 1» o «cuenta 0,5» es una aproximación para registrar volumen semanal: no significa que el músculo se active al 50 % ni que crezca la mitad. Este cómputo no cambia por el esquema de arriba y las rutinas antiguas conservan su mapa de cómputo.</p>
+      </details>
+    </section>
   )
 }

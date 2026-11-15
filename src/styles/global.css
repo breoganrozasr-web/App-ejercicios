@@ -407,3 +407,10 @@ label.btn[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
 .milestones li { display: flex; gap: 8px; align-items: flex-start; }
 .milestones li .ok { color: var(--ok); font-weight: 800; }
 .milestones li .no { color: var(--muted); font-weight: 800; }
+
+/* Esquema corporal por grupos (1.5) */
+.body-map { --map-body: color-mix(in srgb, var(--text) 7%, var(--surface)); --map-off: color-mix(in srgb, var(--text) 13%, var(--surface)); --map-line: color-mix(in srgb, var(--text) 38%, var(--surface)); }
+.map-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.map-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: inherit; text-align: left; font: inherit; cursor: pointer; }
+.map-item[aria-pressed='true'] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.map-item:disabled { cursor: default; opacity: 1; }

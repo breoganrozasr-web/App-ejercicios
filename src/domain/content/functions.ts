@@ -5,7 +5,7 @@ import type { Exercise, Pattern } from '../types'
  * no una certificación anatómica. Son otra capa distinta de los contadores de series (mapa muscular).
  */
 const BY_PATTERN: Partial<Record<Pattern, string>> = {
-  push_h: 'Pecho: mueve el brazo respecto al tronco y, al ser un press, también extiende el codo (tríceps). Una variante inclinada cambia el ángulo; no garantiza crecimiento de una región concreta.',
+  push_h: 'Pecho: acerca el brazo por delante del tronco y, al ser un press, también extiende el codo (tríceps) con ayuda del hombro anterior.',
   chest_iso: 'Pecho: lleva el brazo hacia delante y hacia dentro. A diferencia de un press, no reproduce la extensión de codo del tríceps.',
   pull_v: 'Espalda: tirón vertical (el brazo baja desde arriba). «Espalda» agrupa músculos con papeles distintos; un tirón vertical no sustituye por completo a uno horizontal.',
   pull_h: 'Espalda: tirón horizontal (el codo va hacia atrás) con movimiento de escápulas. Complementa al tirón vertical; no es lo mismo que un jalón.',
@@ -26,8 +26,10 @@ const BY_PATTERN: Partial<Record<Pattern, string>> = {
   core_stab: 'Tronco: resistir la extensión o la flexión lateral, por tiempo. Para antes de perder la postura; no tiene RIR ni 1RM.',
 }
 
-export function functionText(ex: Pick<Exercise, 'id' | 'pattern'>): string | null {
+export function functionText(ex: Pick<Exercise, 'id' | 'pattern' | 'loadType'>): string | null {
   if (ex.id === 'peso_muerto_convencional') return 'Práctica específica del tercer levantamiento del powerlifting: extensión de cadera y rodilla con estabilización de tronco y agarre. Los erectores trabajan, pero eso no lo convierte en un remo ni en todas las series de espalda.'
+  if (ex.id === 'press_inclinado_mancuernas' || ex.id === 'press_inclinado_barra') return 'Pecho con el banco inclinado: mismo gesto de press (brazo por delante del tronco y extensión de codo) con otro ángulo y algo más de hombro anterior. El ángulo no garantiza crecimiento de una región concreta.'
+  if (ex.pattern === 'push_h' && ex.loadType === 'bodyweight') return 'Pecho, tríceps y hombro anterior empujando el cuerpo; el tronco se mantiene en línea (el abdomen estabiliza). Las variantes cambian la carga, no la función.'
   if (ex.id === 'gemelos_sentado_maquina') return 'Pantorrilla con la rodilla flexionada: el sóleo trabaja en condiciones distintas que de pie (F19). Mantener ambas variantes no es redundante.'
   return BY_PATTERN[ex.pattern] ?? null
 }
