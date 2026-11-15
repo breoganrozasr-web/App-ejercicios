@@ -41,7 +41,27 @@ Ejecución del 15/11/2026 en el contenedor de desarrollo (mismas herramientas qu
 | B19 | No comparar contextos incompatibles | `tecnicas.test.ts` (bloque o superserie → nueva referencia; bloques solo con bloques iguales) | ✅ |
 | B20 | JSON conserva bloques y fases; CSV tramos y métodos; copias antiguas valen | `tecnicas.test.ts` (exportar → restaurar en base nueva; CSV con una fila por tramo; copia de formato 1) | ✅ |
 | B21 | Una propuesta no se registra como entrenamiento | `tecnicas.test.ts` | ✅ |
-| B22 | PWA, rutas, sin conexión, actualización y URL pública tras desplegar | Actualización con builds reales (arriba) y «Web publicada, versión 1.3» | ver abajo |
+| B22 | PWA, rutas, sin conexión, actualización y URL pública tras desplegar | Actualización con builds reales (arriba) y «Web publicada, versión 1.3» | ✅ |
+
+### Web publicada, versión 1.3
+
+15-11-2026, https://breoganrozasr-web.github.io/App-ejercicios/ · workflow «Publicar en GitHub Pages» ejecución 9 (pruebas, build y despliegue correctos) · script principal servido `index-C62D1TWZ.js`. La app publicada corresponde al commit **31025e8**; el commit posterior que añade este registro solo cambia documentación y no se despliega.
+
+Comprobado sobre la URL real con un iPhone 13 emulado y perfil intermedio (no es un iPhone físico):
+
+| Comprobación | Chromium | WebKit |
+|---|---|---|
+| Ajustes: «App 1.3.0 · motor de rutinas 2.1.0 · build 31025e8» = commit subido | ✅ | ✅ |
+| Progreso: «Tu programa» en Consolidación; pantalla de fase con el texto literal y «tu programa parte de esa declaración» | ✅ | ✅ |
+| Bloque descendente: 40 kg × 10 con doble toque en «Registrar tramo» → recarga → «Continuar bajada» → 30 kg × 8. IndexedDB: tramos [[40,10],[30,8]], peso y repeticiones de la serie vacíos; descanso habitual al terminar el bloque (B11, B14) | ✅ | ✅ |
+| Rest-pause: tramo inicial → «Pausa breve» → recarga → la pausa sigue (B13) | ✅ | ✅ |
+| Superserie: A1 → «Transición de superserie» → A2 → «Descanso de la ronda» (B18) | ✅ | ✅ |
+| Aprender «Series descendentes» con el texto de ayuda literal; fuente R1 con su alcance de consulta | ✅ | ✅ |
+| Demostración local de Wikimedia Commons cargada; service worker activo | ✅ | ✅ |
+| Sin conexión: la app y la pantalla de fase abren desde la caché | ✅ | no probado (limitación de Playwright con WebKit) |
+| Sin errores de página ni recursos propios fallidos | ✅ | ✅ |
+
+La primera pasada de Chromium marcó dos comprobaciones como fallidas porque el script las evaluaba al instante, antes de que terminara la carga tras navegar o recargar; con espera, ambas pasan (16/16). El tramo 2 registró una pausa de 0 s porque el script pulsa «Continuar bajada» menos de un segundo después de recargar.
 
 ## Versión 1.2 (motor 2): resultados y criterios de aceptación A01–A24
 

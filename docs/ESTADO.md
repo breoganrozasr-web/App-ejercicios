@@ -13,6 +13,8 @@
 - **Métricas** separadas (series convencionales y bloques), sin récords ni 1RM desde bloques, comparación solo en el mismo contexto, tonelaje anotado por tramo. Copia JSON formato 2 y CSV con una fila por tramo.
 - **Aprender**: 4 textos nuevos (descendentes, rest-pause, superseries y fases, con los textos de ayuda literales) y fuentes R1–R5 con su alcance de consulta.
 
+**Publicada y verificada en la web real** el 15-11-2026 (build 31025e8) en Chromium y WebKit; actualización desde la 1.2 con datos probada con las builds reales. Detalle en docs/PRUEBAS.md.
+
 **Pendientes reales:** prueba en iPhone físico (incluido el uso con una mano de los botones de tramo); abrir los enlaces R1–R5 y T1–T9 desde un entorno con acceso; los umbrales de fase y los límites de bloques son reglas de producto sin validación clínica; las técnicas solo se proponen en una lista corta de aislamientos; los bloques no se editan en una sesión ya guardada (se ven tramo a tramo); no hay importación de CSV (no se pedía).
 
 ## Versión 1.2 (14/11/2026): motor 2 y mejoras de la especificación
