@@ -10,6 +10,7 @@ import { go, href, useRoute } from './ui/router'
 import { ExerciseDetailScreen, ExercisesScreen, NewExerciseScreen } from './ui/screens/Exercises'
 import { LearnScreen } from './ui/screens/Learn'
 import { OnboardingScreen } from './ui/screens/Onboarding'
+import { PhaseScreen } from './ui/screens/Phase'
 import { ProgressScreen, SessionDetailScreen } from './ui/screens/Progress'
 import { GenerateScreen, RoutineDetailScreen, RoutineEditScreen, RoutinesScreen, TemplatePreviewScreen, TemplatesScreen } from './ui/screens/Routines'
 import { SettingsScreen } from './ui/screens/Settings'
@@ -66,6 +67,7 @@ export function App() {
         break
       case 'progreso':
         if (route.path[1] === 'sesion' && route.path[2]) screen = <SessionDetailScreen sessionId={route.path[2]} />
+        else if (route.path[1] === 'fase') screen = <PhaseScreen />
         else screen = <ProgressScreen />
         break
       case 'ajustes':

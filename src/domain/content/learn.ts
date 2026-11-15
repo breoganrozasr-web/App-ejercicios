@@ -50,6 +50,30 @@ export const ARTICLES: Article[] = [
     sources: ['E9', 'E11', 'E12', 'E13'],
   },
   {
+    id: 'descendentes',
+    title: 'Series descendentes',
+    body: 'Haces un tramo, bajas el peso y continúas el mismo ejercicio. Puede ahorrar tiempo, pero no garantiza más crecimiento. Cada bajada tiene su propio peso y repeticiones. Puedes terminar el bloque cuando lo necesites. En los estudios disponibles, las series descendentes produjeron una hipertrofia parecida a la de las series convencionales y pueden ahorrar tiempo; no se ha demostrado una superioridad universal y la evidencia inicial era pequeña. Forja usa una variante conservadora (un tramo inicial de 8–12 repeticiones y una bajada de alrededor del 20 %, sin llegar al fallo por defecto): no reproduce exactamente los protocolos estudiados, que a menudo llegan al fallo.',
+    sources: ['R1', 'R3'],
+  },
+  {
+    id: 'rest-pause',
+    title: 'Rest-pause',
+    body: 'Mantienes el peso y haces una pausa breve antes de continuar con unas pocas repeticiones. Registra cada tramo por separado. No necesitas usar esta técnica para seguir progresando. Algunos ensayos y subgrupos muestran resultados favorables, pero eso no justifica presentarla como superior para todo el mundo. En Forja: tramo inicial de 10–15 repeticiones, pausa de unos 20 s ampliable y una miniserie de 3–5; el objetivo es comprimir trabajo, no demostrar más tolerancia al sufrimiento.',
+    sources: ['R4', 'R5', 'R3'],
+  },
+  {
+    id: 'superseries',
+    title: 'Superseries',
+    body: 'Alternas dos ejercicios y descansas después de completar ambos. Puede acortar la sesión. Si falta equipo o necesitas más descanso, puedes separarlos sin perder el registro. Pueden ahorrar tiempo con adaptaciones parecidas, aunque se perciben más exigentes. Emparejar músculos diferentes (por ejemplo, bíceps y tríceps) suele preservar mejor el trabajo que encadenar dos ejercicios del mismo músculo; esas parejas solo se hacen si las eliges tú.',
+    sources: ['R2'],
+  },
+  {
+    id: 'fases',
+    title: 'Fases del programa',
+    body: 'Forja adapta sus propuestas a tu práctica. La fase indica cómo organizamos tu programa; no certifica tu nivel físico. La constancia, tu rendimiento y cómo manejas los ejercicios importan más que una fecha. Aprendizaje: las primeras sesiones válidas con menos series y más margen. Consolidación: mantener tus ejercicios de referencia y progresar con calma. Cuando reúnes constancia suficiente (días válidos, semanas y sesiones completas en tus referencias), Forja te propone revisar el programa; puedes seguir como estás o dejarlo para más adelante. Son reglas de producto: ningún estudio valida que un número de sesiones o semanas convierta a alguien en intermedio, y aceptar Progresión no cambia tu experiencia declarada ni activa técnicas.',
+    sources: ['FORJA', 'R3'],
+  },
+  {
     id: 'primera-carga',
     title: 'Primera carga',
     body: 'Empieza ligero y haz una aproximación. Elige una carga con la que puedas completar la parte baja del rango dejando margen y manteniendo el control. Si no llegas, reduce. Si resulta muy fácil, ajusta poco a poco. No necesitas probar tu máximo para empezar.',
@@ -65,7 +89,7 @@ export interface SourceEntry {
   scope: string
   synthesis?: string
   decision?: string
-  kind: 'cientifica' | 'tecnica' | 'forja'
+  kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada'
 }
 
 /** Fecha de consulta declarada en la especificación. */
@@ -187,6 +211,46 @@ export const SOURCES: SourceEntry[] = [
   { code: 'T7', kind: 'tecnica', title: 'NASM · Floor Bridge (y vídeo).', urls: ['https://www.nasm.org/resource-center/exercise-library/floor-bridge', 'https://www.youtube.com/watch?v=Z3cY3d3BBo4'], scope: 'Página oficial; texto de Forja original.' },
   { code: 'T8', kind: 'tecnica', title: 'ACE · Front Plank.', urls: ['https://www.acefitness.org/resources/everyone/exercise-library/32/front-plank/'], scope: 'Página oficial; texto de Forja original.' },
   { code: 'T9', kind: 'tecnica', title: 'University of Wyoming Campus Recreation · Exercise Video Library («Backward Lunge»).', urls: ['https://www.uwyo.edu/rec/group-fitness/exercise-video-library.html', 'https://www.youtube.com/watch?v=gd1a7i7-CMY'], scope: 'Página oficial; texto de Forja original.' },
+  {
+    code: 'R1', kind: 'avanzada',
+    title: 'Sødal et al., 2023. Revisión sistemática y metaanálisis sobre series descendentes (drop sets).',
+    urls: ['https://link.springer.com/article/10.1186/s40798-023-00620-5'],
+    scope: 'Revisión sistemática y metaanálisis. Consulta: resumen, métodos y secciones del texto abierto.',
+    synthesis: 'Seis estudios, 142 participantes; sin diferencia significativa de hipertrofia entre métodos y posible ahorro de tiempo.',
+    decision: 'Ofrecer las series descendentes como opción para ahorrar tiempo, sin prometer más crecimiento; desactivadas por defecto en el generador.',
+  },
+  {
+    code: 'R2', kind: 'avanzada',
+    title: 'Zhang et al., 2025. Revisión sistemática y metaanálisis sobre superseries.',
+    urls: ['https://link.springer.com/article/10.1007/s40279-025-02176-8'],
+    scope: 'Revisión sistemática y metaanálisis. Consulta: resumen y secciones del texto abierto.',
+    synthesis: 'Resultados compatibles con adaptaciones crónicas similares y sesiones más breves; mayor esfuerzo percibido. Los resultados dependen del tipo de emparejamiento.',
+    decision: 'Proponer parejas de grupos distintos (bíceps + tríceps u otros accesorios) para ahorrar tiempo; las del mismo músculo, solo por elección manual.',
+  },
+  {
+    code: 'R3', kind: 'avanzada',
+    title: 'Cowley et al., 2026. Revisión y metaanálisis en red de métodos avanzados de entrenamiento.',
+    urls: ['https://link.springer.com/article/10.1007/s40279-026-02428-1'],
+    scope: 'Revisión y metaanálisis en red. Consulta: resumen y secciones del texto abierto.',
+    synthesis: 'No identificó una superioridad consistente para fuerza o hipertrofia de los métodos avanzados frente a los tradicionales en las poblaciones estudiadas.',
+    decision: 'Las técnicas son opcionales y no son un requisito para progresar; las series convencionales siguen siendo la alternativa visible.',
+  },
+  {
+    code: 'R4', kind: 'avanzada',
+    title: 'Enes et al., 2021. Ensayo de rest-pause y series descendentes.',
+    urls: ['https://pubmed.ncbi.nlm.nih.gov/34260860/'],
+    scope: 'Ensayo controlado. Consulta: resumen.',
+    synthesis: 'Ensayo pequeño en hombres entrenados; hipertrofia similar, con alguna ventaja de fuerza para rest-pause.',
+    decision: 'No extrapolarlo a todos los ejercicios ni a todas las personas: rest-pause como opción, no como recomendación general.',
+  },
+  {
+    code: 'R5', kind: 'avanzada',
+    title: 'Tsartsapakis et al., 2026. Síntesis sobre métodos de entrenamiento avanzados.',
+    urls: ['https://pubmed.ncbi.nlm.nih.gov/41718208/'],
+    scope: 'Síntesis de estudios. Consulta: resumen.',
+    synthesis: 'Señales favorables en determinados métodos o subgrupos, incluido rest-pause, sin ventaja global de hipertrofia.',
+    decision: 'La diferencia con R3 aconseja no prometer superioridad de ninguna técnica.',
+  },
   { code: 'FORJA', kind: 'forja', title: 'Decisión práctica de Forja.', urls: [], scope: 'No es una fuente externa: valor inicial de la app, revisable.' },
 ]
 

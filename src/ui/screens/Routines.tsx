@@ -15,7 +15,11 @@ import { buildFromTemplate, generateRoutine, prescriptionFor, priorityRegionsOf,
 import { ENGINE_VERSION, PRIORITY_CEILING, weeklyBudget } from '../../domain/engine/params'
 import { isTimePrescription } from '../../domain/engine/prescription'
 import { TEMPLATES, TEMPLATE_BY_ID } from '../../domain/engine/templates'
-import type { Prescription, Region, Routine, RoutineDay, RoutineVersion, ScheduleOverride } from '../../domain/types'
+import { checkScope } from '../../domain/engine/scope'
+import { PHASE_LABEL, pairExercises, setTechnique, supersetProposals, techniqueCandidates, techniqueGate } from '../../domain/program'
+import { METHOD_LABEL, canUseMethod, pairKind, techniqueBeforeAfter } from '../../domain/techniques'
+import type { Prescription, Region, Routine, RoutineDay, RoutineTechnique, RoutineVersion, ScheduleOverride, SetMethod } from '../../domain/types'
+import { useProgram } from './Phase'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, formatDateShort, newId, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -126,9 +130,13 @@ function FrequencyTable({ rows, compact = false }: { rows: FrequencyRow[]; compa
 
 export function GenerateScreen() {
   const { profile } = useApp()
-  const [options, setOptions] = useState<GenerateOptions>({})
+  const [options0, setOptions] = useState<GenerateOptions>({})
   const [youthOk, setYouthOk] = useState(false)
   const toast = useToast()
+  const { view: program } = useProgram()
+  // Fuera de Aprendizaje no se impone otra familiarización de rutina (la fase no retrocede al pedir otra propuesta).
+  const learningDone = !!program && program.phase !== 'learning' && (program.validDays > 0 || program.phase === 'progression')
+  const options = useMemo(() => ({ ...options0, ...(learningDone ? { learningDone: true } : {}) }), [options0, learningDone])
   const result = useMemo(() => (profile ? generateRoutine(profile, options) : null), [profile, options])
   // Para «pedir más trabajo»: la propuesta sin las series extra, para comparar antes/después.
   const baseResult = useMemo<GenerateResult | null>(() => (profile && options.extraSets ? generateRoutine(profile, { ...options, extraSets: undefined }) : null), [profile, options])
@@ -238,7 +246,7 @@ export function GenerateScreen() {
                 )}
               </section>
             )}
-            {Object.keys(options).length > 0 && (
+            {Object.keys(options0).length > 0 && (
               <button className="btn ghost small" onClick={() => setOptions({})}>Deshacer ajustes y volver a la propuesta original</button>
             )}
             <details className="more card flat">
@@ -305,7 +313,9 @@ export function TemplatesScreen() {
 export function TemplatePreviewScreen({ templateId }: { templateId: string }) {
   const { profile } = useApp()
   const t = TEMPLATE_BY_ID[templateId]
-  const built = useMemo(() => (t && profile ? buildFromTemplate(t, profile) : null), [t, profile])
+  const { view: program } = useProgram()
+  const learningDone = !!program && program.phase !== 'learning' && (program.validDays > 0 || program.phase === 'progression')
+  const built = useMemo(() => (t && profile ? buildFromTemplate(t, profile, { learningDone }) : null), [t, profile, learningDone])
   const [schedule, setSchedule] = useState<{ weekday: number; dayId: string }[] | null>(null)
   const toast = useToast()
   if (!t || !built || !profile) return <><Header title="Plantilla" /><main className="page"><p>No encontrada.</p></main></>
@@ -447,6 +457,7 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
         {version.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
         <RoutineDaysView version={version} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
         {profile && <VolumePanel version={version} level={profile.level} goal={profile.goal} priority={priorityRegionsOf(profile)} targets={version.plan?.targetRegions} />}
+        {profile && <TechniquesSection routine={routine} version={version} />}
         <details className="more card flat">
           <summary><Info size={18} aria-hidden /> Por qué está así</summary>
           <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{version.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
@@ -483,6 +494,7 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
   if (!bundle || !profile) return null
   const d = days ?? bundle.version.days
   const sched = schedule ?? bundle.version.schedule
+  const adultScope = checkScope(profile).kind === 'adult'
   const nm = name ?? bundle.routine.name
   const dirty = days !== null || schedule !== null || name !== null
   const updDay = (id: string, f: (day: RoutineDay) => RoutineDay) => setDays(d.map((x) => (x.id === id ? f(structuredClone(x)) : x)))
@@ -542,9 +554,38 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
                     <Num label="Aprox." v={re.prescription.warmupSets} on={(v) => setP({ warmupSets: Math.max(0, v ?? 0) })} />
                   </div>
                   {re.prescription.restSec < 60 && <span className="tiny" style={{ color: 'var(--warn)' }}>Descansos por debajo de 60 s pueden restar calidad a las series.</span>}
+                  {adultScope && ex && ex.loadType !== 'time' && (() => {
+                    const inPair = !!re.superset && day.exercises.filter((x) => x.superset === re.superset).length === 2
+                    const methods = (['drop', 'rest_pause'] as SetMethod[]).filter((m) => canUseMethod(m, ex.loadType))
+                    if (!methods.length) return null
+                    const cur = re.technique
+                    const setT = (t: RoutineTechnique | undefined) => updDay(day.id, (x) => ({ ...x, exercises: x.exercises.map((e) => { if (e.uid !== re.uid) return e; const n2 = { ...e }; if (t) n2.technique = t; else delete n2.technique; return n2 }) }))
+                    return (
+                      <div className="stack-sm" style={{ gap: 4 }}>
+                        <div className="seg" role="group" aria-label={`Técnica de ${ex.name}`}>
+                          <button aria-pressed={!cur} onClick={() => setT(undefined)}>Normal</button>
+                          {methods.map((m) => <button key={m} aria-pressed={cur?.method === m} disabled={inPair} onClick={() => setT({ method: m, mode: cur?.mode ?? (re.prescription.sets >= 2 ? 'reorganize' : 'extend'), extra: cur?.extra ?? 1 })}>{METHOD_LABEL[m]}</button>)}
+                        </div>
+                        {inPair && <span className="tiny muted">En una superserie no se añaden bloques especiales.</span>}
+                        {cur && (
+                          <>
+                            <div className="seg" role="group" aria-label="Uso del bloque">
+                              <button aria-pressed={cur.mode === 'reorganize'} disabled={re.prescription.sets < 2} onClick={() => setT({ ...cur, mode: 'reorganize' })}>Reorganizar 2 series</button>
+                              <button aria-pressed={cur.mode === 'extend'} onClick={() => setT({ ...cur, mode: 'extend' })}>Prolongar la última</button>
+                            </div>
+                            <div className="seg" role="group" aria-label="Bajadas o miniseries">
+                              <button aria-pressed={cur.extra === 1} onClick={() => setT({ ...cur, extra: 1 })}>1 {cur.method === 'drop' ? 'bajada' : 'miniserie'}</button>
+                              <button aria-pressed={cur.extra === 2} onClick={() => setT({ ...cur, extra: 2 })}>2 (elegido a mano)</button>
+                            </div>
+                            <span className="tiny muted">{techniqueBeforeAfter(re.prescription, cur).after}. {techniqueBeforeAfter(re.prescription, cur).note}</span>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
                   <div className="row wrap">
                     <button className="btn small soft" onClick={() => setPicker({ dayId: day.id, replaceUid: re.uid })}><Repeat size={16} /> Sustituir</button>
-                    {i < day.exercises.length - 1 && (
+                    {i < day.exercises.length - 1 && !re.technique && !day.exercises[i + 1].technique && (
                       <button className="btn small soft" onClick={() => updDay(day.id, (x) => {
                         const a = x.exercises[i]
                         const b = x.exercises[i + 1]
@@ -552,7 +593,7 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
                         a.superset = tag
                         b.superset = tag
                         return x
-                      })}><Link2 size={16} /> {re.superset && re.superset === day.exercises[i + 1]?.superset ? 'Quitar superserie' : 'Superserie con el siguiente'}</button>
+                      })}><Link2 size={16} /> {re.superset && re.superset === day.exercises[i + 1]?.superset ? 'Quitar superserie' : `Superserie con el siguiente${pairKind(re.exerciseId, day.exercises[i + 1].exerciseId) === 'same' ? ' (mismo músculo)' : ''}`}</button>
                     )}
                     <button className="btn small soft danger" onClick={() => updDay(day.id, (x) => ({ ...x, exercises: x.exercises.filter((e) => e.uid !== re.uid) }))}><Trash2 size={16} /> Quitar</button>
                   </div>
@@ -598,6 +639,107 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
         }}
       />
     </>
+  )
+}
+
+// ───────────────────────── Técnicas opcionales ─────────────────────────
+
+/**
+ * Técnicas para ahorrar tiempo o variar: solo con consentimiento y en las condiciones del encargo (Progresión o intermedio
+ * declarado, adulto, sin familiarización ni readaptación…). Siempre visible: las técnicas ya puestas y la vuelta a series
+ * normales. Cada cambio crea una versión nueva; nunca durante un entrenamiento de esta rutina.
+ */
+function TechniquesSection({ routine, version }: { routine: Routine; version: RoutineVersion }) {
+  const { activeSession } = useApp()
+  const { view, state, sessions } = useProgram()
+  const toast = useToast()
+  const [choice, setChoice] = useState<Record<string, { method: SetMethod; mode: 'reorganize' | 'extend' }>>({})
+  if (!view) return null
+  const busy = !!activeSession && activeSession.routineId === routine.id
+  const existing = version.days.flatMap((d) => d.exercises.filter((e) => e.technique).map((e) => ({ day: d, re: e })))
+  const gate = techniqueGate(view, state)
+  const cands = gate.allowed ? techniqueCandidates(version, sessions, state) : { candidates: [], notes: [] }
+  const supers = gate.allowed ? supersetProposals(version) : []
+  const apply = async (days: RoutineDay[], note: string) => {
+    if (busy) {
+      toast('Termina o descarta el entrenamiento en curso: la rutina nunca cambia a mitad de una sesión.')
+      return
+    }
+    await saveRoutineVersion(routine.id, { days }, note)
+    toast('Nueva versión guardada. Las sesiones pasadas no cambian.')
+  }
+  if (!existing.length && !state.techniquesConsent) {
+    return (
+      <p className="tiny muted" style={{ padding: '0 4px' }}>Técnicas opcionales (series descendentes, rest-pause, superseries): desactivadas. No son necesarias para progresar; si quieres propuestas para ahorrar tiempo o variar, actívalas en <a href={href('progreso/fase')}>Progreso → Tu programa</a>. Registrar lo que hagas en una sesión es posible siempre.</p>
+    )
+  }
+  return (
+    <section className="card stack-sm" aria-label="Técnicas opcionales">
+      <h3>Técnicas opcionales</h3>
+      {busy && <p className="small" role="status">Hay un entrenamiento de esta rutina en curso: los cambios se podrán aplicar al terminarlo.</p>}
+      {existing.map(({ day, re }) => {
+        const t = techniqueBeforeAfter(re.prescription, re.technique as RoutineTechnique)
+        return (
+          <div key={re.uid} className="card flat tight stack-sm" style={{ background: 'var(--surface-2)' }}>
+            <span className="small"><strong>{getExercise(re.exerciseId)?.name}</strong> · {day.name}: {t.after}.</span>
+            <span className="tiny muted">{t.note} Series normales como alternativa: puedes volver a ellas.</span>
+            <button className="btn soft small" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void apply(setTechnique(version.days, re.uid, null), `Vuelta a series normales en ${getExercise(re.exerciseId)?.name}`)}>Volver a series normales</button>
+          </div>
+        )
+      })}
+      {state.techniquesConsent && !gate.allowed && (
+        <>
+          <p className="small muted">Fase actual: {PHASE_LABEL[view.phase]}. Ahora no se proponen técnicas:</p>
+          <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>{gate.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+        </>
+      )}
+      {gate.allowed && (
+        <>
+          <p className="small muted">Un solo bloque, al final de una sesión y en un aislamiento estable; como máximo dos bloques por semana. Las técnicas no son necesarias para seguir mejorando.</p>
+          {cands.candidates.map((c) => {
+            const ch = choice[c.uid] ?? { method: c.methods[0], mode: c.canReorganize ? 'reorganize' : 'extend' }
+            const re = version.days.find((d) => d.id === c.dayId)?.exercises.find((e) => e.uid === c.uid)
+            if (!re) return null
+            const tech: RoutineTechnique = { method: ch.method, mode: ch.mode, extra: 1 }
+            const t = techniqueBeforeAfter(re.prescription, tech)
+            const before = dayDuration(version.days.find((d) => d.id === c.dayId) as RoutineDay).minutes
+            const after = dayDuration(setTechnique(version.days, c.uid, tech).find((d) => d.id === c.dayId) as RoutineDay).minutes
+            return (
+              <div key={c.uid} className="card flat tight stack-sm" style={{ background: 'var(--surface-2)' }} aria-label={`Propuesta para ${getExercise(c.exerciseId)?.name}`}>
+                <span className="small"><strong>{getExercise(c.exerciseId)?.name}</strong> · {c.dayName}</span>
+                {c.methods.length > 1 && (
+                  <div className="seg" role="group" aria-label="Método">
+                    {c.methods.map((m) => <button key={m} aria-pressed={ch.method === m} onClick={() => setChoice({ ...choice, [c.uid]: { ...ch, method: m } })}>{METHOD_LABEL[m]}</button>)}
+                  </div>
+                )}
+                <div className="seg" role="group" aria-label="Para qué">
+                  {c.canReorganize && <button aria-pressed={ch.mode === 'reorganize'} onClick={() => setChoice({ ...choice, [c.uid]: { ...ch, mode: 'reorganize' } })}>Ahorrar tiempo</button>}
+                  <button aria-pressed={ch.mode === 'extend'} onClick={() => setChoice({ ...choice, [c.uid]: { ...ch, mode: 'extend' } })}>Variar (añade trabajo)</button>
+                </div>
+                <span className="small">Antes: {t.before}. Después: {t.after}. Sesión ≈{before} → ≈{after} min.</span>
+                <span className="tiny muted">{t.note}</span>
+                <button className="btn primary small" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void apply(setTechnique(version.days, c.uid, tech), `${METHOD_LABEL[ch.method]} en ${getExercise(c.exerciseId)?.name} (${ch.mode === 'reorganize' ? 'reorganiza 2 series' : 'prolonga la última serie'})`)}>Añadir a la rutina</button>
+              </div>
+            )
+          })}
+          {!cands.candidates.length && <p className="small muted">Ahora no hay ningún ejercicio en el que proponer un bloque.</p>}
+          {cands.notes.length > 0 && <ul className="tiny muted" style={{ margin: 0, paddingLeft: 18 }}>{cands.notes.map((n) => <li key={n}>{n}</li>)}</ul>}
+          {supers.map((p) => {
+            const day = version.days.find((d) => d.id === p.dayId)
+            const a = day?.exercises.find((e) => e.uid === p.a)
+            const b = day?.exercises.find((e) => e.uid === p.b)
+            if (!a || !b) return null
+            return (
+              <div key={p.dayId} className="card flat tight stack-sm" style={{ background: 'var(--surface-2)' }}>
+                <span className="small"><strong>Superserie</strong> · {p.dayName}: {getExercise(a.exerciseId)?.name} + {getExercise(b.exerciseId)?.name} ({p.kind === 'antagonist' ? 'bíceps + tríceps' : 'grupos distintos'}). Sesión ≈{p.minutesBefore} → ≈{p.minutesAfter} min.</span>
+                <span className="tiny muted">Las referencias y los multiarticulares siguen al principio con sus descansos completos. Se descansa tras completar ambos; puedes separarlos en la sesión si el equipo está ocupado.</span>
+                <button className="btn soft small" style={{ alignSelf: 'flex-start' }} disabled={busy} onClick={() => void apply(pairExercises(version.days, p.dayId, p.a, p.b), `Superserie: ${getExercise(a.exerciseId)?.name} + ${getExercise(b.exerciseId)?.name}`)}>Agrupar en superserie</button>
+              </div>
+            )
+          })}
+        </>
+      )}
+    </section>
   )
 }
 

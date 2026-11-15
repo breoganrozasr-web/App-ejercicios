@@ -4,6 +4,7 @@ import { dayDuration, recoveryOverlaps, scheduledDays, weeklyRegionVolume } from
 import { contributionOf } from '../../src/domain/engine/contribution'
 import { buildFromTemplate, distributeBlocks, generateRoutine, pickSpacedDays } from '../../src/domain/engine/generator'
 import { describeRir } from '../../src/domain/engine/prescription'
+import { ENGINE_VERSION } from '../../src/domain/engine/params'
 import { checkScope } from '../../src/domain/engine/scope'
 import { TEMPLATES } from '../../src/domain/engine/templates'
 import { defaultProfile } from '../../src/domain/profile'
@@ -26,8 +27,8 @@ describe('A01 · determinismo', () => {
       const b = generateRoutine(profile(patch))
       expect(JSON.stringify(a)).toBe(JSON.stringify(b))
       if (a.status !== 'ok') continue
-      expect(a.draft.engineVersion).toBe('2.0.0')
-      expect(a.draft.plan.engineVersion).toBe('2.0.0')
+      expect(a.draft.engineVersion).toBe(ENGINE_VERSION)
+      expect(a.draft.plan.engineVersion).toBe(ENGINE_VERSION)
       for (const d of a.draft.days) {
         const ids = d.exercises.map((e) => e.exerciseId)
         expect(new Set(ids).size).toBe(ids.length)

@@ -22,6 +22,10 @@ import { DemoPlayer } from '../components/DemoPlayer'
 import { Chip, DecimalInput } from '../components/inputs'
 import { useToast } from '../components/overlay'
 import { Thumb } from '../components/RoutineParts'
+import { getProgramState, updateProgramState } from '../../data/repo'
+import { FAMILIARITY_LABEL, PHASE_RULES, exerciseFamiliarity } from '../../domain/program'
+import { METHOD_LABEL, blockText, blocksOf, conventionalWork } from '../../domain/techniques'
+import type { ProgramState, SetMethod } from '../../domain/types'
 import { back, go, href } from '../router'
 
 const LEVEL_TXT = { beginner: 'Principiante', returning: 'Tras pausa', intermediate: 'Intermedio' }
@@ -182,6 +186,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
           </section>
         )}
 
+        <FamiliarityCard exerciseId={ex.id} sessions={sessions} />
         <ExerciseHistory exerciseId={ex.id} sessions={sessions} />
         {(ex.loadType !== 'time' && ex.loadType !== 'band') && <ExerciseSettingsCard exerciseId={ex.id} />}
 
@@ -331,6 +336,36 @@ function ContributionList({ exerciseId }: { exerciseId: string }) {
   )
 }
 
+/**
+ * Familiaridad con el ejercicio (desconocido, en aprendizaje, conocido) según el historial y lo que declares.
+ * Confirmar que lo manejas con control (con 4 sesiones completas) o declarar experiencia previa solo sirve para que, si
+ * activas las técnicas opcionales, se puedan proponer en este ejercicio. No certifica la técnica.
+ */
+function FamiliarityCard({ exerciseId, sessions }: { exerciseId: string; sessions: Session[] }) {
+  const state = useLiveQuery(() => getProgramState(), [], {} as ProgramState)
+  const toast = useToast()
+  const f = exerciseFamiliarity(exerciseId, sessions, state)
+  const set = async (basis: 'history' | 'prior' | null) => {
+    await updateProgramState((st) => {
+      const known = { ...(st.knownExercises ?? {}) }
+      if (basis) known[exerciseId] = { at: Date.now(), basis }
+      else delete known[exerciseId]
+      return { ...st, knownExercises: known }
+    }, basis ? `Ejercicio declarado conocido (${basis === 'prior' ? 'experiencia previa' : 'con historial'}): ${exerciseId}` : `Declaración retirada: ${exerciseId}`)
+    toast(basis ? 'Guardado' : 'Declaración retirada')
+  }
+  return (
+    <section className="card stack-sm" aria-label="Tu familiaridad con este ejercicio">
+      <div className="row between"><h3>Tu familiaridad</h3><span className="badge">{FAMILIARITY_LABEL[f.level]}</span></div>
+      <span className="small">{f.exposures} {f.exposures === 1 ? 'sesión completa' : 'sesiones completas'} con series normales{f.declared === 'prior' ? ' · declaraste que ya lo conocías' : f.declared === 'history' ? ' · confirmaste que lo manejas con control' : ''}.</span>
+      {!f.declared && f.exposures >= PHASE_RULES.techniqueExposures && <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={() => void set('history')}>Confirmo que lo manejo con control</button>}
+      {!f.declared && f.exposures < PHASE_RULES.techniqueExposures && <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => void set('prior')}>Ya lo conocía antes de usar Forja</button>}
+      {f.declared && <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => void set(null)}>Retirar mi declaración</button>}
+      <span className="tiny muted">Un ejercicio nuevo tiene su propio aprendizaje aunque tu fase sea Progresión. Esto es tu declaración, no una evaluación técnica de la app; solo influye en las técnicas opcionales.</span>
+    </section>
+  )
+}
+
 /** Últimas sesiones de ESTE ejercicio (misma variante), con series de trabajo y calentamiento separados. */
 function ExerciseHistory({ exerciseId, sessions }: { exerciseId: string; sessions: Session[] }) {
   const items = historyFor(exerciseId, sessions).slice(0, 8)
@@ -340,9 +375,12 @@ function ExerciseHistory({ exerciseId, sessions }: { exerciseId: string; session
       <h3>Últimas sesiones</h3>
       <div className="list">
         {items.map((h) => {
-          const work = h.ex.sets.filter((x) => x.kind === 'work' && x.completed)
+          const work = conventionalWork(h.ex.sets).filter((x) => x.completed)
           const lt = h.ex.loadTypeSnapshot
-          const txt = work.map((x) => lt === 'time' ? `${x.durationSec ?? '?'} s` : lt === 'assisted' ? `${x.reps ?? '?'} (asist. ${formatNumber(x.assistKg)})` : lt === 'bodyweight' || lt === 'band' ? `${x.reps ?? '?'}${x.addedKg ? ` +${formatNumber(x.addedKg)}` : ''}` : `${formatNumber(x.weightKg)}×${x.reps ?? '?'}`).join(' · ')
+          const txt = [
+            ...work.map((x) => lt === 'time' ? `${x.durationSec ?? '?'} s` : lt === 'assisted' ? `${x.reps ?? '?'} (asist. ${formatNumber(x.assistKg)})` : lt === 'bodyweight' || lt === 'band' ? `${x.reps ?? '?'}${x.addedKg ? ` +${formatNumber(x.addedKg)}` : ''}` : `${formatNumber(x.weightKg)}×${x.reps ?? '?'}`),
+            ...blocksOf(h.ex.sets).filter((x) => x.block?.segments.length).map((x) => `${METHOD_LABEL[x.method as SetMethod].toLowerCase()}: ${blockText(x, lt, formatNumber)}`),
+          ].join(' · ')
           return (
             <a key={h.session.id} className="list-item small" href={href(`progreso/sesion/${h.session.id}`)}>
               <span style={{ width: 64 }} className="muted">{formatDateShort(h.date)}</span>

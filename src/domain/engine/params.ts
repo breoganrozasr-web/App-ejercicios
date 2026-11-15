@@ -6,7 +6,8 @@ import { BUDGET_REGIONS } from './contribution'
  * universales: los estudios justifican principios generales, no validan este algoritmo (docs/EVIDENCIA.md, sección 2.3).
  */
 
-export const ENGINE_VERSION = '2.0.0'
+/** 2.1.0: familiarización por días válidos (uno por fecha), fases del programa y técnicas registrables (ampliación del 14/11/2026). */
+export const ENGINE_VERSION = '2.1.0'
 
 export type SlotRole = 'main' | 'secondary' | 'accessory'
 

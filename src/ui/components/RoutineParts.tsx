@@ -12,6 +12,7 @@ import { describePrescription, describeRir } from '../../domain/engine/prescript
 import { alternativesFor } from '../../domain/engine/substitution'
 import type { EquipmentId, Exercise, Level, Profile, Region, RoutineDay, RoutineVersion } from '../../domain/types'
 import { WEEKDAY_NAME, formatDuration } from '../../domain/util'
+import { techniqueBeforeAfter } from '../../domain/techniques'
 import { Sheet } from './overlay'
 
 export function Thumb({ exerciseId }: { exerciseId: string }) {
@@ -51,7 +52,8 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
               <span className="grow stack-sm" style={{ gap: 2 }}>
                 <span style={{ fontWeight: 650 }}>
                   {ex?.name ?? re.exerciseId}
-                  {re.superset && <span className="badge accent" style={{ marginLeft: 6 }}>Superserie</span>}
+                  {re.superset && day.exercises.filter((x) => x.superset === re.superset).length === 2 && <span className="badge accent" style={{ marginLeft: 6 }}>Superserie</span>}
+                  {re.technique && <span className="badge suggest" style={{ marginLeft: 6 }}>{re.technique.method === 'drop' ? 'Descendente' : 'Rest-pause'}</span>}
                   {re.prescription.reference && <span className="badge accent" style={{ marginLeft: 6 }}>Referencia</span>}
                   {re.optional && <span className="badge" style={{ marginLeft: 6 }}>Opcional</span>}
                 </span>
@@ -67,6 +69,7 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
                     {re.prescription.warmupSets > 0 && ` · ${re.prescription.warmupSets} aprox.`}
                   </span>
                 )}
+                {re.technique && (() => { const t = techniqueBeforeAfter(re.prescription, re.technique); return <span className="tiny">{t.after} · {re.technique.mode === 'reorganize' ? 'reorganiza 2 series normales' : 'trabajo añadido'}{fam ? ' · no se aplica durante la familiarización' : ''}</span> })()}
                 {re.prescription.note && <span className="tiny muted">{re.prescription.note}</span>}
                 <DemoBadge exerciseId={re.exerciseId} />
               </span>
@@ -135,13 +138,14 @@ export function VolumePanel({ version, level, goal, priority = [], targets }: { 
                 )}
                 <span className="small num" style={{ textAlign: 'right' }}>{time ? '' : `${fmt(v.direct)} + ${fmt(v.secondary * 0.5)}`}<br /><span className="tiny muted">{v.directDays} d{v.secondaryOnlyDays ? ` (+${v.secondaryOnlyDays})` : ''}</span></span>
               </button>
+              {v.blocks > 0 && <span className="tiny" style={{ paddingLeft: 2 }}>Además: {v.blocks} {v.blocks === 1 ? 'bloque especial' : 'bloques especiales'} por semana, aparte (no equivalen a un número de series).</span>}
               {(b || legacy) && <span className="tiny muted" style={{ paddingLeft: 2 }}>{b ? `Presupuesto inicial de directas: ${b.min}–${b.max} (no es un mínimo)` : ''}{b && legacy ? ' · ' : ''}{legacy ? 'incluye clasificación heredada' : ''}</span>}
               {open === v.region && (
                 <ul className="tiny" style={{ margin: 0, paddingLeft: 18 }}>
                   {v.sources.length === 0 && <li className="muted">Ningún ejercicio de la propuesta lo trabaja.</li>}
                   {v.sources.map((s, i) => (
                     <li key={i}>
-                      {getExercise(s.exerciseId)?.name ?? s.exerciseId} · {s.dayName}{s.weekday !== null ? ` (${WEEKDAY_NAME[s.weekday]})` : ''}: {s.sets} {s.sets === 1 ? 'serie' : 'series'} · {ROLE_TXT[s.role]}{s.legacy ? ' · clasificación heredada' : ''}
+                      {getExercise(s.exerciseId)?.name ?? s.exerciseId} · {s.dayName}{s.weekday !== null ? ` (${WEEKDAY_NAME[s.weekday]})` : ''}: {s.sets} {s.sets === 1 ? 'serie' : 'series'}{s.blocks ? ` + ${s.blocks} bloque ${s.blockMethod === 'drop' ? 'descendente' : 'rest-pause'}` : ''} · {ROLE_TXT[s.role]}{s.legacy ? ' · clasificación heredada' : ''}
                     </li>
                   ))}
                 </ul>

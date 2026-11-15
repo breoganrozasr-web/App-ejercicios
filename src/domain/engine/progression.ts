@@ -1,4 +1,5 @@
 import { getExercise } from '../catalog'
+import { blockModified, blockText, blocksOf, contextKey, conventionalWork, segmentLoad } from '../techniques'
 import type { Exercise, Increments, LoadType, Prescription, Session, SessionExercise, SetEntry } from '../types'
 import { daysBetween, formatNumber, round2 } from '../util'
 import { INCREMENT_REVIEW_FRACTION, RETURN_AFTER_DAYS, STALL_EXPOSURES } from './params'
@@ -12,6 +13,8 @@ import { isTimePrescription } from './prescription'
  *  - Siguiente incremento REAL disponible; si supera el 10 % de la carga actual no se preselecciona (umbral de revisión).
  *  - Familiarización: sin subidas automáticas. Isométricos: tiempo dentro del rango y luego variante; sin RIR.
  *  - Nunca modifica datos históricos ni marca series: solo devuelve una recomendación.
+ *  - Solo series CONVENCIONALES: las bajadas y miniseries de los bloques no se suman para cumplir la regla, y los bloques
+ *    no activan subidas automáticas. Cambiar de contexto (bloque especial, superserie) inicia una referencia nueva.
  */
 
 export type SuggestionKind =
@@ -27,6 +30,7 @@ export type SuggestionKind =
   | 'stalled'
   | 'familiarization'
   | 'scheme_changed'
+  | 'context_changed'
   | 'paused_pain'
   | 'paused_scope'
 
@@ -110,10 +114,29 @@ export function predictReps(fromLoad: number, repsPlusRir: number, toLoad: numbe
 }
 
 function workPlanned(ex: SessionExercise): SetEntry[] {
-  return ex.sets.filter((s) => s.kind === 'work')
+  return conventionalWork(ex.sets)
 }
 function workDone(ex: SessionExercise): SetEntry[] {
-  return ex.sets.filter((s) => s.kind === 'work' && s.completed)
+  return conventionalWork(ex.sets).filter((s) => s.completed)
+}
+
+/** Contexto de comparación de una exposición del historial (bloques especiales y superserie). */
+export function historyContext(h: HistoryItem): string {
+  return contextKey(h.ex, h.session.exercises)
+}
+
+/** «con series normales», «con un bloque descendente», «en superserie»… */
+export function describeContext(key: string): string {
+  const [blocks, group] = key.split('|')
+  const parts: string[] = []
+  if (blocks === 'convencional') parts.push('con series normales')
+  else {
+    const n = blocks.split(',').length
+    const kinds = new Set(blocks.split(',').map((b) => (b.startsWith('drop') ? 'descendente' : 'rest-pause')))
+    parts.push(`con ${n === 1 ? 'un bloque' : `${n} bloques`} ${[...kinds].join(' y ')}`)
+  }
+  parts.push(group === 'superserie' ? 'en superserie' : 'por separado')
+  return parts.join(', ')
 }
 
 function loadOf(s: SetEntry, lt: LoadType): number | null {
@@ -140,9 +163,9 @@ function sameScheme(a: Prescription | null, b: Prescription, time: boolean): boo
   return a.repMin === b.repMin && a.repMax === b.repMax
 }
 
-/** 5.2 · Tres exposiciones comparables sin mejora (disparador de ayuda, no diagnóstico). */
-export function isStalled(history: HistoryItem[], p: Prescription, lt: LoadType, time: boolean): boolean {
-  const comparable = history.filter((h) => sameScheme(h.ex.prescription, p, time)).slice(0, STALL_EXPOSURES).reverse()
+/** 5.2 · Tres exposiciones comparables (mismo esquema y mismo contexto) sin mejora (disparador de ayuda, no diagnóstico). */
+export function isStalled(history: HistoryItem[], p: Prescription, lt: LoadType, time: boolean, context?: string): boolean {
+  const comparable = history.filter((h) => sameScheme(h.ex.prescription, p, time) && (!context || historyContext(h) === context) && workDone(h.ex).length > 0).slice(0, STALL_EXPOSURES).reverse()
   if (comparable.length < STALL_EXPOSURES) return false
   const first = performance(comparable[0].ex, lt, time)
   // Sin mejora: ninguna de las exposiciones siguientes supera a la primera de las tres.
@@ -161,6 +184,8 @@ export interface SuggestInput {
   familiarization?: { index: number; total: number } | null
   /** ¿Se puede ofrecer esta variante? (material marcado y no excluida). Sin función: se asume que sí. */
   available?: (exerciseId: string) => boolean
+  /** Contexto del ejercicio en la sesión actual (bloques y superserie). Si cambia respecto a la última vez, no se compara. */
+  context?: string
 }
 
 export function suggestNext(input: SuggestInput): Suggestion {
@@ -211,6 +236,21 @@ export function suggestNext(input: SuggestInput): Suggestion {
     }
   }
 
+  if (input.context) {
+    const prevCtx = historyContext(last)
+    if (prevCtx !== input.context) {
+      return {
+        kind: 'context_changed',
+        title: 'Nueva referencia: estructura distinta',
+        detail: `La última vez lo hiciste ${describeContext(prevCtx)}; hoy, ${describeContext(input.context)}. No se compara de forma automática ni se interpreta como un retroceso: esta sesión será la referencia para las siguientes.`,
+        targetWeightKg: keepWeight,
+        targetAssistKg: keepAssist,
+        targetReps: time ? undefined : [p.repMin, p.repMax],
+        basedOnDate,
+      }
+    }
+  }
+
   const lastRx = last.ex.prescription
   if (lastRx && !sameScheme(lastRx, p, time)) {
     return {
@@ -226,6 +266,16 @@ export function suggestNext(input: SuggestInput): Suggestion {
   }
 
   // Un ejercicio con series pendientes no cumple la regla (aunque la sesión fuese parcial por otros ejercicios).
+  if (planned.length === 0) {
+    return {
+      kind: 'repeat',
+      title: 'La última vez solo hubo bloques especiales',
+      detail: 'Los bloques (descendentes o rest-pause) no se usan para proponer subidas de carga. Ajusta la carga de las series normales a tu criterio.',
+      targetWeightKg: keepWeight,
+      targetAssistKg: keepAssist,
+      basedOnDate,
+    }
+  }
   if (done.length < planned.length || done.length === 0) {
     return {
       kind: 'repeat',
@@ -253,7 +303,7 @@ export function suggestNext(input: SuggestInput): Suggestion {
         basedOnDate,
       }
     }
-    if (isStalled(input.history, p, lt, true)) return stalled(basedOnDate)
+    if (isStalled(input.history, p, lt, true, input.context)) return stalled(basedOnDate)
     const best = Math.max(...done.map((s) => s.durationSec ?? 0))
     return { kind: 'more_time', title: 'Suma tiempo dentro del rango', detail: `La última vez: ${done.map((s) => `${s.durationSec ?? 0} s`).join(' / ')}. Intenta acercarte a ${maxT} s en todas las series terminando antes de perder la postura.`, targetTimeSec: Math.min(maxT, Math.max(p.timeMinSec ?? 15, best)), basedOnDate }
   }
@@ -267,7 +317,7 @@ export function suggestNext(input: SuggestInput): Suggestion {
   const minRir = rirKnown ? Math.min(...(rirs as number[])) : null
 
   if (!topReached) {
-    if (isStalled(input.history, p, lt, false)) return stalled(basedOnDate)
+    if (isStalled(input.history, p, lt, false, input.context)) return stalled(basedOnDate)
     const sameLoad = loads.length === done.length && loads.every((l) => Math.abs(l - (refLoad ?? 0)) < 1e-6)
     return {
       kind: 'repeat',
@@ -373,6 +423,49 @@ function firstTime(ex: Exercise | undefined, p: Prescription, time: boolean): Su
     title: 'Primera vez: busca una carga cómoda',
     detail: `Empieza ligero y haz una aproximación. Elige una carga con la que puedas completar ${p.repMin} repeticiones dejando margen y manteniendo el control. Si no llegas, reduce; si resulta muy fácil, ajusta poco a poco. No necesitas probar tu máximo.`,
     targetReps: [p.repMin, p.repMax],
+  }
+}
+
+// ───────────────────────── Bloques especiales ─────────────────────────
+
+export interface BlockAdvice {
+  /** Carga orientativa para el tramo inicial: la del último bloque comparable (los bloques no suben carga solos). */
+  firstLoad: number | null
+  last: { date: string; text: string } | null
+  previous: { date: string; text: string } | null
+  /** Diferencias entre los dos últimos bloques comparables (solo si la estructura y las cargas coinciden). */
+  diff: string | null
+  comparable: number
+}
+
+/**
+ * Evolución de un bloque: solo se compara con bloques del MISMO ejercicio, método, número de tramos y pausa objetivo, sin
+ * cambios de carga indebidos. No propone subidas de kg automáticamente; la persona puede ajustarlas.
+ */
+export function blockAdvice(set: SetEntry, lt: LoadType, history: HistoryItem[], fmt: (n: number) => string): BlockAdvice {
+  const found: { date: string; set: SetEntry }[] = []
+  for (const h of history) {
+    const b = blocksOf(h.ex.sets).find((x) => x.method === set.method && x.block?.plannedSegments === set.block?.plannedSegments && (x.block?.target.pauseSec ?? null) === (set.block?.target.pauseSec ?? null) && (x.block?.segments.length ?? 0) > 0 && !blockModified(x, lt))
+    if (b) found.push({ date: h.date, set: b })
+  }
+  const last = found[0] ?? null
+  const prev = found[1] ?? null
+  let diff: string | null = null
+  if (last && prev) {
+    const a = last.set.block?.segments ?? []
+    const b = prev.set.block?.segments ?? []
+    const sameLoads = a.length === b.length && a.every((s, i) => segmentLoad(s, lt) === segmentLoad(b[i], lt))
+    if (sameLoads) {
+      const d = a.map((s, i) => (s.reps ?? 0) - (b[i].reps ?? 0))
+      diff = `Con las mismas cargas: ${d.map((x) => (x > 0 ? `+${x}` : `${x}`)).join(' / ')} repeticiones por tramo respecto a la vez anterior.`
+    } else diff = 'Cargas distintas a la vez anterior: compáralo a tu criterio.'
+  }
+  return {
+    firstLoad: last ? segmentLoad(last.set.block?.segments[0] ?? { weightKg: null }, lt) : null,
+    last: last ? { date: last.date, text: blockText(last.set, lt, fmt) } : null,
+    previous: prev ? { date: prev.date, text: blockText(prev.set, lt, fmt) } : null,
+    diff,
+    comparable: found.length,
   }
 }
 

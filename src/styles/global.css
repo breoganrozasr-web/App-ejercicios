@@ -390,3 +390,20 @@ label.btn[aria-disabled='true'] { opacity: 0.5; pointer-events: none; }
 .freq-table { table-layout: fixed; font-size: 0.85rem; }
 .freq-table th:first-child { width: 42%; }
 .freq-table th, .freq-table td { overflow-wrap: anywhere; }
+
+/* ───── Bloques especiales (descendente / rest-pause) ───── */
+.block-row { grid-column: 1 / -1; border: 1.5px solid var(--accent-soft); border-radius: 12px; padding: 8px 10px; background: var(--surface); }
+.block-row .num-input { min-width: 0; flex: 1 1 0; }
+.set-tag.block { background: var(--accent-soft); color: var(--accent-strong); font-size: 0.78rem; }
+.segs { margin: 0; padding-left: 18px; display: grid; gap: 2px; }
+.restbar.short { background: var(--suggest); color: #fff; }
+.restbar.short .btn { color: #fff; border-color: color-mix(in srgb, #fff 45%, transparent); }
+.restbar.transition { background: var(--surface-2); color: var(--text); border-top: 2px solid var(--accent); }
+.restbar.transition .btn { color: var(--text); border-color: var(--border); }
+.phase-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.phase-steps > div { border: 1.5px solid var(--border); border-radius: 10px; padding: 6px 8px; font-size: 0.8rem; text-align: center; color: var(--muted); }
+.phase-steps > div.on { border-color: var(--accent); color: var(--text); font-weight: 700; background: var(--accent-soft); }
+.milestones { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.milestones li { display: flex; gap: 8px; align-items: flex-start; }
+.milestones li .ok { color: var(--ok); font-weight: 800; }
+.milestones li .no { color: var(--muted); font-weight: 800; }

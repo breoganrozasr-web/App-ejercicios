@@ -277,6 +277,23 @@ export interface RoutineExercise {
   superset?: string
   /** Accesorio opcional: es lo primero que se quita si no hay tiempo. */
   optional?: boolean
+  /** Técnica elegida para este ejercicio (series descendentes o rest-pause). Sin valor = series normales. */
+  technique?: RoutineTechnique
+}
+
+/** Método de un bloque especial. Sin método = serie convencional. No es un tipo de calentamiento. */
+export type SetMethod = 'drop' | 'rest_pause'
+
+/**
+ * Técnica configurada en la rutina (queda registrada en la versión).
+ * - reorganize: dos series normales se sustituyen por un bloque (inicial + bajada/miniserie). Puede ahorrar tiempo; no se garantiza la misma dosis.
+ * - extend: la última serie se prolonga con una bajada/miniserie. Añade trabajo.
+ */
+export interface RoutineTechnique {
+  method: SetMethod
+  mode: 'reorganize' | 'extend'
+  /** Bajadas o miniseries tras el tramo inicial: 1 por defecto; 2 solo si se elige expresamente. */
+  extra: 1 | 2
 }
 
 export interface RoutineDay {
@@ -401,6 +418,60 @@ export interface SetEntry {
   completedAt: number | null
   /** Isométricos: esfuerzo percibido 0–10 (opcional; no es RIR ni se convierte a RIR). */
   effort?: number | null
+  /**
+   * Bloque especial (serie descendente o rest-pause). Sin valor = serie convencional.
+   * En un bloque, weightKg/reps de la serie quedan vacíos: lo real está en block.segments (tramo a tramo).
+   */
+  method?: SetMethod
+  block?: SpecialBlock
+}
+
+/** Tramo REAL de un bloque: su propia carga y repeticiones (40 kg × 10 → 30 kg × 8 son dos tramos, no 40 × 18). */
+export interface BlockSegment {
+  id: string
+  weightKg: number | null
+  assistKg?: number | null
+  addedKg?: number | null
+  reps: number | null
+  rir: number | null
+  /** Pausa real antes de este tramo, en segundos (cambio de carga o pausa breve). null en el tramo inicial. */
+  pauseSec: number | null
+  /** Carga sugerida cuando se registró (informativa; lo que cuenta es la real). */
+  suggestedKg?: number | null
+  completedAt: number
+}
+
+export interface BlockTarget {
+  /** Tramo inicial. */
+  firstRepMin: number
+  firstRepMax: number
+  /** Bajadas o miniseries. */
+  nextRepMin: number
+  nextRepMax: number
+  /** RIR orientativo por tramo (opcional al registrar; se admite 0). */
+  rirMin: number
+  rirMax: number
+  /** Rest-pause: pausa breve objetivo (s). */
+  pauseSec?: number
+  /** Descendente: reducción orientativa (%). */
+  dropPct?: number
+}
+
+export interface SpecialBlock {
+  /** Tramos previstos: inicial + bajadas (descendente) o + miniseries (rest-pause). Máximo 3. */
+  plannedSegments: number
+  segments: BlockSegment[]
+  /** Inicio del tramo pendiente (tras «Continuar bajada» o al terminar la pausa breve). */
+  nextStartedAt: number | null
+  /** Cómo terminó: con todos los tramos previstos o antes de tiempo. null = sin terminar. */
+  ended: 'complete' | 'early' | null
+  target: BlockTarget
+  /** Origen: configurado en la rutina, reorganizando dos series pendientes o prolongando una serie. */
+  origin: 'routine' | 'reorganize' | 'extend'
+  /** Series normales a las que sustituye (2 al reorganizar, 1 al prolongar): para volver a series normales sin perder nada. */
+  replaces?: number
+  /** Lo que se está escribiendo del tramo actual (se guarda al momento; se vacía al registrar el tramo). */
+  draft?: { weightKg: number | null; reps: number | null; rir: number | null }
 }
 
 export interface SessionExercise {
@@ -456,7 +527,32 @@ export interface Session {
   /** Qué hacer con una sesión parcial: retomarla, pasar a la siguiente o repetirla otro día. */
   partialAction?: 'resume' | 'next' | 'repeat'
   /** Familiarización aplicada al crear la sesión (motor 2): número de sesión dentro de la fase. */
-  familiarization?: { index: number; total: number } | null
+  familiarization?: { index: number; total: number; reason?: 'readaptation' | 'extended' } | null
+}
+
+// ───────────────────────── Programa (fases) ─────────────────────────
+
+/** Fase del programa: cómo organiza Forja tus propuestas. No certifica el nivel físico ni cambia la experiencia declarada. */
+export type ProgramPhase = 'learning' | 'consolidation' | 'progression'
+
+/** Decisiones guardadas del programa (meta «program»; viaja en las copias). Aprendizaje se deriva de la familiarización. */
+export interface ProgramState {
+  /** Fecha (YYYY-MM-DD) de entrada en Progresión al aceptar la revisión. Sin valor = Consolidación. */
+  progressionSince?: string | null
+  /** Última revisión pospuesta o descartada: no se vuelve a ofrecer antes de 14 días y 4 días válidos más. */
+  review?: { decision: 'postponed' | 'declined'; on: string; validDaysAt: number } | null
+  /** Aprendizaje prolongado a petición: se mantiene la dosis de familiarización hasta que se termine. */
+  extendLearning?: boolean
+  /** Readaptación tras una pausa de 21 días o más: se ofrece, nunca se aplica en silencio. */
+  readaptation?: { lastValidBefore: string; decision: 'accepted' | 'declined'; on: string; sessions: number } | null
+  /** «Quiero usar técnicas para ahorrar tiempo o variar». Sin consentimiento no se proponen técnicas. */
+  techniquesConsent?: boolean
+  /** Ejercicios que la persona confirma manejar (con historial) o declara conocer de antes (sin historial). */
+  knownExercises?: Record<string, { at: number; basis: 'history' | 'prior' }>
+  /** Avisos ya vistos (p. ej. paso a Consolidación de una versión de rutina). */
+  seen?: string[]
+  /** Registro de decisiones (no se borra). */
+  log?: { at: number; text: string }[]
 }
 
 /** Autoevaluación 1–5. Sueño y energía: 1 = muy mal/baja, 5 = muy bien/alta. Agujetas: 1 = ninguna, 5 = muchas. */
@@ -497,6 +593,13 @@ export interface RestTimerState {
   durationSec: number
   /** id de la serie que lo inició */
   setId: string | null
+  /**
+   * Tipo (sin valor = descanso normal): transición de A1 a A2 en una superserie (sin aviso sonoro),
+   * descanso de la ronda de superserie, o pausa breve de rest-pause.
+   */
+  kind?: 'rest' | 'transition' | 'round' | 'short'
+  /** Texto corto para la barra (p. ej. «Ahora: extensión de tríceps»). */
+  label?: string
 }
 
 export interface BodyWeightEntry {

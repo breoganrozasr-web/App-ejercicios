@@ -1,6 +1,7 @@
 import { getExercise } from './catalog'
 import { INDIRECT_WEIGHT } from './engine/analysis'
 import { PANEL_REGIONS, contributionOf } from './engine/contribution'
+import { blocksOf, contextKey, conventionalWork, exerciseTonnage, isBlock } from './techniques'
 import type { LoadType, Region, Session, SetEntry } from './types'
 import { addDays, round2, weekStart } from './util'
 
@@ -10,6 +11,8 @@ import { addDays, round2, weekStart } from './util'
  *  - "Mejor carga para N repeticiones": la carga más alta con al menos N repeticiones.
  *  - 1RM estimado (Epley) solo con series de 1–10 repeticiones y en ejercicios con carga externa comparable.
  *    Es una ESTIMACIÓN orientativa, no un máximo real, y no se muestra en perfiles de menores.
+ *  - Los bloques especiales (descendente, rest-pause) NUNCA entran en récords, 1RM ni tendencias: sus tramos tienen
+ *    cargas distintas y no se suman (40 × 10 → 30 × 8 no es 40 × 18).
  */
 
 export const E1RM_MAX_REPS = 10
@@ -33,7 +36,7 @@ export function completedWorkSets(sessions: Session[], exerciseId: string): Exer
     if (s.status !== 'completed' && s.status !== 'partial') continue
     for (const ex of s.exercises) {
       if (ex.exerciseId !== exerciseId) continue
-      for (const set of ex.sets) if (set.kind === 'work' && set.completed) out.push({ date: s.date, sessionId: s.id, set })
+      for (const set of conventionalWork(ex.sets)) if (set.completed) out.push({ date: s.date, sessionId: s.id, set })
     }
   }
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
@@ -139,21 +142,38 @@ export function exerciseTrend(sessions: Session[], exerciseId: string, allowE1rm
   return out.sort((a, b) => (a.date < b.date ? -1 : 1))
 }
 
+export interface WeekRegionSets {
+  week: string
+  /** Series convencionales de trabajo hechas con contribución principal (peso 1). */
+  direct: Record<string, number>
+  /** Series convencionales con contribución secundaria (sin ponderar). */
+  secondary: Record<string, number>
+  /** Bloques especiales hechos con contribución principal y sus tramos reales: aparte, sin conversión a series. */
+  blocks: Record<string, { blocks: number; segments: number }>
+}
+
 /** Series de trabajo completadas por región y semana: directas y secundarias por separado (motor 2, política de familias). */
-export function weeklyRegionSets(sessions: Session[], weeks: number, today: string): { week: string; direct: Record<string, number>; secondary: Record<string, number> }[] {
+export function weeklyRegionSets(sessions: Session[], weeks: number, today: string): WeekRegionSets[] {
   const start = addDays(weekStart(today), -7 * (weeks - 1))
-  const res = new Map<string, { direct: Record<string, number>; secondary: Record<string, number> }>()
-  for (let i = 0; i < weeks; i++) res.set(addDays(start, i * 7), { direct: {}, secondary: {} })
+  const res = new Map<string, Omit<WeekRegionSets, 'week'>>()
+  for (let i = 0; i < weeks; i++) res.set(addDays(start, i * 7), { direct: {}, secondary: {}, blocks: {} })
   for (const s of sessions) {
     if (s.status !== 'completed' && s.status !== 'partial') continue
     const bucket = res.get(weekStart(s.date))
     if (!bucket) continue
     for (const ex of s.exercises) {
-      const n = ex.sets.filter((x) => x.kind === 'work' && x.completed).length
-      if (!n) continue
+      const n = conventionalWork(ex.sets).filter((x) => x.completed).length
+      const doneBlocks = blocksOf(ex.sets).filter((x) => x.completed)
+      const segs = doneBlocks.reduce((a, b) => a + (b.block?.segments.length ?? 0), 0)
+      if (!n && !doneBlocks.length) continue
       for (const c of contributionOf(ex.exerciseId).items) {
-        if (c.weight === 1) bucket.direct[c.region] = (bucket.direct[c.region] ?? 0) + n
-        else if (c.weight === 0.5) bucket.secondary[c.region] = (bucket.secondary[c.region] ?? 0) + n
+        if (c.weight === 1) {
+          if (n) bucket.direct[c.region] = (bucket.direct[c.region] ?? 0) + n
+          if (doneBlocks.length) {
+            const cur = bucket.blocks[c.region] ?? { blocks: 0, segments: 0 }
+            bucket.blocks[c.region] = { blocks: cur.blocks + doneBlocks.length, segments: cur.segments + segs }
+          }
+        } else if (c.weight === 0.5 && n) bucket.secondary[c.region] = (bucket.secondary[c.region] ?? 0) + n
       }
     }
   }
@@ -225,8 +245,8 @@ export interface SetRecord {
  *  - Peso corporal / banda: más repeticiones sin asistencia. Tiempo: más segundos. Asistida: menos asistencia con ≥ repeticiones.
  */
 export function setRecord(set: SetEntry, lt: LoadType, prior: SetEntry[], fmt: (n: number) => string): SetRecord | null {
-  if (set.kind !== 'work') return null
-  const prev = prior.filter((p) => p.kind === 'work' && p.completed)
+  if (set.kind !== 'work' || isBlock(set)) return null
+  const prev = prior.filter((p) => p.kind === 'work' && p.completed && !isBlock(p))
   if (!prev.length) return null
   if (lt === 'time') {
     const sec = set.durationSec
@@ -274,7 +294,7 @@ export function priorSets(sessions: Session[], exerciseId: string, before: { id:
   const out: SetEntry[] = []
   for (const s of sessions) {
     if (s.id === before.id || (s.status !== 'completed' && s.status !== 'partial') || s.startedAt >= before.startedAt) continue
-    for (const ex of s.exercises) if (ex.exerciseId === exerciseId) for (const set of ex.sets) if (set.kind === 'work' && set.completed) out.push(set)
+    for (const ex of s.exercises) if (ex.exerciseId === exerciseId) for (const set of conventionalWork(ex.sets)) if (set.completed) out.push(set)
   }
   return out
 }
@@ -292,7 +312,7 @@ export function sessionRecords(session: Session, all: Session[], fmt: (n: number
     let best: SetRecord | null = null
     const sets = session.exercises.filter((e) => e.exerciseId === ex.exerciseId).flatMap((e) => e.sets)
     for (const set of sets) {
-      if (set.kind !== 'work' || !set.completed) continue
+      if (set.kind !== 'work' || !set.completed || isBlock(set)) continue
       const r = setRecord(set, ex.loadTypeSnapshot, prior, fmt)
       if (r && (!best || r.gain > best.gain)) best = r
     }
@@ -307,15 +327,48 @@ export function previousComparable(session: Session, all: Session[]): Session | 
   return cands.sort((a, b) => b.startedAt - a.startedAt)[0] ?? null
 }
 
-export function sessionTotals(s: Session): { sets: number; reps: number; exercises: number } {
-  let sets = 0
-  let reps = 0
-  let exercises = 0
+export interface SessionTotals {
+  /** Series convencionales de trabajo hechas. */
+  sets: number
+  /** Repeticiones de las series convencionales (las de los tramos van aparte). */
+  reps: number
+  exercises: number
+  /** Bloques especiales hechos y sus tramos reales. */
+  blocks: number
+  segments: number
+  segmentReps: number
+  /** Tonelaje anotado (kg × repeticiones), solo cargas externas numéricas. No mide crecimiento muscular. */
+  tonnage: number
+  tonnageBlocks: number
+}
+
+export function sessionTotals(s: Session): SessionTotals {
+  const t: SessionTotals = { sets: 0, reps: 0, exercises: 0, blocks: 0, segments: 0, segmentReps: 0, tonnage: 0, tonnageBlocks: 0 }
   for (const e of s.exercises) {
-    const done = e.sets.filter((x) => x.kind === 'work' && x.completed)
-    if (done.length) exercises++
-    sets += done.length
-    for (const x of done) reps += x.reps ?? 0
+    const done = conventionalWork(e.sets).filter((x) => x.completed)
+    const blocks = blocksOf(e.sets).filter((x) => x.completed)
+    if (done.length || blocks.length) t.exercises++
+    t.sets += done.length
+    for (const x of done) t.reps += x.reps ?? 0
+    t.blocks += blocks.length
+    for (const b of blocks) for (const seg of b.block?.segments ?? []) {
+      t.segments++
+      t.segmentReps += seg.reps ?? 0
+    }
+    const ton = exerciseTonnage(e)
+    t.tonnage += ton.conventional + ton.blocks
+    t.tonnageBlocks += ton.blocks
   }
-  return { sets, reps, exercises }
+  t.tonnage = round2(t.tonnage)
+  t.tonnageBlocks = round2(t.tonnageBlocks)
+  return t
+}
+
+/**
+ * ¿Tienen dos sesiones la misma estructura? (mismos ejercicios con los mismos bloques especiales y el mismo contexto de
+ * superserie). Si no, no se comparan automáticamente.
+ */
+export function sameStructure(a: Session, b: Session): boolean {
+  const sig = (s: Session) => s.exercises.map((e) => `${e.exerciseId}:${contextKey(e, s.exercises)}`).sort().join(';')
+  return sig(a) === sig(b)
 }

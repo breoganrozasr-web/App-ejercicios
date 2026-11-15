@@ -17,6 +17,7 @@ import { Sheet, useToast } from '../components/overlay'
 import { useNow } from '../hooks'
 import { requestPersistence } from '../pwa'
 import { go, href } from '../router'
+import { TodayProgramCards, useProgram } from './Phase'
 
 export function TodayScreen() {
   const { currentRoutineId, activeSession } = useApp()
@@ -84,6 +85,11 @@ export function TodayScreen() {
   const lastFinished = done.filter((s) => !s.isDemo).sort((a, b) => b.startedAt - a.startedAt)[0]
   const openPartial = !activeSession && lastFinished?.status === 'partial' && !lastFinished.partialAction ? lastFinished : null
   const fam = bundle ? familiarizationStatus(bundle.version, sessions, bundle.routine.id) : null
+  const { view: program, state: programState } = useProgram()
+  const inProgression = !!programState.progressionSince
+  const famShown = inProgression ? null : fam
+  const extended = !famShown && !inProgression && !!programState.extendLearning && !!bundle?.version.familiarization
+  const readapt = !famShown && !extended ? program?.readaptation.active ?? null : null
 
   const showBackup = backupInfo && done.filter((s) => !s.isDemo).length > 0 && (backupInfo.since >= 4 || (backupInfo.last !== null && now - backupInfo.last > 14 * 86400000 && backupInfo.since > 0) || (backupInfo.last === null && backupInfo.since >= 2))
 
@@ -97,6 +103,7 @@ export function TodayScreen() {
         <a className="icon-btn" href={href('ajustes')} aria-label="Ajustes"><Settings /></a>
       </header>
       <main className="page">
+        <TodayProgramCards hasActive={!!activeSession} />
         {openPartial && (
           <section className="card stack" aria-label="Sesión parcial">
             <span className="small muted">Sesión parcial · {formatDateShort(openPartial.date)}</span>
@@ -128,11 +135,15 @@ export function TodayScreen() {
               {next.exercises.length} ejercicios · {durationText(next)}
               {!todayPlanned && nextPlannedDate ? ` · planificada el ${WEEKDAY_NAME[weekdayMon0(nextPlannedDate)]}, pero puedes hacerla hoy` : ''}
             </span>
-            {fam ? (
-              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{bundle.version.familiarization?.reason === 'returning' ? 'Adaptación' : 'Familiarización'}: sesión {fam.index} de {fam.total} · mitad de series y RIR 3–4</span>
-            ) : !bundle.version.familiarization && inRamp && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
+            {famShown ? (
+              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{bundle.version.familiarization?.reason === 'returning' ? 'Adaptación' : 'Familiarización'}: sesión {famShown.index} de {famShown.total} · mitad de series y RIR 3–4</span>
+            ) : extended ? (
+              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Aprendizaje prolongado: mitad de series y RIR 3–4</span>
+            ) : readapt ? (
+              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Readaptación: sesión {readapt.index} de {readapt.total} · mitad de series y RIR 3–4</span>
+            ) : !bundle.version.familiarization && inRamp && !inProgression && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
-              {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}{fam ? ` · hoy ${familiarizationPreview(e).today.split(' · ')[0]}` : ''}</li>)}
+              {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}{famShown || extended || readapt ? ` · hoy ${familiarizationPreview(e).today.split(' · ')[0]}` : e.technique ? ` · con bloque ${e.technique.method === 'drop' ? 'descendente' : 'rest-pause'}` : ''}</li>)}
               {next.exercises.length > 6 && <li>y {next.exercises.length - 6} más</li>}
             </ul>
             {done.length > 0 && nextRegions.length > 0 && (

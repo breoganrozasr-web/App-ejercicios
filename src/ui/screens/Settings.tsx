@@ -6,12 +6,13 @@ import { APP_VERSION, BackupError, backupFileName, exportBackup, markBackupDone,
 import { SCHEMA_VERSION, TABLES, db } from '../../data/db'
 import { clearDemo, loadDemo } from '../../data/demo'
 import { DEMO_CACHE, clearDemos, demoCacheInfo, downloadDemos, formatBytes } from '../../data/offline'
-import { getMeta, getRoutineBundle, saveProfile, setMeta } from '../../data/repo'
+import { getMeta, getProgramState, getRoutineBundle, saveProfile, setMeta, updateProgramState } from '../../data/repo'
+import { HELP_TEXT } from '../../domain/techniques'
 import { EXERCISES } from '../../domain/catalog/exercises'
 import { ALL_MEDIA, COMMONS_MANIFEST, MEDIA_MANIFEST, demoBytes } from '../../domain/catalog/media'
 import { ENGINE_VERSION } from '../../domain/engine/params'
 import { DEFAULT_PLATES, PLATE_CHOICES } from '../../domain/plates'
-import type { Increments, Session } from '../../domain/types'
+import type { Increments, ProgramState, Session } from '../../domain/types'
 import { formatDateShort, formatNumber, toLocalDate } from '../../domain/util'
 import { Chip, DecimalInput, Segmented, Toggle } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -80,6 +81,7 @@ export function SettingsScreen({ section }: { section?: string }) {
   const [withPhotos, setWithPhotos] = useState(false)
   const photoCount = useLiveQuery(() => db().photos.count(), [], 0)
   const plates = useLiveQuery(() => getMeta<number[]>('plates', DEFAULT_PLATES), [], DEFAULT_PLATES)
+  const program = useLiveQuery(() => getProgramState(), [], {} as ProgramState)
 
   useEffect(() => {
     void demoCacheInfo().then(setCache)
@@ -171,6 +173,12 @@ export function SettingsScreen({ section }: { section?: string }) {
             {sound === 'always' && !hasAudioSessionApi() && <p className="tiny muted">Este navegador no permite elegir el tipo de audio: si no oyes la prueba con el modo silencio activado, quítalo durante el entrenamiento.</p>}
           </div>
           <Toggle checked={awake} onChange={(v) => { setAwake(v); setKeepAwake(v) }} label="Pantalla encendida durante el entrenamiento" desc={`Evita que el iPhone se bloquee mientras entrenas, para que el aviso del descanso pueda sonar. Con la pantalla bloqueada o la app en segundo plano, una web no puede avisar; el tiempo sí se recalcula al volver.${wakeLockSupported() ? '' : ' (Este navegador no lo permite.)'}`} />
+        </Section>
+
+        <Section id="tecnicas" title="Fases y técnicas opcionales">
+          <p className="small">{HELP_TEXT.phases}</p>
+          <a className="btn soft small" style={{ alignSelf: 'flex-start' }} href={href('progreso/fase')}>Ver mi fase y su revisión</a>
+          <Toggle checked={!!program.techniquesConsent} onChange={(v) => void updateProgramState((st) => ({ ...st, techniquesConsent: v }), v ? 'Técnicas opcionales activadas' : 'Técnicas opcionales desactivadas')} label="Quiero usar técnicas para ahorrar tiempo o variar" desc="Series descendentes, rest-pause y superseries como PROPUESTAS opcionales (en Progresión o con nivel intermedio declarado, fuera de familiarización y readaptación). No son necesarias para progresar. Registrar lo que hagas en una sesión es posible siempre." />
         </Section>
 
         <Section id="demos" title="Demostraciones sin conexión" icon={<WifiOff aria-hidden />}>

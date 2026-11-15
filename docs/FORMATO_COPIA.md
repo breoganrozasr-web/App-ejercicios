@@ -5,9 +5,9 @@ Archivo JSON (UTF-8) exportado desde Ajustes → Copias de seguridad → Exporta
 ```json
 {
   "format": "forja-backup",
-  "formatVersion": 1,
+  "formatVersion": 2,
   "schemaVersion": 2,
-  "appVersion": "1.1.0",
+  "appVersion": "1.3.0",
   "exportedAt": "2026-11-13T18:00:00.000Z",
   "tables": {
     "profile": [ ... ],
@@ -41,6 +41,11 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
   - Serie: `effort` (esfuerzo percibido 0–10 en isométricos; no es RIR). El RIR antiguo de planchas se conserva como dato legado.
   - Perfil: `priorityRegions`, `frequencyExtraRegions`, `strengthRefs` (hasta 3) y `returningAdaptation`.
   - `meta.brokenLinks`: enlaces externos que la persona marcó como caídos.
+- **Formato 2 (app 1.3, ampliación de técnicas y fases)**: mismo esquema de base de datos 2 (no cambian tablas ni índices). Es **aditivo**: las copias de formato 1 se restauran igual (una serie sin `method` es una serie convencional). Una app anterior a la 1.3 **rechaza** las copias de formato 2 («copia de una versión más nueva») en lugar de malinterpretar los bloques.
+  - Serie (`sets[]`): `method` (`drop` | `rest_pause`; sin valor = convencional; nunca es un tipo de calentamiento: `kind` sigue siendo `warmup`/`work`) y `block` con `{ plannedSegments, segments[], nextStartedAt, ended (complete|early|null), target, origin (routine|reorganize|extend), replaces, draft? }`. En un bloque, `weightKg`/`reps` de la serie quedan **vacíos**: lo real está en `segments[]`, un tramo por elemento: `{ id, weightKg, assistKg?, addedKg?, reps, rir, pauseSec (pausa real antes del tramo; null en el inicial), suggestedKg?, completedAt }`. 40 kg × 10 → 30 kg × 8 son **dos tramos**, nunca 40 × 18. `target` guarda los objetivos por separado: `{ firstRepMin, firstRepMax, nextRepMin, nextRepMax, rirMin, rirMax, pauseSec? (rest-pause), dropPct? (descendente) }`.
+  - Ejercicio de rutina: `technique` `{ method, mode (reorganize|extend), extra (1|2) }` (la elección queda en la versión de rutina).
+  - Sesión: `rest.kind` (`rest` | `transition` | `round` | `short`) y `rest.label`; `familiarization.reason` (`readaptation` | `extended`).
+  - `meta.program` (estado del programa): `{ progressionSince?, review? { decision, on, validDaysAt }, extendLearning?, readaptation? { lastValidBefore, decision, on, sessions }, techniquesConsent?, knownExercises? { <id>: { at, basis (history|prior) } }, seen?, log? [{ at, text }] }`. La fase Aprendizaje no se guarda: se deriva de la familiarización de la rutina y del historial.
 - El **diario local de guardado** (`localStorage`, claves `forja-wal:<id>`) no forma parte de la copia: solo protege la sesión activa ante una recarga brusca y se borra al guardarse en IndexedDB.
 - **Medidas** (`measurements`): `{ id, date, site, cm }`; `site` = `waist` | `hips` | `chest` | `arm` | `thigh` | `calf` | `neck`.
 - **Fotos de progreso** (`photos`): `{ id, date, pose (front|side|back), dataUrl (JPEG en base64), bytes, width, height, createdAt }`. **Solo se exportan si se pide** (casilla al exportar); si la tabla no aparece en el archivo, la copia no lleva fotos.
@@ -51,7 +56,7 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
 
 ## Restauración
 
-1. Se aceptan copias del esquema 1 (versión 1.0) y 2. Se valida tamaño (≤ 100 MB), JSON, `format`, versiones (no se aceptan copias de versiones más nuevas), identificadores y estructura de sesiones/rutinas.
+1. Se aceptan copias del esquema 1 (versión 1.0) y 2, y de los formatos de copia 1 y 2. Se valida tamaño (≤ 100 MB), JSON, `format`, versiones (no se aceptan copias de versiones más nuevas), identificadores y estructura de sesiones/rutinas.
 2. Se limpian caracteres de control y claves peligrosas (`__proto__`…). Las imágenes deben ser `data:image/(png|jpeg|webp|gif);base64`.
 3. Vista previa: número de sesiones, rango de fechas, rutinas, registros que ya existen.
 4. Modos:
@@ -62,3 +67,5 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
 ## CSV de registros
 
 `forja-registros-AAAA-MM-DD.csv`, separador `;`, coma decimal, BOM UTF-8 (abre bien en Excel/Numbers en español). Una fila por serie: fecha, sesión, estado, ejercicio, id, tipo de carga, significado del peso, tipo de serie, nº de serie, peso, repeticiones, RIR, segundos, distancia, asistencia, lastre, banda, lado, completada, molestia, notas. Los textos que empiezan por `=`, `+`, `-` o `@` se escapan para evitar fórmulas.
+
+Desde la app 1.3 se añaden **al final** (para no romper hojas existentes) las columnas `metodo` (convencional, descendente, rest-pause), `id_bloque`, `tramo` (0 = inicial), `pausa_s`, `estado_bloque` (completo, terminado antes de tiempo, sin terminar) y `superserie` (identificador de la pareja). Un bloque especial ocupa **una fila por tramo**, todas con el mismo `id_bloque` y `n_serie`, cada una con su carga, repeticiones, RIR y pausa reales. No hay importación de CSV (la copia JSON es la que se restaura).

@@ -2,6 +2,12 @@
 
 Fecha de comprobación: **13 de noviembre de 2026**. Manifiestos de medios: [`media-manifest.json`](media-manifest.json) (Everkinetic, generado por `scripts/build_media.py`) y [`media-manifest-commons.json`](media-manifest-commons.json) (Wikimedia Commons, generado por `scripts/build_commons_media.py`); copias de los de `src/domain/catalog/`.
 
+## Versión 1.3 (15/11/2026): textos de técnicas y fases
+
+- **Aprender** pasa de 7 a 11 textos. Los nuevos («Series descendentes», «Rest-pause», «Superseries» y «Fases del programa») empiezan con los **textos de ayuda literales** del encargo del 14/11/2026 y añaden un resumen de sus conclusiones (sin atribuir a los estudios la validación de las cifras de Forja). Los mismos textos aparecen en el botón «Qué es» de cada bloque o superserie durante el entrenamiento y en la pantalla «Tu programa».
+- **Fuentes R1–R5** (Sødal 2023, Zhang 2025, Cowley 2026, Enes 2021, Tsartsapakis 2026) en la biblioteca de fuentes, con el alcance de consulta tal como se declaró (resumen; resumen, métodos y secciones del texto abierto). Los enlaces no se pudieron abrir desde el entorno de desarrollo (red restringida): se usan tal como los da el encargo.
+- No se ha añadido ningún medio nuevo ni se han generado vídeos o animaciones.
+
 ## Versión 1.2 (14/11/2026): demostraciones externas, etiquetas y fichas en dos niveles
 
 ### Etiquetas honestas del tipo de demostración (F6)

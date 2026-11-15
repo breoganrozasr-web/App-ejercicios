@@ -2,6 +2,7 @@ import { getExercise } from '../catalog'
 import type { Prescription, Region, RoutineDay, RoutineVersion } from '../types'
 import { WEEKDAY_NAME } from '../util'
 import { DEFAULT_TARGET_REGIONS, PANEL_REGIONS, REGION_LABEL, contributionOf, type ContributionRole } from './contribution'
+import { blockExecSec, plannedWorkRows } from '../techniques'
 import { DURATION } from './params'
 import { isTimePrescription } from './prescription'
 
@@ -13,8 +14,11 @@ export interface VolumeSource {
   dayId: string
   dayName: string
   weekday: number | null
-  /** Series de trabajo del ejercicio ese día (unilateral: series por lado = series para cada lado, no el doble). */
+  /** Series de trabajo CONVENCIONALES del ejercicio ese día (unilateral: series por lado = series para cada lado, no el doble). */
   sets: number
+  /** Bloques especiales previstos (descendente o rest-pause): aparte, sin convertirlos en series. */
+  blocks: number
+  blockMethod?: 'drop' | 'rest_pause'
   weight: 1 | 0.5 | 0
   role: ContributionRole
   /** Clasificación antigua (no revisada con la política de familias). */
@@ -23,8 +27,10 @@ export interface VolumeSource {
 
 export interface RegionVolume {
   region: Region
-  /** Series directas (peso 1). */
+  /** Series directas (peso 1), solo convencionales. */
   direct: number
+  /** Bloques especiales con trabajo directo de la región: se muestran aparte y no se convierten en series. */
+  blocks: number
   /** Nº de series con contribución secundaria (sin ponderar). */
   secondary: number
   /** direct + 0,5 × secondary. ESTIMACIÓN. */
@@ -48,15 +54,23 @@ export function scheduledDays(version: Pick<RoutineVersion, 'days' | 'schedule'>
     .filter((x): x is { weekday: number; day: RoutineDay } => !!x.day)
 }
 
-/** Series directas y secundarias por región en un día. */
+/** Filas de trabajo previstas de un ejercicio de la rutina: series convencionales y bloque especial (si lo hay). */
+export function workRowsOf(re: Pick<RoutineDay['exercises'][number], 'exerciseId' | 'prescription' | 'technique'>): { conventional: number; blocks: number; method?: 'drop' | 'rest_pause' } {
+  const lt = getExercise(re.exerciseId)?.loadType ?? 'machine'
+  const rows = plannedWorkRows(re.prescription, re.technique, lt)
+  return { conventional: rows.conventional, blocks: rows.block ? 1 : 0, ...(rows.block ? { method: rows.block.method } : {}) }
+}
+
+/** Series directas y secundarias por región en un día (un bloque cuenta como trabajo directo del día, no como series). */
 export function dayRegionSets(day: RoutineDay): Map<Region, { direct: number; secondary: number }> {
   const m = new Map<Region, { direct: number; secondary: number }>()
   for (const re of day.exercises) {
     const c = contributionOf(re.exerciseId)
+    const rows = workRowsOf(re)
     for (const it of c.items) {
       const v = m.get(it.region) ?? { direct: 0, secondary: 0 }
-      if (it.weight === 1) v.direct += re.prescription.sets
-      else if (it.weight === 0.5) v.secondary += re.prescription.sets
+      if (it.weight === 1) v.direct += rows.conventional + rows.blocks
+      else if (it.weight === 0.5) v.secondary += rows.conventional + rows.blocks
       m.set(it.region, v)
     }
   }
@@ -68,7 +82,7 @@ export function weeklyRegionVolume(version: Pick<RoutineVersion, 'days' | 'sched
   const get = (r: Region) => {
     let t = totals.get(r)
     if (!t) {
-      t = { region: r, direct: 0, secondary: 0, estimated: 0, directDays: 0, secondaryDays: 0, secondaryOnlyDays: 0, sources: [] }
+      t = { region: r, direct: 0, blocks: 0, secondary: 0, estimated: 0, directDays: 0, secondaryDays: 0, secondaryOnlyDays: 0, sources: [] }
       totals.set(r, t)
     }
     return t
@@ -78,16 +92,18 @@ export function weeklyRegionVolume(version: Pick<RoutineVersion, 'days' | 'sched
     const dayHas = new Map<Region, { d: boolean; s: boolean }>()
     for (const re of day.exercises) {
       const c = contributionOf(re.exerciseId)
+      const rows = workRowsOf(re)
       for (const it of c.items) {
         const t = get(it.region)
-        t.sources.push({ exerciseId: re.exerciseId, dayId: day.id, dayName: day.name, weekday, sets: re.prescription.sets, weight: it.weight, role: it.role, legacy: c.legacy })
-        if (re.prescription.sets <= 0) continue
+        t.sources.push({ exerciseId: re.exerciseId, dayId: day.id, dayName: day.name, weekday, sets: rows.conventional, blocks: rows.blocks, ...(rows.method ? { blockMethod: rows.method } : {}), weight: it.weight, role: it.role, legacy: c.legacy })
+        if (rows.conventional + rows.blocks <= 0) continue
         const flags = dayHas.get(it.region) ?? { d: false, s: false }
         if (it.weight === 1) {
-          t.direct += re.prescription.sets
+          t.direct += rows.conventional
+          t.blocks += rows.blocks
           flags.d = true
         } else if (it.weight === 0.5) {
-          t.secondary += re.prescription.sets
+          t.secondary += rows.conventional
           flags.s = true
         }
         dayHas.set(it.region, flags)
@@ -148,9 +164,12 @@ export function dayDuration(day: RoutineDay): { minutes: number; rounded: number
     const pair = cur.superset && ex[i + 1]?.superset === cur.superset ? [cur, ex[i + 1]] : [cur]
     for (const re of pair) {
       b.warmupSetsMin += re.prescription.warmupSets * DURATION.warmupSetMin
-      b.workMin += (re.prescription.sets * execSecPerSet(re.exerciseId, re.prescription)) / 60
+      const rows = plannedWorkRows(re.prescription, re.technique, getExercise(re.exerciseId)?.loadType ?? 'machine')
+      b.workMin += (rows.conventional * execSecPerSet(re.exerciseId, re.prescription)) / 60
+      // Bloque: tramos + cambios de carga o pausas breves (el descanso normal va después del bloque).
+      if (rows.block) b.workMin += blockExecSec(rows.block.method, rows.block.extra, DURATION.secPerRep, getExercise(re.exerciseId)?.unilateral ? 2 : 1) / 60
     }
-    const sets = Math.max(...pair.map((re) => re.prescription.sets))
+    const sets = Math.max(...pair.map((re) => { const r = workRowsOf(re); return r.conventional + r.blocks }))
     const rest = Math.max(...pair.map((re) => re.prescription.restSec))
     b.restMin += (Math.max(0, sets - 1) * rest) / 60
     if (pair.length === 2) b.transitionsMin += (sets * 15) / 60 // paso de un ejercicio al otro dentro de la superserie

@@ -1,0 +1,54 @@
+import { FAMILIARIZATION_MIN_COMPLETION } from './engine/params'
+import type { Session, SessionExercise } from './types'
+
+/**
+ * Utilidades de sesión sin acceso a datos (dominio puro).
+ * Un bloque especial (descendente o rest-pause) es UNA fila de trabajo: cuenta como una unidad prevista y como hecha
+ * cuando se terminó con al menos un tramo. Nunca se convierte en varias series ni en calentamiento.
+ */
+
+export function sessionWorkSummary(s: Pick<Session, 'exercises'>): { planned: number; done: number } {
+  let planned = 0
+  let done = 0
+  for (const e of s.exercises) for (const set of e.sets) if (set.kind === 'work') {
+    planned++
+    if (set.completed) done++
+  }
+  return { planned, done }
+}
+
+/** Proporción de series de trabajo hechas en una sesión (el calentamiento no cuenta). */
+export function completionRatio(s: Pick<Session, 'exercises'>): number {
+  const { planned, done } = sessionWorkSummary(s)
+  return planned ? done / planned : 0
+}
+
+/**
+ * Sesión válida para la familiarización y las fases: terminada (completa o parcial), sin datos de ejemplo y con al menos
+ * el 70 % de las series de trabajo previstas hechas.
+ */
+export function isValidSession(s: Session): boolean {
+  if (s.isDemo) return false
+  if (s.status !== 'completed' && s.status !== 'partial') return false
+  const { planned, done } = sessionWorkSummary(s)
+  return planned > 0 && done / planned >= FAMILIARIZATION_MIN_COMPLETION
+}
+
+/** Días válidos: como máximo uno por fecha local (dos sesiones el mismo día no aceleran nada). Orden ascendente. */
+export function validDates(sessions: Session[], pred: (s: Session) => boolean = () => true): string[] {
+  return [...new Set(sessions.filter((s) => isValidSession(s) && pred(s)).map((s) => s.date))].sort()
+}
+
+/** Pareja de superserie de un ejercicio dentro de la sesión (mismo grupo y contiguo). Una etiqueta sin pareja no es superserie. */
+export function supersetPartner(list: Pick<SessionExercise, 'uid' | 'superset'>[], uid: string): number {
+  const i = list.findIndex((e) => e.uid === uid)
+  const e = list[i]
+  if (!e?.superset) return -1
+  if (list[i + 1]?.superset === e.superset) return i + 1
+  if (list[i - 1]?.superset === e.superset) return i - 1
+  return -1
+}
+
+export function inSuperset(list: Pick<SessionExercise, 'uid' | 'superset'>[], uid: string): boolean {
+  return supersetPartner(list, uid) >= 0
+}

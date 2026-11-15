@@ -1,6 +1,47 @@
 # Pruebas: comandos, resultados reales y comprobaciones pendientes
 
-Última ejecución: **14 de noviembre de 2026** (app 1.2.0, motor 2.0.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+Última ejecución: **15 de noviembre de 2026** (app 1.3.0, motor 2.1.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). Las secciones de la 1.2 y la 1.1 se conservan debajo. **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+
+## Versión 1.3 (ampliación: técnicas y fases): resultados y criterios B01–B22
+
+Ejecución del 15/11/2026 en el contenedor de desarrollo (mismas herramientas que abajo). **WebKit para Linux no es un iPhone: no se ha probado en un iPhone físico.**
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` | ✅ sin errores |
+| `npm test` | ✅ **130/130** (5 ficheros; 30 nuevas en `tecnicas.test.ts`) |
+| `npm run build` | ✅ precache ≈1009 KB |
+| `npm run e2e` (Chromium: iPhone 13, iPhone SE, iPhone 15 Pro Max) | ✅ **35/35** (28 anteriores + 7 nuevas en `tecnicas.spec.ts`) |
+| WebKit 26.6 (`webkit-iphone-13`) | ✅ **28/29** (1 omitida: la prueba sin conexión, por la misma limitación de Playwright) |
+| Actualización **1.2 publicada → 1.3** con datos (builds reales en `/App-ejercicios/`, Chromium **y** WebKit) | ✅ Con la 1.2: rutina de principiante, una sesión completa y una parcial con 52,5 kg. Tras «Actualizar ahora»: «App 1.3.0 · motor de rutinas 2.1.0»; las sesiones se conservan; Progreso muestra «Aprendizaje · 1 de 4 días válidos»; la parcial aparece en Hoy y se retoma con 52,5 kg; en esa sesión antigua se registra un bloque rest-pause (pausa breve en marcha); al terminar, el bloque se cierra «antes de tiempo» con su tramo; la sesión siguiente es «familiarización 2/4». Sin errores |
+| Revisión visual (iPhone 13 claro, iPhone SE oscuro) | ✅ Hoy con la tarjeta de revisión, pantalla de fase con la revisión breve, sección de técnicas de la rutina, bloque descendente en sus dos estados. Ajustados: lista de referencias de la tarjeta (máx. 3), redacción de los hitos y contraste del botón «Terminar bloque» |
+
+**Fallo encontrado y corregido durante las pruebas:** un doble toque en «Registrar tramo» podía pulsar el botón que aparece en ese mismo sitio («Deshacer último tramo» o «Terminar bloque») y perder el tramo recién registrado o cerrar el bloque. Ahora cada bloque admite una acción cada 0,7 s; la prueba B14 hace el doble toque y comprueba que el tramo se conserva. También se evitó que «Copiar lo de la última vez» y «Usar X kg» escriban en filas de bloque.
+
+| # | Criterio | Dónde se prueba | Estado |
+|---|---|---|---|
+| B01 | Las mejoras del primer encargo siguen pasando | Toda la batería anterior (100 unitarias, 28 e2e) sigue en verde | ✅ |
+| B02 | 4 días válidos terminan la familiarización; 4 días de calendario sin entrenar, no | `tecnicas.test.ts` (dos sesiones el mismo día cuentan una; 50 % no es válida; el calentamiento no cuenta; paso automático a Consolidación) | ✅ |
+| B03 | 12 sesiones en menos de 42 días no disparan la revisión | `tecnicas.test.ts` | ✅ |
+| B04 | 42 días sin constancia tampoco; ejemplo y duplicados no adelantan fase | `tecnicas.test.ts` | ✅ |
+| B05 | Cumplir hitos propone revisión; no certifica intermedio ni activa técnicas | `tecnicas.test.ts`, `tecnicas.spec.ts` | ✅ |
+| B06 | Posponer conserva la rutina y respeta el plazo (14 días y 4 días válidos) | `tecnicas.test.ts`, `tecnicas.spec.ts` | ✅ |
+| B07 | Aceptar crea versión solo si cambia el plan y conserva las sesiones | `tecnicas.test.ts` (+1 serie → versión 2; sesiones intactas), `tecnicas.spec.ts` (aceptar sin cambios → sigue 1 versión) | ✅ |
+| B08 | Pausa larga ofrece readaptación sin borrar nivel; ejercicio nuevo no hereda dominio | `tecnicas.test.ts`, `tecnicas.spec.ts` («Llevas 30 días sin entrenar» → «readaptación 1/4») | ✅ |
+| B09 | Principiante, familiarización, menor o salud: sin propuestas de técnicas | `tecnicas.test.ts`, `tecnicas.spec.ts` | ✅ |
+| B10 | Nueva fase sin consentimiento mantiene técnicas desactivadas | `tecnicas.test.ts`, `tecnicas.spec.ts` | ✅ |
+| B11 | 40×10 + 30×8 = dos tramos; nunca 40×18 ni un 1RM | `tecnicas.test.ts`, `tecnicas.spec.ts` (IndexedDB: tramos [[40,10],[30,8]], peso/reps de la serie vacíos) | ✅ |
+| B12 | Bajadas disponibles y estrictamente menores; sin aviso del 10 % | `tecnicas.test.ts` (máquina, polea, mancuernas, barra, empate → la menor, sin reducción razonable → a mano) | ✅ |
+| B13 | Rest-pause conserva carga y pausas; cambio de carga identificado | `tecnicas.test.ts`, `tecnicas.spec.ts` | ✅ |
+| B14 | Guardado tras cada tramo, recarga en pausa, doble toque y deshacer | `tecnicas.spec.ts` (recarga a mitad de bloque y durante la pausa breve; doble toque; deshacer conserva el tramo anterior), `tecnicas.test.ts` | ✅ (fallo del doble toque encontrado y corregido) |
+| B15 | Terminar antes conserva lo hecho y el estado parcial | `tecnicas.test.ts`, `tecnicas.spec.ts`, prueba de actualización | ✅ |
+| B16 | Reorganizar no toca lo hecho; prolongar avisa de trabajo añadido | `tecnicas.test.ts`, `tecnicas.spec.ts` (antes/después, vuelta a series normales) | ✅ |
+| B17 | Métricas separadas sin conversión fisiológica | `tecnicas.test.ts` (semana, rutina, tonelaje por tramo, estimación de duración) | ✅ |
+| B18 | A1/A2: pausas, orden y carga independiente; separar conserva registros | `tecnicas.test.ts`, `tecnicas.spec.ts` (transición «Ahora: …», descanso de la ronda, separar) | ✅ |
+| B19 | No comparar contextos incompatibles | `tecnicas.test.ts` (bloque o superserie → nueva referencia; bloques solo con bloques iguales) | ✅ |
+| B20 | JSON conserva bloques y fases; CSV tramos y métodos; copias antiguas valen | `tecnicas.test.ts` (exportar → restaurar en base nueva; CSV con una fila por tramo; copia de formato 1) | ✅ |
+| B21 | Una propuesta no se registra como entrenamiento | `tecnicas.test.ts` | ✅ |
+| B22 | PWA, rutas, sin conexión, actualización y URL pública tras desplegar | Actualización con builds reales (arriba) y «Web publicada, versión 1.3» | ver abajo |
 
 ## Versión 1.2 (motor 2): resultados y criterios de aceptación A01–A24
 

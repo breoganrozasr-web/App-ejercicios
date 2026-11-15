@@ -131,7 +131,7 @@ describe('Récords (R22)', () => {
     expect(recs[0].rec.value).toBe('65 kg × 8')
     expect(sessionRecords(old, [old, cur], formatNumber)).toHaveLength(0)
     expect(previousComparable(cur, [old, cur])?.id).toBe('o')
-    expect(sessionTotals(cur)).toEqual({ sets: 2, reps: 16, exercises: 1 })
+    expect(sessionTotals(cur)).toMatchObject({ sets: 2, reps: 16, exercises: 1 })
   })
 })
 

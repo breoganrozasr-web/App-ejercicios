@@ -61,8 +61,9 @@ function SourcesScreen({ focus }: { focus: string | null }) {
     const t = window.setTimeout(() => document.getElementById(`src-${focus}`)?.scrollIntoView({ block: 'start' }), 120)
     return () => window.clearTimeout(t)
   }, [focus])
-  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' }[] = [
+  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' }[] = [
     { title: 'Fuentes científicas (E1–E14)', kind: 'cientifica' },
+    { title: 'Técnicas avanzadas: descendentes, rest-pause y superseries (R1–R5)', kind: 'avanzada' },
     { title: 'Fuentes técnicas de las fichas (T1–T9)', kind: 'tecnica' },
   ]
   return (
@@ -72,7 +73,7 @@ function SourcesScreen({ focus }: { focus: string | null }) {
         <span className="title grow">Biblioteca de fuentes</span>
       </header>
       <main className="page">
-        <p className="small">Fecha de consulta: <strong>{SOURCES_CHECKED}</strong>. Cada ficha indica el tipo de fuente y el <strong>alcance real de la consulta</strong> (resumen, fragmentos o texto completo). Forja no ha hecho una investigación científica propia: estas fuentes justifican principios generales, no validan su algoritmo.</p>
+        <p className="small">Fecha de consulta: <strong>{SOURCES_CHECKED}</strong>. Cada ficha indica el tipo de fuente y el <strong>alcance real de la consulta</strong> (resumen, fragmentos o texto completo). Forja no ha hecho una investigación científica propia: estas fuentes justifican principios generales, no validan su algoritmo ni las cifras concretas de Forja (por ejemplo, los umbrales de las fases o el tamaño de una bajada).</p>
         {groups.map((g) => (
           <section key={g.kind} className="stack-sm">
             <h2 className="section-title">{g.title}</h2>

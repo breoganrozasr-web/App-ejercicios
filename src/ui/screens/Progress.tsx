@@ -9,7 +9,9 @@ import { weeklyBudget } from '../../domain/engine/params'
 import { checkScope } from '../../domain/engine/scope'
 import { bodyweightOn, kcalRange, sessionMinutes } from '../../domain/energy'
 import { READINESS_SCALES, readinessLevel } from '../../domain/readiness'
-import { exerciseTrend, previousComparable, sessionRecords, sessionTotals, sessionsPerWeek, weeklyRegionSets } from '../../domain/records'
+import { exerciseTrend, previousComparable, sameStructure, sessionRecords, sessionTotals, sessionsPerWeek, weeklyRegionSets } from '../../domain/records'
+import { METHOD_LABEL, blockText, isBlock } from '../../domain/techniques'
+import { PhaseCard } from './Phase'
 import { PANEL_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
 import { priorityRegionsOf } from '../../domain/engine/generator'
 import type { Session, SetEntry } from '../../domain/types'
@@ -27,8 +29,8 @@ export function ProgressScreen() {
   const finished = sessions.filter((s) => s.status === 'completed' || s.status === 'partial').sort((a, b) => b.startedAt - a.startedAt)
   const perWeek = sessionsPerWeek(finished, 12, today)
   const regionWeeks = weeklyRegionSets(finished, 2, today)
-  const thisWeek = regionWeeks[regionWeeks.length - 1] ?? { direct: {}, secondary: {} }
-  const lastWeek = regionWeeks[0] ?? { direct: {}, secondary: {} }
+  const thisWeek = regionWeeks[regionWeeks.length - 1] ?? { direct: {}, secondary: {}, blocks: {} }
+  const lastWeek = regionWeeks[0] ?? { direct: {}, secondary: {}, blocks: {} }
   const exIds = useMemo(() => {
     const count = new Map<string, number>()
     for (const s of finished) for (const e of s.exercises) if (e.sets.some((x) => x.kind === 'work' && x.completed)) count.set(e.exerciseId, (count.get(e.exerciseId) ?? 0) + 1)
@@ -45,6 +47,7 @@ export function ProgressScreen() {
     <>
       <header className="topbar"><h1 className="grow" style={{ fontSize: '1.6rem' }}>Progreso</h1></header>
       <main className="page">
+        <PhaseCard />
         {finished.length === 0 ? (
           <div className="card empty">
             <ChartLine aria-hidden />
@@ -62,7 +65,7 @@ export function ProgressScreen() {
 
             <section className="card stack">
               <h3>Series de trabajo por grupo</h3>
-              <p className="tiny muted">Esta semana (lunes a domingo), series completadas: <strong>directas + indirectas estimadas</strong> (media serie cada una; estimación, el trabajo indirecto no equivale exactamente al directo). Entre paréntesis, las directas de la semana pasada. El tronco por tiempo va aparte.</p>
+              <p className="tiny muted">Esta semana (lunes a domingo), series completadas: <strong>directas + indirectas estimadas</strong> (media serie cada una; estimación, el trabajo indirecto no equivale exactamente al directo). Entre paréntesis, las directas de la semana pasada. El tronco por tiempo va aparte. Los <strong>bloques especiales</strong> (descendentes, rest-pause) se muestran aparte con sus tramos reales: no se convierten en series.</p>
               <div className="stack-sm">
                 {PANEL_REGIONS.map((r) => {
                   const d = thisWeek.direct[r] ?? 0
@@ -79,6 +82,7 @@ export function ProgressScreen() {
                         </div>
                       )}
                       <span className="small num" style={{ textAlign: 'right' }}>{r === 'core_iso' ? '' : `${formatNumber(d)} + ${formatNumber(ind)}`} <span className="muted">({formatNumber(lastWeek.direct[r] ?? 0)})</span></span>
+                      {thisWeek.blocks[r] && <span className="tiny muted" style={{ gridColumn: '1 / -1', paddingLeft: 4 }}>+ {thisWeek.blocks[r].blocks} {thisWeek.blocks[r].blocks === 1 ? 'bloque especial' : 'bloques especiales'} ({thisWeek.blocks[r].segments} tramos reales), aparte</span>}
                     </div>
                   )
                 })}
@@ -201,7 +205,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
           <div className="row wrap">
             {s.status === 'partial' && <span className="badge warn">Parcial</span>}
             {s.isDemo && <span className="badge demo">Ejemplo</span>}
-            {s.rampApplied && <span className="badge suggest">Familiarización</span>}
+            {s.rampApplied && <span className="badge suggest">{s.familiarization?.reason === 'readaptation' ? 'Readaptación' : s.familiarization?.reason === 'extended' ? 'Aprendizaje prolongado' : 'Familiarización'}</span>}
             {s.backdated && <span className="badge">Registrada después</span>}
           </div>
           <h1 style={{ fontSize: '1.6rem' }}>{s.title}</h1>
@@ -230,6 +234,15 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
               <div className="stack-sm">
                 {e.sets.map((x, si) => {
                   if (x.kind === 'work') n++
+                  if (isBlock(x) && x.method) {
+                    return (
+                      <div key={x.id} className={`row small ${x.completed || x.block?.segments.length ? '' : 'faint'}`} style={{ alignItems: 'flex-start' }}>
+                        <span style={{ width: 110 }}>Bloque {n}<br /><span className="tiny muted">{METHOD_LABEL[x.method]}</span></span>
+                        <span className="grow num">{blockText(x, e.loadTypeSnapshot, formatNumber)}{edit ? ' (los bloques no se editan aquí)' : ''}</span>
+                        {!x.block?.segments.length && <span className="badge">No hecho</span>}
+                      </div>
+                    )
+                  }
                   const tag = x.kind === 'warmup' ? 'Calentamiento' : `Serie ${n}`
                   if (edit) {
                     return (
@@ -286,13 +299,14 @@ function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[
   const recs = sessionRecords(s, all, formatNumber)
   const prev = previousComparable(s, all)
   const pt = prev ? sessionTotals(prev) : null
+  const comparable = prev ? sameStructure(s, prev) : false
   const delta = (a: number, b: number) => (a === b ? 'igual' : `${a > b ? '+' : '−'}${Math.abs(a - b)}`)
   const lvl = readinessLevel(s.readiness)
   return (
     <section className="card stack" aria-label="Resumen de la sesión">
       <div className="summary-grid">
         <div><span className="tiny muted">Duración</span><strong className="num">{minutes} min</strong></div>
-        <div><span className="tiny muted">Series</span><strong className="num">{t.sets}</strong></div>
+        <div><span className="tiny muted">Series</span><strong className="num">{t.sets}{t.blocks ? ` + ${t.blocks} bl.` : ''}</strong></div>
         <div><span className="tiny muted">Repetic.</span><strong className="num">{t.reps}</strong></div>
         <div><span className="tiny muted">Ejercicios</span><strong className="num">{t.exercises}</strong></div>
       </div>
@@ -304,9 +318,17 @@ function SessionSummary({ s, all, bodyKg, minutes }: { s: Session; all: Session[
           </ul>
         </div>
       )}
-      {prev && pt && (
-        <p className="small muted">Respecto a la vez anterior ({formatDateShort(prev.date)}): series {delta(t.sets, pt.sets)}, repeticiones {delta(t.reps, pt.reps)}.</p>
+      {t.blocks > 0 && (
+        <p className="small muted">Además de las series normales: {t.blocks} {t.blocks === 1 ? 'bloque especial' : 'bloques especiales'} con {t.segments} tramos reales ({t.segmentReps} repeticiones en tramos, contadas aparte). No se convierten en series equivalentes.</p>
       )}
+      {t.tonnage > 0 && (
+        <p className="tiny muted">Tonelaje anotado: {formatNumber(t.tonnage)} kg (carga × repeticiones de lo anotado{t.tonnageBlocks ? `; ${formatNumber(t.tonnageBlocks)} kg de tramos de bloques` : ''}; mancuernas: el peso de una). Es un dato de registro: no mide el crecimiento muscular.</p>
+      )}
+      {prev && pt && (comparable ? (
+        <p className="small muted">Respecto a la vez anterior ({formatDateShort(prev.date)}): series {delta(t.sets, pt.sets)}, repeticiones {delta(t.reps, pt.reps)}.</p>
+      ) : (
+        <p className="small muted">La vez anterior ({formatDateShort(prev.date)}) la estructura fue distinta (bloques especiales o superseries): no se compara de forma automática.</p>
+      ))}
       {showKcal && (
         <div className="row tiny muted" style={{ alignItems: 'flex-start' }}>
           <Flame size={14} aria-hidden />

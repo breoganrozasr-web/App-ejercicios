@@ -30,6 +30,11 @@ export interface GenerateOptions {
   acceptRealFrequency?: boolean
   /** Vuelta tras pausa: empezar sin las 4 sesiones de adaptación. */
   skipAdaptation?: boolean
+  /**
+   * La persona ya completó la fase de Aprendizaje (o está en Progresión): la propuesta empieza con la dosis base, sin otra
+   * familiarización de rutina. Los ejercicios nuevos para ella conservan su propio aprendizaje.
+   */
+  learningDone?: boolean
 }
 
 export interface RoutineDraft {
@@ -755,8 +760,9 @@ export function generateRoutine(profile: Profile, options: GenerateOptions = {})
 
   // 4) Familiarización (desde cero) o adaptación (vuelta tras pausa)
   // Menores: su itinerario ya es de aprendizaje (1–2 series, RIR 3–4); no se le aplican reglas adultas de familiarización.
-  const famReason: 'beginner' | 'returning' | null = youth ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && !options.skipAdaptation && profile.returningAdaptation !== false ? 'returning' : null
+  const famReason: 'beginner' | 'returning' | null = youth || options.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && !options.skipAdaptation && profile.returningAdaptation !== false ? 'returning' : null
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
+  if (options.learningDone && !youth && (ctx.level === 'beginner' || ctx.level === 'returning')) st.notes.push('Ya completaste la fase de Aprendizaje: esta propuesta empieza con la dosis base, sin otra familiarización. Los ejercicios nuevos para ti conservan su propio aprendizaje (primera vez: carga cómoda y margen).')
 
   const plan: RoutinePlanInfo = { engineVersion: ENGINE_VERSION, goal: ctx.goal, level: ctx.level, desiredFrequency: desired, targetRegions: targets, references: refs, minutes: ctx.minutes }
   const draft = finalizeDraft({ days, schedule, ctx, youth, n, f, desired, table, st, refs, refsProvisional, familiarization, plan, homeBodyweight, location: profile.locations })
@@ -944,7 +950,7 @@ export interface TemplateDef {
   notes: string[]
 }
 
-export function buildFromTemplate(t: TemplateDef, profile: Profile): { draft: RoutineDraft; warnings: string[] } {
+export function buildFromTemplate(t: TemplateDef, profile: Profile, opts: { learningDone?: boolean } = {}): { draft: RoutineDraft; warnings: string[] } {
   const scope = checkScope(profile)
   const youth = scope.kind === 'youth'
   const ctx = ctxFromProfile(profile, youth, t.goal, t.equipment)
@@ -982,7 +988,7 @@ export function buildFromTemplate(t: TemplateDef, profile: Profile): { draft: Ro
   const noteText = t.notes.join(' ').toLowerCase()
   const explained = (r: Region) => (r === 'back' && /tirón|espalda/.test(noteText)) || (r === 'hamstrings' && /isquio/.test(noteText))
   for (const g of gaps) if (!explained(g.region)) warnings.push(`${REGION_LABEL[g.region]}: sin series directas en esta plantilla.`)
-  const famReason: 'beginner' | 'returning' | null = youth ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && profile.returningAdaptation !== false ? 'returning' : null
+  const famReason: 'beginner' | 'returning' | null = youth || opts.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && profile.returningAdaptation !== false ? 'returning' : null
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
   const freq = table.filter((r) => r.target).map((r) => `${REGION_LABEL[r.region].toLowerCase()} ${r.directDays}`).join(', ')
   const rationale = dedupe([t.description, ...t.notes.filter((x) => !x.startsWith('⚠')), `Frecuencia directa con el calendario de la plantilla: ${freq}.`])

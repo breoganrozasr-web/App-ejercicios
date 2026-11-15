@@ -1,6 +1,19 @@
 # Estado del proyecto (punto de continuación)
 
-Última actualización: **14 de noviembre de 2026** (versión 1.2). Rama: `claude/app-from-spec-1c0pa7`.
+Última actualización: **15 de noviembre de 2026** (versión 1.3). Rama: `claude/app-from-spec-1c0pa7`.
+
+## Versión 1.3 (15/11/2026): series descendentes, rest-pause, superseries y fases
+
+**Terminado y probado (automático, no en iPhone físico):**
+- **Fases del programa** (Aprendizaje → Consolidación → Progresión), separadas de la experiencia declarada y de la familiaridad con cada ejercicio. Días válidos (≥ 70 %, sin ejemplo, uno por fecha). Paso automático a Consolidación con aviso y opción de prolongar el aprendizaje. Revisión con hitos (12 días válidos, 42 días, 3 sesiones completas en 2 referencias, sin bloqueo de salud), tarjeta única en Hoy, revisión breve de autorregistro, propuesta comparada (mantener o +1 serie opcional de una prioridad) y «Seguir como estoy» / «Más adelante» con plazo de 14 días y 4 días válidos. Tarjeta y pantalla «Tu programa» en Progreso.
+- **Readaptación** ofrecida (nunca aplicada en silencio) tras 21 días o más sin entrenar: 4 días válidos con mitad de series y RIR 3–4.
+- **Series descendentes y rest-pause** registradas tramo a tramo (carga, repeticiones, RIR y pausa reales; guardado inmediato; recarga en el tramo correcto; deshacer el último tramo; terminar antes; otra bajada solo si se elige; carga sugerida estrictamente menor y disponible). Reorganizar dos series pendientes o prolongar una serie, con antes/después y vuelta a series normales.
+- **Superseries**: A1 → transición → A2 → descanso de la ronda; separar sin perder registros; etiqueta de «mismo músculo» para parejas manuales.
+- **Propuestas opcionales** (con consentimiento «Quiero usar técnicas para ahorrar tiempo o variar»): un bloque al final de la sesión en aislamientos estables, máximo dos por semana; superseries de grupos distintos. Configuración manual de técnica por ejercicio en el editor.
+- **Métricas** separadas (series convencionales y bloques), sin récords ni 1RM desde bloques, comparación solo en el mismo contexto, tonelaje anotado por tramo. Copia JSON formato 2 y CSV con una fila por tramo.
+- **Aprender**: 4 textos nuevos (descendentes, rest-pause, superseries y fases, con los textos de ayuda literales) y fuentes R1–R5 con su alcance de consulta.
+
+**Pendientes reales:** prueba en iPhone físico (incluido el uso con una mano de los botones de tramo); abrir los enlaces R1–R5 y T1–T9 desde un entorno con acceso; los umbrales de fase y los límites de bloques son reglas de producto sin validación clínica; las técnicas solo se proponen en una lista corta de aislamientos; los bloques no se editan en una sesión ya guardada (se ven tramo a tramo); no hay importación de CSV (no se pedía).
 
 ## Versión 1.2 (14/11/2026): motor 2 y mejoras de la especificación
 

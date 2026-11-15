@@ -1,10 +1,12 @@
 import { getExercise, setCustomExercises } from '../domain/catalog'
 import type { RoutineDraft } from '../domain/engine/generator'
 import { ENGINE_VERSION } from '../domain/engine/params'
-import { FAMILIARIZATION_MIN_COMPLETION } from '../domain/engine/params'
 import { applyFamiliarization, applyRamp } from '../domain/engine/prescription'
+import { computeProgram, logState } from '../domain/program'
+import { completionRatio, sessionWorkSummary, validDates } from '../domain/sessions'
+import { endBlock, isBlock, makeBlockSet, plannedWorkRows } from '../domain/techniques'
 import type {
-  ChangeLogEntry, Exercise, Prescription, Profile, Routine, RoutineDay, RoutineExercise, RoutineVersion, ScheduleOverride, Session, SessionExercise, SetEntry, SetKind,
+  ChangeLogEntry, Exercise, Prescription, Profile, ProgramState, Routine, RoutineDay, RoutineExercise, RoutineTechnique, RoutineVersion, ScheduleOverride, Session, SessionExercise, SetEntry, SetKind,
 } from '../domain/types'
 import { addDays, daysBetween, newId, toLocalDate, weekStart } from '../domain/util'
 import { db } from './db'
@@ -210,20 +212,18 @@ export function nextRoutineDay(version: RoutineVersion, sessions: Session[], rou
   return version.days[0]
 }
 
-/** Proporción de series de trabajo hechas en una sesión. */
-export function completionRatio(s: Session): number {
-  const { planned, done } = sessionWorkSummary(s)
-  return planned ? done / planned : 0
-}
+export { completionRatio, sessionWorkSummary }
 
 /**
- * Familiarización (motor 2): cuenta las sesiones de la rutina terminadas con al menos el 70 % de las series de trabajo.
- * Sin fecha de caducidad: las ausencias no la consumen. Devuelve la sesión que tocaría (1-based) o null si ya terminó.
+ * Familiarización (motor 2 + ampliación del 14/11/2026): cuenta los DÍAS VÁLIDOS de la rutina (sesiones terminadas con al
+ * menos el 70 % de las series de trabajo, sin datos de ejemplo; como máximo uno por fecha local, así que dos sesiones el
+ * mismo día no aceleran nada). Sin fecha de caducidad: las ausencias no la consumen.
+ * Devuelve la sesión que tocaría (1-based) o null si ya terminó.
  */
 export function familiarizationStatus(version: Pick<RoutineVersion, 'familiarization'>, sessions: Session[], routineId: string, excludeSessionId?: string): { index: number; total: number; completed: number } | null {
   const fam = version.familiarization
   if (!fam) return null
-  const completed = sessions.filter((s) => s.routineId === routineId && s.id !== excludeSessionId && (s.status === 'completed' || s.status === 'partial') && !s.isDemo && completionRatio(s) >= FAMILIARIZATION_MIN_COMPLETION).length
+  const completed = validDates(sessions, (s) => s.routineId === routineId && s.id !== excludeSessionId).length
   if (completed >= fam.sessions) return null
   return { index: completed + 1, total: fam.sessions, completed }
 }
@@ -240,12 +240,18 @@ function emptySet(kind: SetKind): SetEntry {
   return { id: newId('set'), kind, weightKg: null, reps: null, rir: null, durationSec: null, distanceM: null, assistKg: null, addedKg: null, bandLabel: null, side: 'both', completed: false, completedAt: null }
 }
 
-export function makeSessionExercise(exerciseId: string, prescription: Prescription | null, superset?: string): SessionExercise {
+/**
+ * Crea un ejercicio de sesión. Con una técnica de la rutina (y fuera de familiarización/readaptación), las series de
+ * trabajo previstas son las convencionales que quedan más un bloque al final; si no, todas convencionales.
+ */
+export function makeSessionExercise(exerciseId: string, prescription: Prescription | null, superset?: string, technique?: RoutineTechnique): SessionExercise {
   const ex = getExercise(exerciseId)
   const sets: SetEntry[] = []
   if (prescription) {
     for (let i = 0; i < prescription.warmupSets; i++) sets.push(emptySet('warmup'))
-    for (let i = 0; i < prescription.sets; i++) sets.push(emptySet('work'))
+    const rows = plannedWorkRows(prescription, superset ? undefined : technique, ex?.loadType ?? 'machine')
+    for (let i = 0; i < rows.conventional; i++) sets.push(emptySet('work'))
+    if (rows.block) sets.push(makeBlockSet(rows.block.method, 'routine', rows.block.extra, 'both', rows.block.replaces))
   } else {
     sets.push(emptySet('work'))
   }
@@ -296,7 +302,7 @@ export interface BackdateOpts {
 }
 
 export async function startSessionFromDay(routineId: string, dayId: string, date = toLocalDate(), backdate?: BackdateOpts): Promise<Session> {
-  return db().transaction('rw', [db().sessions, db().routines, db().routineVersions], async () => {
+  return db().transaction('rw', [db().sessions, db().routines, db().routineVersions, db().meta, db().profile], async () => {
     const active = await db().sessions.where('status').equals('active').first()
     if (active) return active
     const routine = await db().routines.get(routineId)
@@ -305,10 +311,26 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
     if (!version) throw new Error('Versión no encontrada')
     const day = version.days.find((d) => d.id === dayId)
     if (!day) throw new Error('Día no encontrado')
-    // Motor 2: familiarización por sesiones completadas. Versiones antiguas: semanas (se conserva su regla).
-    const sessions = await db().sessions.where('routineId').equals(routineId).toArray()
-    const fam = version.familiarization ? familiarizationStatus(version, sessions, routineId) : null
-    const ramp = !version.familiarization && isRampWeek(routine, version, date)
+    const state = await getProgramState()
+    const profile = await db().profile.get('me')
+    const all = await db().sessions.toArray()
+    const sessions = all.filter((s) => s.routineId === routineId)
+    // En Progresión ya no se aplica la familiarización de una rutina (la fase no retrocede al cambiar de rutina).
+    const inProgression = !!state.progressionSince
+    // Motor 2: familiarización por días válidos. Versiones antiguas: semanas (se conserva su regla).
+    let fam: Session['familiarization'] = null
+    const famStatus = version.familiarization && !inProgression ? familiarizationStatus(version, sessions, routineId) : null
+    if (famStatus) fam = { index: famStatus.index, total: famStatus.total }
+    else if (version.familiarization && !inProgression && state.extendLearning) {
+      // Aprendizaje prolongado a petición: misma dosis de familiarización.
+      fam = { index: validDates(sessions).length + 1, total: version.familiarization.sessions, reason: 'extended' }
+    } else if (profile) {
+      // Readaptación aceptada tras una pausa de 21 días o más.
+      const view = computeProgram({ profile, routine, version, sessions: all, state, today: date })
+      if (view.readaptation.active) fam = { index: view.readaptation.active.index, total: view.readaptation.active.total, reason: 'readaptation' }
+    }
+    // Rutinas del motor 1: semanas de familiarización (o aprendizaje prolongado a petición).
+    const ramp = !fam && !version.familiarization && !inProgression && (isRampWeek(routine, version, date) || (!!state.extendLearning && version.rampWeeks > 0))
     const now = Date.now()
     const session: Session = {
       id: newId('ses'),
@@ -322,10 +344,11 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
       endedAt: null,
       pausedAt: null,
       pausedTotalMs: 0,
-      exercises: day.exercises.map((re: RoutineExercise) => makeSessionExercise(re.exerciseId, fam ? applyFamiliarization(re.prescription, getExercise(re.exerciseId)) : ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset)),
+      // Durante la familiarización o la readaptación no se usan bloques especiales: series normales con más margen.
+      exercises: day.exercises.map((re: RoutineExercise) => makeSessionExercise(re.exerciseId, fam ? applyFamiliarization(re.prescription, getExercise(re.exerciseId)) : ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset, fam || ramp ? undefined : re.technique)),
       notes: '',
       rampApplied: ramp || !!fam,
-      familiarization: fam ? { index: fam.index, total: fam.total } : null,
+      familiarization: fam,
       engineVersion: version.engineVersion,
       updatedAt: now,
       rest: null,
@@ -456,10 +479,16 @@ export async function recoverJournal(): Promise<number> {
   return n
 }
 
-export async function finishSession(s: Session, status: 'completed' | 'partial'): Promise<Session> {
+/** Al terminar la sesión, un bloque empezado y sin cerrar se cierra con lo hecho (estado «antes de tiempo»); no se inventa nada. */
+export function closeOpenBlocks(s: Session, now = Date.now()): Session {
+  return { ...s, exercises: s.exercises.map((e) => ({ ...e, sets: e.sets.map((x) => (isBlock(x) && !x.completed && (x.block?.segments.length ?? 0) > 0 ? endBlock(x, now) : x)) })) }
+}
+
+export async function finishSession(s0: Session, status: 'completed' | 'partial'): Promise<Session> {
   await flushWrites()
-  journalDrop(s.id)
+  journalDrop(s0.id)
   const now = Date.now()
+  const s = closeOpenBlocks(s0, now)
   const pausedExtra = s.pausedAt ? now - s.pausedAt : 0
   // Al terminar (también tras retomar una parcial) se vuelve a ofrecer la elección si queda parcial.
   const base: Session = { ...s }
@@ -549,14 +578,24 @@ export async function finishedSessions(): Promise<Session[]> {
   return (await db().sessions.toArray()).filter((s) => s.status === 'completed' || s.status === 'partial')
 }
 
-export function sessionWorkSummary(s: Session): { planned: number; done: number } {
-  let planned = 0
-  let done = 0
-  for (const e of s.exercises) for (const set of e.sets) if (set.kind === 'work') {
-    planned++
-    if (set.completed) done++
-  }
-  return { planned, done }
+// ───────────────────────── Programa (fases y técnicas) ─────────────────────────
+
+export const PROGRAM_KEY = 'program'
+
+export async function getProgramState(): Promise<ProgramState> {
+  return (await getMeta<ProgramState | null>(PROGRAM_KEY, null)) ?? {}
+}
+
+/** Cambia el estado del programa y deja constancia de la decisión (no borra nada del historial). */
+export async function updateProgramState(f: (s: ProgramState) => ProgramState, logText?: string): Promise<ProgramState> {
+  return db().transaction('rw', [db().meta, db().changelog], async () => {
+    const cur = await getProgramState()
+    let next = f(structuredClone(cur))
+    if (logText) next = logState(next, logText)
+    await setMeta(PROGRAM_KEY, next)
+    if (logText) await log('profile', 'program', logText)
+    return next
+  })
 }
 
 export function currentWeekRange(today = toLocalDate()): { start: string; end: string } {
