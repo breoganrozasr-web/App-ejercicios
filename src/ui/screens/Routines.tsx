@@ -21,7 +21,8 @@ import { checkScope } from '../../domain/engine/scope'
 import { PHASE_LABEL, pairExercises, setTechnique, supersetProposals, techniqueCandidates, techniqueGate } from '../../domain/program'
 import { METHOD_LABEL, canUseMethod, pairKind, techniqueBeforeAfter } from '../../domain/techniques'
 import type { Prescription, Region, Routine, RoutineDay, RoutineTechnique, RoutineVersion, ScheduleOverride, SetMethod } from '../../domain/types'
-import { useProgram } from './Phase'
+import { PrepareReturn, useProgram } from './Phase'
+import { experienceOf, wantsReturnAdaptation } from '../../domain/profile'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, formatDateShort, newId, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
@@ -193,7 +194,10 @@ export function GenerateScreen() {
               <p className="small muted">Pedida: {profile.frequency === 'auto' && !options.frequencyOverride ? 'auto (resultado real abajo)' : `${options.frequencyOverride ?? profile.frequency}`}. Se aplica a: {targets.map((r) => REGION_LABEL[r].toLowerCase()).join(', ')}. Hombros y brazos se muestran con su resultado real.</p>
               <FrequencyTable rows={result.frequency} />
             </section>
-            {profile.level === 'returning' && !result.draft.youth && (
+            {experienceOf(profile) === 'unconfirmed' && !result.draft.youth && (
+              <div className="note info"><Info aria-hidden /><span className="small">Tu experiencia está sin confirmar (perfil anterior «vuelvo tras una pausa»). Esta propuesta usa criterios prudentes de vuelta, no una personalización de tu experiencia. <a href={href('perfil')}>Confirmarla en el perfil</a>.</span></div>
+            )}
+            {wantsReturnAdaptation({ ...profile, returningAdaptation: true }) && !result.draft.youth && (
               <label className="note info" style={{ alignItems: 'center' }}>
                 <Info aria-hidden />
                 <span className="grow small">Empezar con {4} sesiones de adaptación (mitad de series, RIR 3–4). Puedes quitarla o seguir con tu rutina anterior.</span>
@@ -333,6 +337,7 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
 
         {version.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
         <AdoptionCard routine={routine} version={version} />
+        {isCurrent && <PrepareReturn compact />}
         <RoutineDaysView version={version} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
         {profile && <VolumePanel version={version} level={profile.level} goal={profile.goal} priority={priorityRegionsOf(profile)} targets={version.plan?.targetRegions} />}
         {profile && <TechniquesSection routine={routine} version={version} />}

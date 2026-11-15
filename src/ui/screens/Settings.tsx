@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowLeft, Download, FileDown, HardDrive, Smartphone, Trash2, Upload, User, Volume2, WifiOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useApp } from '../../App'
+import { CONTINUITY_LABEL, EXPERIENCE_LABEL, continuityOf, experienceOf } from '../../domain/profile'
 import { APP_VERSION, BackupError, backupFileName, exportBackup, markBackupDone, parseBackupText, previewBackup, restoreBackup, sessionsToCsv, type BackupPreview } from '../../data/backup'
 import { SCHEMA_VERSION, TABLES, db } from '../../data/db'
 import { clearDemo, loadDemo } from '../../data/demo'
@@ -22,7 +23,6 @@ import { back, href } from '../router'
 import { getKeepAwake, getSoundMode, hasAudioSessionApi, setKeepAwake, setSoundMode, testSound, type SoundMode } from '../sound'
 import { wakeLockSupported } from '../wakelock'
 
-const LEVEL_TXT = { beginner: 'Desde cero', returning: 'Vuelta tras pausa', intermediate: 'Intermedio' }
 const GOAL_TXT = { hypertrophy: 'Ganar músculo', strength: 'Ganar fuerza', mixed: 'Fuerza + músculo', general: 'Condición física' }
 
 function Section({ id, title, icon, children }: { id: string; title: string; icon?: ReactNode; children: ReactNode }) {
@@ -132,7 +132,7 @@ export function SettingsScreen({ section }: { section?: string }) {
       <main className="page">
         <Section id="perfil" title="Perfil" icon={<User aria-hidden />}>
           {profile ? (
-            <p className="small">{LEVEL_TXT[profile.level]} · {GOAL_TXT[profile.goal]} · {profile.days.length} días disponibles · {profile.minutesPerSession} min</p>
+            <p className="small">{EXPERIENCE_LABEL[experienceOf(profile)]} · {CONTINUITY_LABEL[continuityOf(profile)].toLowerCase()} · {GOAL_TXT[profile.goal]} · {profile.days.length} días disponibles · {profile.minutesPerSession} min</p>
           ) : <p className="small muted">Sin perfil.</p>}
           <a className="btn soft" href={href('perfil')}>Editar perfil</a>
           <p className="tiny muted">Cambiar el perfil no modifica tu rutina actual; te ofrecerá una propuesta nueva para comparar.</p>

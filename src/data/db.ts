@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type {
   BodyWeightEntry, ChangeLogEntry, Exercise, ExerciseSetting, MeasurementEntry, MetaEntry, Profile, ProgressPhoto, Routine, RoutineVersion, ScheduleOverride, Session,
 } from '../domain/types'
+import { migrateProfile } from '../domain/profile'
 
 /** Imagen o enlace de demostración aportado por la persona usuaria para un ejercicio propio. */
 export interface UserMedia {
@@ -19,7 +20,7 @@ export interface UserMedia {
  * Esquema versionado. Para cambiarlo: añadir this.version(N+1).stores({...}).upgrade(tx => ...)
  * SIN borrar las versiones anteriores. Nunca se borra la base al actualizar la app.
  */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 export class ForjaDB extends Dexie {
   meta!: Table<MetaEntry, string>
@@ -55,6 +56,16 @@ export class ForjaDB extends Dexie {
     this.version(2).stores({
       measurements: 'id, date, site',
       photos: 'id, date',
+    })
+    // v3 (app 1.5): experiencia y situación actual separadas en el perfil. Migración transaccional del perfil; no se
+    // regeneran rutinas ni se tocan sesiones. El antiguo «vuelvo» queda con experiencia «sin confirmar».
+    this.version(3).stores({}).upgrade(async (tx) => {
+      await tx.table('profile').toCollection().modify((p: Profile) => {
+        const m = migrateProfile(p)
+        p.experience = m.experience
+        p.continuity = m.continuity
+        p.level = m.level
+      })
     })
   }
 }

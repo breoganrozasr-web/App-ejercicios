@@ -250,7 +250,18 @@ export interface Profile {
   returningAdaptation?: boolean
   /** Reparto preferido para ordenar el catálogo de plantillas (1.4). Sin valor = sin preferencia. */
   splitPref?: SplitPref
+  /**
+   * 1.5: experiencia declarada (autodescripción, no certificado) y situación actual, independientes entre sí.
+   * `level` se conserva como NIVEL EFECTIVO del motor y se deriva de ambas (ver domain/profile.ts).
+   */
+  experience?: Experience
+  continuity?: Continuity
 }
+
+/** Experiencia declarada. «unconfirmed» solo procede de migrar el antiguo «vuelvo tras una pausa». */
+export type Experience = 'beginner' | 'intermediate' | 'advanced' | 'unconfirmed'
+/** Situación actual. «unconfirmed» = no consta (perfiles anteriores). */
+export type Continuity = 'regular' | 'returning' | 'not_started' | 'unconfirmed'
 
 /** Reparto preferido. «none» = sin preferencia. Son criterios de interfaz, no una clasificación científica. */
 export type SplitPref = 'none' | 'full' | 'upper_lower' | 'ppl' | 'ant_post' | 'strength'
@@ -604,8 +615,11 @@ export interface ProgramState {
   review?: { decision: 'postponed' | 'declined'; on: string; validDaysAt: number } | null
   /** Aprendizaje prolongado a petición: se mantiene la dosis de familiarización hasta que se termine. */
   extendLearning?: boolean
-  /** Readaptación tras una pausa de 21 días o más: se ofrece, nunca se aplica en silencio. */
-  readaptation?: { lastValidBefore: string; decision: 'accepted' | 'declined'; on: string; sessions: number } | null
+  /**
+   * Readaptación (vuelta gradual): se ofrece tras 21 días sin registros o se pide a mano («Preparar mi vuelta»); nunca se
+   * aplica en silencio. «trained_outside» = la persona declara que entrenó fuera de Forja (no se inventan sesiones).
+   */
+  readaptation?: { lastValidBefore: string; decision: 'accepted' | 'declined' | 'trained_outside'; on: string; sessions: number; manual?: boolean; endReviewed?: boolean } | null
   /** «Quiero usar técnicas para ahorrar tiempo o variar». Sin consentimiento no se proponen técnicas. */
   techniquesConsent?: boolean
   /** Ejercicios que la persona confirma manejar (con historial) o declara conocer de antes (sin historial). */

@@ -154,7 +154,7 @@ export function TodayScreen() {
               <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Aprendizaje prolongado: mitad de series y RIR 3–4</span>
             ) : readapt ? (
               <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Readaptación: sesión {readapt.index} de {readapt.total} · mitad de series y RIR 3–4</span>
-            ) : !bundle.version.familiarization && inRamp && !inProgression && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Semana de familiarización: una serie menos y más margen</span>}
+            ) : !bundle.version.familiarization && inRamp && !inProgression && <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Rutina anterior (motor 1): adaptación por semanas, una serie menos y más margen. Las rutinas nuevas cuentan días válidos.</span>}
             <ul className="small muted" style={{ margin: 0, paddingLeft: 18 }}>
               {next.exercises.slice(0, 6).map((e) => <li key={e.uid}>{nameOf(e.exerciseId)}{famShown || extended || readapt ? ` · hoy ${familiarizationPreview(e).today.split(' · ')[0]}` : e.technique ? ` · con bloque ${e.technique.method === 'drop' ? 'descendente' : 'rest-pause'}` : ''}</li>)}
               {next.exercises.length > 6 && <li>y {next.exercises.length - 6} más</li>}

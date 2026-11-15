@@ -12,6 +12,7 @@ import {
 } from './params'
 import { applyFamiliarization, buildPrescription, describePrescription, describeRir, type PrescriptionContext } from './prescription'
 import { checkScope } from './scope'
+import { wantsReturnAdaptation } from '../profile'
 
 // ───────────────────────── Tipos públicos ─────────────────────────
 
@@ -623,7 +624,7 @@ function buildStrengthDays(n: number, weekdays: number[], ids: string[], ctx: Ct
 // ───────────────────────── API principal ─────────────────────────
 
 const GOAL_TEXT: Record<Goal, string> = { hypertrophy: 'ganar músculo', strength: 'ganar fuerza', mixed: 'fuerza y músculo', general: 'condición física general' }
-const LEVEL_TEXT: Record<Level, string> = { beginner: 'empiezas desde cero', returning: 'vuelves tras una pausa', intermediate: 'tienes nivel intermedio' }
+const LEVEL_TEXT: Record<Level, string> = { beginner: 'tu experiencia es de principiante', returning: 'tu experiencia está sin confirmar (vuelta tras una pausa)', intermediate: 'tienes experiencia (intermedio o avanzado)' }
 
 function frequencyTable(days: RoutineDay[], schedule: { weekday: number; dayId: string }[], targets: Region[], desired: FrequencyPref): FrequencyRow[] {
   const vol = new Map(weeklyRegionVolume({ days, schedule }).map((v) => [v.region, v]))
@@ -760,7 +761,7 @@ export function generateRoutine(profile: Profile, options: GenerateOptions = {})
 
   // 4) Familiarización (desde cero) o adaptación (vuelta tras pausa)
   // Menores: su itinerario ya es de aprendizaje (1–2 series, RIR 3–4); no se le aplican reglas adultas de familiarización.
-  const famReason: 'beginner' | 'returning' | null = youth || options.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && !options.skipAdaptation && profile.returningAdaptation !== false ? 'returning' : null
+  const famReason: 'beginner' | 'returning' | null = youth || options.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : !options.skipAdaptation && wantsReturnAdaptation(profile) ? 'returning' : null
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
   if (options.learningDone && !youth && (ctx.level === 'beginner' || ctx.level === 'returning')) st.notes.push('Ya completaste la fase de Aprendizaje: esta propuesta empieza con la dosis base, sin otra familiarización. Los ejercicios nuevos para ti conservan su propio aprendizaje (primera vez: carga cómoda y margen).')
 
@@ -988,7 +989,7 @@ export function buildFromTemplate(t: TemplateDef, profile: Profile, opts: { lear
   const noteText = t.notes.join(' ').toLowerCase()
   const explained = (r: Region) => (r === 'back' && /tirón|espalda/.test(noteText)) || (r === 'hamstrings' && /isquio/.test(noteText))
   for (const g of gaps) if (!explained(g.region)) warnings.push(`${REGION_LABEL[g.region]}: sin series directas en esta plantilla.`)
-  const famReason: 'beginner' | 'returning' | null = youth || opts.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : ctx.level === 'returning' && profile.returningAdaptation !== false ? 'returning' : null
+  const famReason: 'beginner' | 'returning' | null = youth || opts.learningDone ? null : ctx.level === 'beginner' ? 'beginner' : wantsReturnAdaptation(profile) ? 'returning' : null
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
   const freq = table.filter((r) => r.target).map((r) => `${REGION_LABEL[r.region].toLowerCase()} ${r.directDays}`).join(', ')
   const rationale = dedupe([t.description, ...t.notes.filter((x) => !x.startsWith('⚠')), `Frecuencia directa con el calendario de la plantilla: ${freq}.`])

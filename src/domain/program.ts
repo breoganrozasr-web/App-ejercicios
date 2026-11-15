@@ -126,7 +126,7 @@ export interface ProgramView {
   /** Hitos cumplidos y sin aplazamiento vigente: se muestra la tarjeta. */
   reviewDue: boolean
   snooze: { untilDate: string; untilValidDays: number; active: boolean } | null
-  readaptation: { offer: boolean; gapDays: number; active: { index: number; total: number } | null }
+  readaptation: { offer: boolean; gapDays: number; active: { index: number; total: number } | null; ended: { total: number } | null; trainedOutside: boolean }
 }
 
 export function computeProgram(i: ProgramInput): ProgramView {
@@ -178,15 +178,17 @@ export function computeProgram(i: ProgramInput): ProgramView {
   const gapDays = lastValid ? Math.max(0, daysBetween(lastValid, i.today)) : 0
   const ra = i.state.readaptation
   let active: { index: number; total: number } | null = null
+  let ended: { total: number } | null = null
   if (ra?.decision === 'accepted') {
     const since = validDates(real, (s) => s.date >= ra.on).length
     if (since < ra.sessions) active = { index: since + 1, total: ra.sessions }
+    else if (!ra.endReviewed) ended = { total: ra.sessions }
   }
   const offer = !youth && !!lastValid && gapDays >= PHASE_RULES.readaptationGapDays && !(ra && ra.lastValidBefore === lastValid) && phase !== 'learning' && !active
 
   return {
     phase, declared: i.profile.level, youth, healthBlock, learning, learningDoneOn, validDays, firstValid, lastValid, spanDays, refs, refsRequired, milestones, reviewReady, reviewDue,
-    snooze, readaptation: { offer, gapDays, active },
+    snooze, readaptation: { offer, gapDays, active, ended, trainedOutside: ra?.decision === 'trained_outside' && ra.lastValidBefore === lastValid },
   }
 }
 
@@ -307,7 +309,7 @@ export function techniqueGate(v: ProgramView, state: ProgramState): TechniqueGat
   if (v.healthBlock) reasons.push('No se proponen con una señal de salud activa en tu perfil.')
   if (v.phase === 'learning') reasons.push('No se proponen durante la familiarización.')
   if (v.readaptation.active) reasons.push('No se proponen durante la readaptación.')
-  if (v.phase === 'consolidation' && v.declared !== 'intermediate') reasons.push('Se ofrecen en la fase de Progresión o si declaraste nivel intermedio.')
+  if (v.phase === 'consolidation' && v.declared !== 'intermediate') reasons.push('Se ofrecen en la fase de Progresión o si declaraste nivel intermedio o avanzado.')
   return { allowed: reasons.length === 0, reasons }
 }
 
@@ -446,4 +448,19 @@ export function decideReview(state: ProgramState, decision: 'postponed' | 'decli
 
 export function enterProgression(state: ProgramState, today: string, note: string): ProgramState {
   return logState({ ...state, progressionSince: today, review: null, extendLearning: false }, `Entrada en Progresión${note ? ` (${note})` : ''}`)
+}
+
+/**
+ * «Preparar mi vuelta» (1.5): readaptación pedida a mano, también sin historial local. Reutiliza la regla de cuatro días
+ * válidos con max(1, mitad de series) y RIR 3–4 (decisión de producto, no protocolo clínico). No borra fase ni historial.
+ */
+export function acceptManualReturn(s: ProgramState, today: string, lastValid: string | null): ProgramState {
+  return { ...s, readaptation: { lastValidBefore: lastValid ?? 'sin-registros', decision: 'accepted', on: today, sessions: PHASE_RULES.readaptationSessions, manual: true } }
+}
+
+/** Fin de la vuelta gradual: continuar con el plan base o prolongar dos días válidos más (sin afirmar recuperación). */
+export function endReadaptation(s: ProgramState, choice: 'continue' | 'extend'): ProgramState {
+  const ra = s.readaptation
+  if (!ra || ra.decision !== 'accepted') return s
+  return choice === 'extend' ? { ...s, readaptation: { ...ra, sessions: ra.sessions + 2 } } : { ...s, readaptation: { ...ra, endReviewed: true } }
 }

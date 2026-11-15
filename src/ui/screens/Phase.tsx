@@ -7,9 +7,13 @@ import { getProgramState, getRoutineBundle, saveRoutineVersion, updateProgramSta
 import { getExercise } from '../../domain/catalog'
 import { REGION_LABEL } from '../../domain/engine/contribution'
 import {
-  PHASE_LABEL, PHASE_RULES, addOneSet, computeProgram, decideReview, enterProgression, nextReviewText, reviewProposal, techniqueGate, type ProgramView, type ReviewAnswers,
+  PHASE_LABEL, PHASE_RULES, acceptManualReturn, addOneSet, endReadaptation, computeProgram, decideReview, enterProgression, nextReviewText, reviewProposal, techniqueGate, type ProgramView, type ReviewAnswers,
 } from '../../domain/program'
 import { HELP_TEXT } from '../../domain/techniques'
+import { CONTINUITY_LABEL, EXPERIENCE_LABEL, continuityOf, experienceOf } from '../../domain/profile'
+import { applyFamiliarization } from '../../domain/engine/prescription'
+import { durationText } from '../../domain/engine/analysis'
+import { nextRoutineDay } from '../../data/repo'
 import type { ProgramState, Session } from '../../domain/types'
 import { formatDateShort, toLocalDate } from '../../domain/util'
 import { Toggle } from '../components/inputs'
@@ -78,11 +82,22 @@ export function TodayProgramCards({ hasActive }: { hasActive: boolean }) {
       )}
       {view.readaptation.offer && (
         <section className="card stack-sm" aria-label="Vuelta tras una pausa">
-          <strong>Llevas {view.readaptation.gapDays} días sin entrenar.</strong>
-          <span className="small">Una pausa no borra tu historial ni tu fase. ¿Quieres empezar con {PHASE_RULES.readaptationSessions} sesiones de readaptación (mitad de series y RIR 3–4)? Es una pauta orientativa, no una medida de lo que hayas perdido.</span>
+          <strong>No hay entrenamientos registrados desde el {formatDateShort(view.lastValid as string)} ({view.readaptation.gapDays} días). ¿Has entrenado fuera de Forja?</strong>
+          <span className="small">La ausencia de registros no demuestra que hayas parado. Si sí has parado, puedes empezar con una vuelta gradual de {PHASE_RULES.readaptationSessions} días válidos (mitad de series y RIR 3–4): es una pauta orientativa, no una medida de lo que hayas perdido. Tu historial y tu fase no se borran.</span>
+          <div className="stack-sm">
+            <button className="btn soft small" onClick={async () => { await updateProgramState((s) => ({ ...s, readaptation: { lastValidBefore: view.lastValid as string, decision: 'trained_outside', on: today, sessions: PHASE_RULES.readaptationSessions } }), 'Entrenamiento fuera de Forja declarado'); toast('Anotado: no lo tratamos como una pausa. No se inventan sesiones.') }}>Sí, he entrenado fuera de Forja</button>
+            <button className="btn primary small" onClick={async () => { await updateProgramState((s) => ({ ...s, readaptation: { lastValidBefore: view.lastValid as string, decision: 'accepted', on: today, sessions: PHASE_RULES.readaptationSessions } }), 'Readaptación aceptada'); toast('Vuelta gradual activada para las próximas sesiones') }}>No he entrenado: vuelta gradual</button>
+            <button className="btn ghost small" onClick={async () => { await updateProgramState((s) => ({ ...s, readaptation: { lastValidBefore: view.lastValid as string, decision: 'declined', on: today, sessions: PHASE_RULES.readaptationSessions } }), 'Readaptación no aceptada'); toast('Sigues con tu dosis habitual') }}>No he entrenado, pero sigo como antes</button>
+          </div>
+        </section>
+      )}
+      {view.readaptation.ended && (
+        <section className="card stack-sm" aria-label="Fin de la vuelta gradual">
+          <strong>Has completado la vuelta gradual ({view.readaptation.ended.total} días válidos).</strong>
+          <span className="small">¿Cómo te has sentido? Si te costó, puedes prolongarla; si fue bien, sigues con la dosis base de tu rutina. Esto no certifica que estés «recuperado».</span>
           <div className="row">
-            <button className="btn primary small grow" onClick={async () => { await updateProgramState((s) => ({ ...s, readaptation: { lastValidBefore: view.lastValid as string, decision: 'accepted', on: today, sessions: PHASE_RULES.readaptationSessions } }), 'Readaptación aceptada'); toast('Readaptación activada para las próximas sesiones') }}>Sí, con readaptación</button>
-            <button className="btn soft small grow" onClick={async () => { await updateProgramState((s) => ({ ...s, readaptation: { lastValidBefore: view.lastValid as string, decision: 'declined', on: today, sessions: PHASE_RULES.readaptationSessions } }), 'Readaptación no aceptada'); toast('Sigues con tu dosis habitual') }}>No, seguir como antes</button>
+            <button className="btn primary small grow" onClick={async () => { await updateProgramState((s) => endReadaptation(s, 'continue'), 'Vuelta gradual terminada'); toast('Sigues con la dosis base de tu rutina') }}>Continuar con el plan base</button>
+            <button className="btn soft small grow" onClick={async () => { await updateProgramState((s) => endReadaptation(s, 'extend'), 'Vuelta gradual prolongada'); toast('Dos días válidos más de vuelta gradual') }}>Prolongar 2 días</button>
           </div>
         </section>
       )}
@@ -162,7 +177,7 @@ export function PhaseScreen() {
             {steps.map((p) => <div key={p} role="listitem" className={view.phase === p ? 'on' : ''} aria-current={view.phase === p ? 'step' : undefined}>{PHASE_LABEL[p]}</div>)}
           </div>
           <p className="small">{HELP_TEXT.phases}</p>
-          <p className="tiny muted">Experiencia declarada en tu perfil: <strong>{profile.level === 'beginner' ? 'desde cero' : profile.level === 'returning' ? 'vuelvo tras una pausa' : 'intermedio'}</strong>. Forja no la cambia sola ni certifica tu técnica con un contador.{profile.level === 'intermediate' ? ' Tu programa parte de esa declaración, no de un historial en la app.' : ''}</p>
+          <p className="tiny muted">Experiencia declarada en tu perfil: <strong>{EXPERIENCE_LABEL[experienceOf(profile)].toLowerCase()}</strong> · ahora mismo: <strong>{CONTINUITY_LABEL[continuityOf(profile)].toLowerCase()}</strong>. Forja no la cambia sola ni certifica tu técnica con un contador.{profile.level === 'intermediate' ? ' Tu programa parte de esa declaración, no de un historial en la app.' : ''}</p>
         </section>
 
         <section className="card stack-sm" aria-label="Datos de tu fase">
@@ -182,7 +197,8 @@ export function PhaseScreen() {
           {view.phase === 'learning' && view.learning && !view.learning.extended && view.learning.unit === 'days' && (
             <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={async () => { await updateProgramState((s) => ({ ...s, extendLearning: true }), 'Aprendizaje prolongado'); toast('Al acabar la familiarización seguirás con la dosis de aprendizaje hasta que lo termines') }}>Quiero prolongar el aprendizaje</button>
           )}
-          {view.readaptation.active && <p className="small"><RotateCcw size={14} aria-hidden /> Readaptación: sesión {view.readaptation.active.index} de {view.readaptation.active.total} (mitad de series y RIR 3–4).</p>}
+          {view.readaptation.active && <p className="small"><RotateCcw size={14} aria-hidden /> Vuelta gradual: día válido {view.readaptation.active.index} de {view.readaptation.active.total} (mitad de series y RIR 3–4).</p>}
+          {!view.readaptation.active && !view.youth && <PrepareReturn />}
         </section>
 
         {view.reviewReady && (
@@ -235,5 +251,35 @@ export function PhaseScreen() {
         <a className="btn ghost small" style={{ alignSelf: 'flex-start' }} href={href('aprender/fases')}>Más sobre las fases</a>
       </main>
     </>
+  )
+}
+
+/**
+ * «Preparar mi vuelta»: vuelta gradual pedida a mano, también sin historial local. Antes de aceptar se compara la
+ * sesión siguiente con el plan base (series, esfuerzo y duración). Se conserva la plantilla elegida.
+ */
+export function PrepareReturn({ compact = false }: { compact?: boolean }) {
+  const { view, bundle, sessions } = useProgram()
+  const { activeSession } = useApp()
+  const [open, setOpen] = useState(false)
+  const toast = useToast()
+  if (!view || view.youth || view.readaptation.active) return null
+  const next = bundle ? nextRoutineDay(bundle.version, sessions, bundle.routine.id) : null
+  const famDay = next ? { ...next, exercises: next.exercises.map((e) => ({ ...e, technique: undefined, prescription: applyFamiliarization(e.prescription, getExercise(e.exerciseId)) })) } : null
+  const sets = (d: NonNullable<typeof next>) => d.exercises.reduce((a, e) => a + e.prescription.sets, 0)
+  return (
+    <div className="stack-sm" aria-label="Preparar mi vuelta">
+      <button className={`btn ${compact ? 'soft' : 'ghost'} small`} style={{ alignSelf: 'flex-start' }} aria-expanded={open} onClick={() => setOpen(!open)}><RotateCcw size={16} /> Preparar mi vuelta</button>
+      {open && (
+        <div className="note info small stack-sm" style={{ display: 'block' }}>
+          <p style={{ margin: 0 }}>Si llevas tiempo sin entrenar (dentro o fuera de Forja), las próximas {PHASE_RULES.readaptationSessions} sesiones válidas usan max(1, mitad de series) y RIR 3–4. Tu experiencia, tu fase y tu rutina se conservan. Es una decisión de producto orientativa, no un protocolo clínico ni una garantía de recuperación.</p>
+          {next && famDay ? (
+            <p style={{ margin: '6px 0 0' }}>Próxima sesión «{next.name}»: hoy {sets(famDay)} series de trabajo, RIR 3–4, {durationText(famDay)} · plan base {sets(next)} series, {durationText(next)}. Las cargas anteriores se ven con su fecha; eliges una carga actual con margen (no se calcula un porcentaje).</p>
+          ) : <p style={{ margin: '6px 0 0' }}>Cuando elijas una rutina verás aquí la comparación con su plan base.</p>}
+          {activeSession && <p className="tiny" style={{ margin: '6px 0 0' }}>No cambia el entrenamiento en curso: se aplica desde la siguiente sesión.</p>}
+          <button className="btn primary small" style={{ marginTop: 8 }} onClick={async () => { await updateProgramState((s) => acceptManualReturn(s, toLocalDate(), view.lastValid), 'Vuelta gradual preparada'); toast('Vuelta gradual preparada para las próximas sesiones'); setOpen(false) }}>Aceptar la vuelta gradual</button>
+        </div>
+      )}
+    </div>
   )
 }

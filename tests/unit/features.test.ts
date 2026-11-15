@@ -189,7 +189,7 @@ describe('Esquema v2: actualización sin pérdida y copias con fotos opcionales'
     const plain = await exportBackup()
     expect(plain.tables.photos).toBeUndefined()
     expect(plain.tables.measurements).toHaveLength(1)
-    expect(plain.schemaVersion).toBe(2)
+    expect(plain.schemaVersion).toBe(SCHEMA_VERSION) // 1.5: esquema 3 (migración del perfil, encargo 4)
     const withPhotos = await exportBackup({ includePhotos: true })
     expect(withPhotos.tables.photos).toHaveLength(1)
 
@@ -207,6 +207,6 @@ describe('Esquema v2: actualización sin pérdida y copias con fotos opcionales'
   it('acepta copias del esquema 1 y rechaza medidas no válidas', () => {
     expect(() => parseBackupText(JSON.stringify({ format: 'forja-backup', formatVersion: 1, schemaVersion: 1, tables: { bodyweight: [] } }))).not.toThrow()
     expect(() => parseBackupText(JSON.stringify({ format: 'forja-backup', formatVersion: 1, schemaVersion: 2, tables: { measurements: [{ id: 'x', date: '2026-01-01', site: 'waist', cm: 'mucho' }] } }))).toThrow(/medida/)
-    expect(() => parseBackupText(JSON.stringify({ format: 'forja-backup', formatVersion: 1, schemaVersion: 3, tables: {} }))).toThrow(/incompatible/)
+    expect(() => parseBackupText(JSON.stringify({ format: 'forja-backup', formatVersion: 1, schemaVersion: SCHEMA_VERSION + 1, tables: {} }))).toThrow(/incompatible/)
   })
 })

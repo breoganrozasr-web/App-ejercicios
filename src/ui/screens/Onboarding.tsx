@@ -8,17 +8,19 @@ import { EQUIPMENT_LABEL } from '../../domain/catalog/exercises'
 import { DEFAULT_TARGET_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
 import { priorityRegionsOf, referenceCandidates, targetRegionsFor } from '../../domain/engine/generator'
 import { checkScope } from '../../domain/engine/scope'
-import { defaultProfile } from '../../domain/profile'
-import type { AgeBand, EquipmentId, FrequencyPref, Goal, Level, Location, Profile, Region } from '../../domain/types'
+import { CONTINUITY_LABEL, EXPERIENCE_HELP, EXPERIENCE_LABEL, continuityOf, defaultProfile, effectiveLevel, experienceOf } from '../../domain/profile'
+import type { AgeBand, Continuity, EquipmentId, Experience, FrequencyPref, Goal, Location, Profile, Region } from '../../domain/types'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, newId, toLocalDate } from '../../domain/util'
 import { Chip, Choice, DecimalInput, Segmented, Toggle } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
 import { back, go } from '../router'
+import { PrepareReturn } from './Phase'
 
-const LEVELS: { v: Level; t: string; d: string }[] = [
-  { v: 'beginner', t: 'Empiezo desde cero', d: 'Nunca he entrenado fuerza o casi nada' },
-  { v: 'returning', t: 'Vuelvo tras una pausa', d: 'Entrené antes y lo dejé un tiempo' },
-  { v: 'intermediate', t: 'Intermedio', d: 'Llevo meses entrenando con constancia' },
+const EXPERIENCES: Exclude<Experience, 'unconfirmed'>[] = ['beginner', 'intermediate', 'advanced']
+const CONTINUITIES: { v: Continuity; d: string }[] = [
+  { v: 'regular', d: '' },
+  { v: 'returning', d: '' },
+  { v: 'not_started', d: '' },
 ]
 const GOALS: { v: Goal; t: string; d: string }[] = [
   { v: 'hypertrophy', t: 'Ganar músculo', d: 'Hipertrofia' },
@@ -73,10 +75,7 @@ export function OnboardingScreen({ editing = false }: { editing?: boolean }) {
       valid: true,
       body: (
         <div className="stack">
-          <span className="label">¿Cuál es tu punto de partida?</span>
-          <div className="stack-sm">
-            {LEVELS.map((l) => <Choice key={l.v} selected={p.level === l.v} onClick={() => set('level', l.v)} title={l.t} desc={l.d} />)}
-          </div>
+          <ExperienceFields p={p} setP={setP} />
           <span className="label">¿Qué buscas principalmente?</span>
           <div className="choice-grid">
             {GOALS.map((g) => <Choice key={g.v} selected={p.goal === g.v} onClick={() => set('goal', g.v)} title={g.t} desc={g.d} />)}
@@ -234,8 +233,8 @@ export function OnboardingScreen({ editing = false }: { editing?: boolean }) {
               <p className="tiny muted">Se practican primero y se muestra cuántos días a la semana. Elige solo ejercicios que conozcas: ser intermedio no implica dominar cualquier levantamiento. Si no eliges, Forja propone unas provisionales.</p>
             </>
           )}
-          {p.level === 'returning' && (
-            <Toggle checked={p.returningAdaptation !== false} onChange={(v) => set('returningAdaptation', v)} label="Empezar con 4 sesiones de adaptación" desc="Max(1, mitad de series) y RIR 3–4 durante 4 días válidos. No te reclasifica como «desde cero». Puedes quitarla." />
+          {continuityOf(p) === 'returning' && (
+            <Toggle checked={p.returningAdaptation !== false} onChange={(v) => set('returningAdaptation', v)} label="Empezar con una vuelta gradual (4 días válidos)" desc="Max(1, mitad de series) y RIR 3–4 durante 4 días válidos. No cambia tu experiencia declarada. Puedes quitarla." />
           )}
           <details className="more">
             <summary>Ejercicios que no quiero hacer ({p.excludedExercises.length})</summary>
@@ -320,5 +319,31 @@ export function OnboardingScreen({ editing = false }: { editing?: boolean }) {
         </div>
       </main>
     </>
+  )
+}
+
+/**
+ * Experiencia declarada y situación actual, juntas y en lenguaje sencillo (1.5). Son dimensiones independientes: se
+ * puede tener experiencia y estar volviendo. Ninguna elección cambia una sesión activa ni aumenta series.
+ */
+export function ExperienceFields({ p, setP }: { p: Profile; setP: (f: (x: Profile) => Profile) => void }) {
+  const exp = experienceOf(p)
+  const cont = continuityOf(p)
+  const setExp = (e: Exclude<Experience, 'unconfirmed'>) => setP((x) => ({ ...x, experience: e, level: effectiveLevel(e), continuity: (e !== 'beginner' && continuityOf(x) === 'not_started') ? 'regular' : continuityOf(x) }))
+  const setCont = (c: Continuity) => setP((x) => ({ ...x, continuity: c }))
+  return (
+    <div className="stack">
+      <span className="label" id="exp-lbl">Tu experiencia</span>
+      {exp === 'unconfirmed' && <p className="small note info" style={{ margin: 0 }}>Tu perfil anterior decía «vuelvo tras una pausa», que no indica tu experiencia. Elígela cuando quieras; mientras tanto Forja usa criterios prudentes y tu rutina no cambia.</p>}
+      <div className="stack-sm" role="group" aria-labelledby="exp-lbl">
+        {EXPERIENCES.map((e) => <Choice key={e} selected={exp === e} onClick={() => setExp(e)} title={EXPERIENCE_LABEL[e]} desc={EXPERIENCE_HELP[e]} />)}
+      </div>
+      <span className="label" id="cont-lbl">Ahora mismo</span>
+      <div className="row wrap" role="group" aria-labelledby="cont-lbl">
+        {CONTINUITIES.map((c) => <Chip key={c.v} on={cont === c.v} onClick={() => setCont(c.v)}>{CONTINUITY_LABEL[c.v]}</Chip>)}
+      </div>
+      <p className="tiny muted">Es una autodescripción, no un certificado: no depende de marcas, edad ni días en la app, y Forja no te sube de nivel sola. Elegir «Avanzado» no añade series ni activa técnicas.</p>
+      {cont === 'returning' && <PrepareReturn compact />}
+    </div>
   )
 }

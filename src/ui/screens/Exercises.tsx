@@ -29,7 +29,6 @@ import { METHOD_LABEL, blockText, blocksOf, conventionalWork } from '../../domai
 import type { ProgramState, SetMethod } from '../../domain/types'
 import { back, go, href } from '../router'
 
-const LEVEL_TXT = { beginner: 'Principiante', returning: 'Tras pausa', intermediate: 'Intermedio' }
 
 export function ExercisesScreen() {
   const { profile } = useApp()
@@ -103,7 +102,6 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
           {ex.synonyms.length > 0 && <span className="small muted">También: {ex.synonyms.join(', ')}</span>}
           <div className="row wrap">
             <span className="badge">{PATTERN_LABEL[ex.pattern]}</span>
-            <span className="badge">{LEVEL_TXT[ex.minLevel]}</span>
             {ex.unilateral && <span className="badge">Por lado</span>}
             {ex.custom && <span className="badge">Contenido propio</span>}
           </div>

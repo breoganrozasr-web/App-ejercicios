@@ -95,12 +95,15 @@ describe('A12 · doble progresión (3×8–12, RIR objetivo 2–3)', () => {
     const d = session('prensa', 'machine', [11, 10, 10].map((r) => st({ weightKg: 100, reps: r, rir: 2 })), '2026-11-12')
     expect(suggestNext({ ...base, exerciseId: 'prensa', history: hist(b, c, d) }).kind).toBe('repeat')
   })
-  it('tras una pausa larga propone vuelta gradual con menos carga', () => {
+  it('tras una pausa larga propone vuelta gradual sin precargar ni calcular un porcentaje (encargo 4, 2.3)', () => {
+    // Antes (1.1–1.4) se proponía ≈15 % menos. El encargo 4 lo prohíbe expresamente: la carga anterior se muestra con
+    // fecha y la persona elige una carga actual con margen.
     const s = session('press_banca_barra', 'barbell_total', [12, 12, 12].map((r) => st({ weightKg: 60, reps: r, rir: 2 })), '2026-09-01')
     const sug = suggestNext({ ...base, exerciseId: 'press_banca_barra', history: hist(s) })
     expect(sug.kind).toBe('return_after_break')
-    expect(sug.targetWeightKg).toBeLessThan(60)
-    expect(((sug.targetWeightKg ?? 0) - 20) % 2.5).toBe(0)
+    expect(sug.targetWeightKg).toBeUndefined()
+    expect(sug.detail).toMatch(/La última vez: 60 kg el 01\/09\/2026/)
+    expect(sug.detail).not.toMatch(/%/)
   })
   it('molestia marcada o perfil fuera de alcance: no sugiere subir', () => {
     const s = session('press_banca_barra', 'barbell_total', [12, 12, 12].map((r) => st({ weightKg: 40, reps: r, rir: 2 })), '2026-11-10', true)

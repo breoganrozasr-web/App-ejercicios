@@ -11,6 +11,7 @@ import { AUTO_SESSION_CAP, ENGINE_VERSION, FAMILIARIZATION_SESSIONS, isBodyweigh
 import { applyFamiliarization } from './prescription'
 import { RECIPE_DATA, type RecipeData, type RecipeItem } from './recipes-data'
 import { checkScope } from './scope'
+import { wantsReturnAdaptation } from '../profile'
 import { alternativesFor } from './substitution'
 
 /**
@@ -256,7 +257,7 @@ export function buildFromRecipe(r: Recipe, profile: Profile, opts: { learningDon
   const volume = weeklyRegionVolume(version)
   const table = frequencyRows(volume, targets, profile)
   // Aprendizaje / adaptación: dosis temporal (no cambia la receta). Se calcula aparte para mostrar las dos duraciones.
-  const famReason: 'beginner' | 'returning' | null = blocked || opts.learningDone ? null : level === 'beginner' ? 'beginner' : level === 'returning' && profile.returningAdaptation !== false ? 'returning' : null
+  const famReason: 'beginner' | 'returning' | null = blocked || opts.learningDone ? null : level === 'beginner' ? 'beginner' : wantsReturnAdaptation(profile) ? 'returning' : null
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
   const minutes: DayMinutes[] = days.map((d) => {
     const b = dayDuration(d)

@@ -181,7 +181,7 @@ export interface SuggestInput {
   today: string
   progressionAllowed: boolean
   /** Sesión actual dentro de la familiarización (motor 2): sin subidas automáticas. */
-  familiarization?: { index: number; total: number } | null
+  familiarization?: { index: number; total: number; reason?: 'readaptation' | 'extended' } | null
   /** ¿Se puede ofrecer esta variante? (material marcado y no excluida). Sin función: se asume que sí. */
   available?: (exerciseId: string) => boolean
   /** Contexto del ejercicio en la sesión actual (bloques y superserie). Si cambia respecto a la última vez, no se compara. */
@@ -214,13 +214,14 @@ export function suggestNext(input: SuggestInput): Suggestion {
   const keepWeight = lt === 'assisted' || lt === 'bodyweight' || lt === 'band' || time ? undefined : refLoad ?? undefined
   const keepAssist = lt === 'assisted' ? refLoad ?? undefined : undefined
 
-  if (gap > RETURN_AFTER_DAYS) {
-    const target = refLoad !== null && (lt === 'barbell_total' || lt === 'dumbbell_each' || lt === 'machine' || lt === 'cable') ? returnLoad(refLoad, step, lt, input.increments) : undefined
+  if (gap > RETURN_AFTER_DAYS || input.familiarization?.reason === 'readaptation') {
+    // 1.5: tras una pausa no se precarga la carga anterior ni se calcula una «carga segura» con un porcentaje arbitrario.
+    // Se muestra la última con su fecha y la persona elige una carga actual con margen.
+    const lastTxt = refLoad !== null && (lt === 'barbell_total' || lt === 'dumbbell_each' || lt === 'machine' || lt === 'cable') ? `${formatNumber(refLoad)} kg el ${anyLast.date.split('-').reverse().join('/')}` : null
     return {
       kind: 'return_after_break',
-      title: `Vuelta gradual (${gap} días sin hacerlo)`,
-      detail: `Tras una pausa, empieza con menos: ${target !== undefined ? `unos ${formatNumber(target)} kg (≈15 % menos)` : 'una variante o carga algo más fácil'} y dejando más margen. Lo perdido suele recuperarse rápido; ajusta según cómo te sientas.`,
-      targetWeightKg: target,
+      title: gap > RETURN_AFTER_DAYS ? `Vuelta gradual (${gap} días sin hacerlo)` : 'Vuelta gradual',
+      detail: `${lastTxt ? `La última vez: ${lastTxt}. ` : ''}Elige hoy una carga actual con la que te sobren 3–4 repeticiones. No calculamos un porcentaje «seguro»: la referencia anterior es solo un dato con fecha. Ajusta según cómo te sientas.`,
       targetReps: time ? undefined : [p.repMin, p.repMax],
       basedOnDate,
     }
