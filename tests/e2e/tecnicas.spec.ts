@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { acceptProposal, collectErrors, countSessions, onboard } from './helpers'
+import { acceptProposal, collectErrors, countSessions, onboard, markDone } from './helpers'
 
 /** Lee una sesión de IndexedDB (la activa o la indicada). */
 async function readSession(page: Page, status = 'active'): Promise<{ id: string; exercises: { exerciseId: string; sets: { kind: string; method?: string; weightKg: number | null; reps: number | null; completed: boolean; block?: { segments: { weightKg: number | null; reps: number | null; pauseSec: number | null }[]; ended: string | null; plannedSegments: number } }[] }[]; rest: { kind?: string; durationSec: number } | null }> {
@@ -162,7 +162,7 @@ test('B16 · reorganizar dos series pendientes con antes/después; lo hecho no s
   const field = ex.getByRole('textbox', { name: /, serie 1$/ }).first()
   await field.fill('35')
   await ex.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await ex.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex, 1)
   await ex.getByRole('button', { name: /^Opciones de / }).first().click()
   await page.getByRole('button', { name: 'Reorganizar 2 series pendientes en un bloque…' }).click()
   await expect(page.getByText(/no se garantiza que el estímulo sea equivalente/)).toBeVisible()
@@ -191,11 +191,11 @@ test('B18 · superserie: A1 → transición → A2 → descanso de la ronda; sep
   await expect(a1.getByRole('button', { name: /^Superserie A1/ })).toBeVisible()
   await expect(a2.getByRole('button', { name: /^Superserie A2/ })).toBeVisible()
   const a2name = (await a2.getAttribute('aria-label'))!.replace(/^\d+\. /, '')
-  await a1.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(a1, 1)
   const transition = page.getByRole('timer', { name: 'Transición de superserie' })
   await expect(transition).toBeVisible()
   await expect(transition).toContainText(`Ahora: ${a2name}`)
-  await a2.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(a2, 1)
   await expect(page.getByRole('timer', { name: 'Descanso de la ronda' })).toBeVisible()
   const s = await readSession(page)
   expect(s.rest?.kind).toBe('round')

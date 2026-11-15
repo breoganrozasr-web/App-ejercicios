@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, Image as ImageIcon, Link2, Plus, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, Image as ImageIcon, Link2, Plus, Search, Star, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
@@ -15,6 +15,7 @@ import { alternativesFor } from '../../domain/engine/substitution'
 import { functionText } from '../../domain/content/functions'
 import { ANAT_LABEL, anatomyOf, regionsByRole, type AnatRegion } from '../../domain/catalog/anatomy'
 import { BodyMap } from '../components/BodyMap'
+import { useFavoriteExercises, useRecentExercises } from '../favorites'
 import { computeRecords, exerciseTrend } from '../../domain/records'
 import type { EquipmentId, Exercise, LoadType, MuscleId, Pattern, Session } from '../../domain/types'
 import { formatDateShort, formatNumber, newId } from '../../domain/util'
@@ -37,14 +38,18 @@ export function ExercisesScreen() {
   const [q, setQ] = useState('')
   const [muscle, setMuscle] = useState<MuscleId | null>(null)
   const [mine, setMine] = useState(false)
+  const [onlyFav, setOnlyFav] = useState(false)
+  const [fav] = useFavoriteExercises()
+  const recent = useRecentExercises()
   const list = useMemo(() => {
     const nq = q.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
     return allExercises()
       .filter((e) => !muscle || e.primary.includes(muscle))
       .filter((e) => !mine || !profile || hasEquipment(profile.equipment, e))
+      .filter((e) => !onlyFav || fav.includes(e.id))
       .filter((e) => !nq || [e.name, ...e.synonyms, PATTERN_LABEL[e.pattern]].some((s) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').includes(nq)))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-  }, [q, muscle, mine, profile])
+  }, [q, muscle, mine, profile, onlyFav, fav])
   return (
     <>
       <header className="topbar">
@@ -57,9 +62,16 @@ export function ExercisesScreen() {
           <input className="input" style={{ paddingLeft: 38 }} type="search" placeholder="Buscar (sentadilla, remo, press…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar ejercicio" />
         </label>
         <div className="row" style={{ overflowX: 'auto', paddingBottom: 4 }} role="group" aria-label="Filtrar por músculo">
+          <Chip on={onlyFav} onClick={() => setOnlyFav(!onlyFav)}><Star aria-hidden /> Favoritos</Chip>
           <Chip on={mine} onClick={() => setMine(!mine)}>Mi material</Chip>
           {MAJOR_MUSCLES.map((m) => <Chip key={m} on={muscle === m} onClick={() => setMuscle(muscle === m ? null : m)}>{MUSCLE_LABEL[m]}</Chip>)}
         </div>
+        {!q.trim() && !onlyFav && !muscle && recent.length > 0 && (
+          <section className="stack-sm" aria-label="Usados recientemente">
+            <span className="label">Usados recientemente</span>
+            <div className="row wrap" style={{ gap: 6 }}>{recent.map((id) => <a key={id} className="chip" href={href(`ejercicios/${id}`)}>{getExercise(id)?.name ?? id}</a>)}</div>
+          </section>
+        )}
         <span className="small muted">{list.length} ejercicios</span>
         <div className="card flat list" style={{ padding: '0 12px' }}>
           {list.map((e) => (
@@ -98,6 +110,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
       <header className="topbar">
         <button className="icon-btn" onClick={() => back('ejercicios')} aria-label="Volver"><ArrowLeft /></button>
         <span className="title grow">Ejercicio</span>
+        <FavButton id={ex.id} name={ex.name} />
       </header>
       <main className="page">
         <div className="stack-sm">
@@ -465,4 +478,10 @@ export function WhatItWorks({ ex }: { ex: Exercise }) {
       </details>
     </section>
   )
+}
+
+function FavButton({ id, name }: { id: string; name: string }) {
+  const [fav, toggle] = useFavoriteExercises()
+  const on = fav.includes(id)
+  return <button className="icon-btn" aria-pressed={on} aria-label={on ? `Quitar ${name} de favoritos` : `Añadir ${name} a favoritos`} onClick={() => toggle(id)}><Star fill={on ? 'currentColor' : 'none'} /></button>
 }

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { acceptProposal, collectErrors, countSessions, onboard } from './helpers'
+import { acceptProposal, collectErrors, countSessions, onboard, markDone } from './helpers'
 
 test('A16/F8 · 20,5, cambiar repeticiones y RIR, marcar, escribir nota y recargar al instante conserva todo', async ({ page }) => {
   const errors = collectErrors(page)
@@ -15,20 +15,21 @@ test('A16/F8 · 20,5, cambiar repeticiones y RIR, marcar, escribir nota y recarg
     await page.getByRole('dialog').getByRole('button', { name: '2', exact: true }).click()
     const mark = ex.getByRole('button', { name: 'Marcar serie 1 como hecha' })
     if (await mark.count()) await mark.click()
-    const note = ex.getByRole('textbox', { name: /^Notas de / })
-    if (!(await note.count())) await ex.getByRole('button', { name: 'Nota', exact: true }).click()
-    await ex.getByRole('textbox', { name: /^Notas de / }).fill('')
-    await ex.getByRole('textbox', { name: /^Notas de / }).pressSequentially(`agarre neutro ${run}`, { delay: 5 })
+    const note = ex.getByRole('textbox', { name: /^Nota de esta sesión: / })
+    if (!(await note.count())) await ex.getByRole('button', { name: 'Nota de hoy', exact: true }).click()
+    await ex.getByRole('textbox', { name: /^Nota de esta sesión: / }).fill('')
+    await ex.getByRole('textbox', { name: /^Nota de esta sesión: / }).pressSequentially(`agarre neutro ${run}`, { delay: 5 })
     await page.reload()
     const ex2 = page.locator('section.wk-ex').first()
     await expect(ex2.getByRole('textbox', { name: 'kg de la máquina, serie 1' })).toHaveValue('20,5')
     await expect(ex2.getByRole('textbox', { name: 'Repeticiones, serie 1' })).toHaveValue('11')
     await expect(ex2.getByRole('button', { name: 'RIR serie 1: 2' })).toBeVisible()
     await expect(ex2.getByRole('button', { name: 'Desmarcar serie 1' })).toBeVisible()
-    await expect(ex2.getByRole('textbox', { name: /^Notas de / })).toHaveValue(`agarre neutro ${run}`)
+    await expect(ex2.getByRole('textbox', { name: /^Nota de esta sesión: / })).toHaveValue(`agarre neutro ${run}`)
   }
-  // Doble toque: no marca y desmarca a la vez
+  // Doble toque: no marca y desmarca a la vez (1.5: con las repeticiones escritas; sin ellas el primer toque solo prepara)
   const ex = page.locator('section.wk-ex').nth(1)
+  await ex.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
   await ex.getByRole('button', { name: /^Marcar serie 1 como hecha$/ }).dblclick()
   await expect(ex.getByRole('button', { name: 'Desmarcar serie 1' })).toBeVisible()
   expect(await countSessions(page)).toBe(1)
@@ -42,7 +43,7 @@ test('A15 · una parcial aparece primero en Hoy; retomar no duplica; repetir pro
   const ex = page.locator('section.wk-ex').first()
   await ex.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('30')
   await ex.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await ex.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex, 1)
   await page.getByRole('button', { name: 'Terminar' }).click()
   await page.getByRole('button', { name: 'Guardar como parcial' }).click()
   await expect(page.getByText('Sesión parcial: ¿qué prefieres?')).toBeVisible()
@@ -112,7 +113,7 @@ test('A19/A11 · demostración externa honesta; plancha con segundos y esfuerzo,
   const first = page.locator('section.wk-ex').first()
   await first.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('40')
   await first.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   await expect(page.getByRole('timer', { name: 'Descanso' })).toBeVisible()
   await expect(page.getByText('Descansa más si aún no puedes repetir con control', { exact: false })).toBeVisible()
   await page.getByRole('button', { name: 'Añadir 60 segundos' }).click()

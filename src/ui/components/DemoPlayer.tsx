@@ -230,6 +230,7 @@ export function ExternalDemoPanel({ demo, open = false }: { demo: ExternalDemo; 
     <div className="card flat stack-sm" style={{ background: 'var(--surface-2)' }}>
       <strong className="small">{demo.videoUrl ? 'Vídeo externo' : 'Página externa'} · requiere conexión</strong>
       <span className="small">{demo.author} — «{demo.pageTitle}» (fuente {demo.code}).</span>
+      {demo.scope && <span className="tiny muted">{demo.scope}</span>}
       {!online && <span className="small"><WifiOff size={14} aria-hidden /> Sin conexión: este contenido no se guarda para uso sin conexión.</span>}
       {demo.videoUrl && online && !isBroken && <ExternalVideo url={demo.videoUrl} name={demo.pageTitle} />}
       <a className="btn small soft" style={{ alignSelf: 'flex-start' }} href={demo.pageUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} /> Abrir la página oficial</a>

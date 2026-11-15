@@ -10,8 +10,11 @@ import { getExercise, hasEquipment } from '../../domain/catalog'
 import { LOAD_LABEL } from '../../domain/catalog/exercises'
 import { prescriptionFor } from '../../domain/engine/generator'
 import { functionText } from '../../domain/content/functions'
+import { MusclesSummary } from './Exercises'
+import { doLater } from '../../domain/sessions'
+import { GROUP_LABEL, groupPrescription } from '../../domain/setGroups'
 import { describePrescription, describeRir, isTimePrescription } from '../../domain/engine/prescription'
-import { blockAdvice, historyFor, sameScheme, suggestNext, type BlockAdvice, type Suggestion } from '../../domain/engine/progression'
+import { blockAdvice, historyFor, historyForGroup, sameScheme, suggestNext, type BlockAdvice, type Suggestion } from '../../domain/engine/progression'
 import { progressionAllowed } from '../../domain/engine/scope'
 import { DEFAULT_PLATES, describePlates, platesFor, warmupPlan, type WarmupStep } from '../../domain/plates'
 import { DEFAULT_INCREMENTS } from '../../domain/profile'
@@ -22,7 +25,7 @@ import {
   HELP_TEXT, MAX_SEGMENTS, METHOD_LABEL, NEXT_NAME, RP_PAUSE_SEC, addExtraSegment, blockModified, blockText, blocksOf, canRegister, canUseMethod, contextKey, conventionalWork, dropSuggestion, endBlock, extendSet,
   isBlock, pairKind, pendingConventional, registerSegment, reorganizePending, revertBlock, segmentLoad, setDraft, startNextSegment, supersetStep, undoSegment,
 } from '../../domain/techniques'
-import type { Increments, LoadType, Prescription, Readiness, Session, SessionExercise, SetEntry, SetMethod } from '../../domain/types'
+import type { Increments, LoadType, Prescription, SetGroup, Readiness, Session, SessionExercise, SetEntry, SetMethod } from '../../domain/types'
 import { formatDateShort, formatDuration, formatNumber, newId, toLocalDate } from '../../domain/util'
 import { DemoPlayer } from '../components/DemoPlayer'
 import { DecimalInput } from '../components/inputs'
@@ -73,12 +76,16 @@ function ActiveWorkout({ initial }: { initial: Session }) {
   const [setMenu, setSetMenu] = useState<{ exUid: string; setId: string } | null>(null)
   const [exMenu, setExMenu] = useState<string | null>(null)
   const [noteFor, setNoteFor] = useState<string | null>(null)
+  const [ctxFor, setCtxFor] = useState<string | null>(null)
   const [effortFor, setEffortFor] = useState<{ exUid: string; setId: string } | null>(null)
   const [view, setView] = useState<'list' | 'focus'>(() => { try { return localStorage.getItem('forja-workout-view') === 'focus' ? 'focus' : 'list' } catch { return 'list' } })
   const [focusUid, setFocusUid] = useState<string | null>(null)
   const setViewPref = (v: 'list' | 'focus') => { setView(v); try { localStorage.setItem('forja-workout-view', v) } catch { /* nada */ } }
   const [platesFor_, setPlatesFor] = useState<{ exUid: string; kg: number | null } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [saveFailed, setSaveFailed] = useState(false)
+  const [restCollapsed, setRestCollapsed] = useState(() => { try { return localStorage.getItem('forja-rest-collapsed') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('forja-rest-collapsed', restCollapsed ? '1' : '0') } catch { /* nada */ } }, [restCollapsed])
   const lock = useRef(0)
   const alerted = useRef<string | null>(null)
   const plates = useLiveQuery(() => getMeta<number[]>('plates', DEFAULT_PLATES), [], DEFAULT_PLATES)
@@ -91,7 +98,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
     const next = f(structuredClone(prev))
     sRef.current = next
     setS(next)
-    void saveSession(next).catch(() => toast('No se pudo guardar. Comprueba el espacio del dispositivo.'))
+    void saveSession(next).then(() => setSaveFailed(false), () => { setSaveFailed(true); toast('No se pudo guardar en el dispositivo. Lo escrito sigue en pantalla: no cierres la app y libera espacio.') })
     if (undoLabel) {
       toast(undoLabel, {
         label: 'Deshacer',
@@ -157,6 +164,8 @@ function ActiveWorkout({ initial }: { initial: Session }) {
       updSet(e.uid, set.id, { completed: false, completedAt: null })
       return
     }
+    // 1.5: un valor anterior o propuesto NUNCA se convierte en serie hecha sin confirmación. Si faltan datos, el primer
+    // toque solo los prepara en los campos (borrador visible) y la serie se confirma con un segundo toque.
     const fill: Partial<SetEntry> = {}
     let filled = false
     for (const k of ['weightKg', 'reps', 'durationSec', 'assistKg'] as const) {
@@ -165,6 +174,19 @@ function ActiveWorkout({ initial }: { initial: Session }) {
         filled = true
       }
     }
+    const isTime = e.loadTypeSnapshot === 'time'
+    const missing = isTime ? set.durationSec === null : set.reps === null
+    if (missing && filled) {
+      updSet(e.uid, set.id, fill)
+      toast('Valores preparados en la serie (sin completar): revísalos y pulsa ✓ para confirmar')
+      return
+    }
+    if (missing) {
+      toast(isTime ? 'Anota los segundos para completar la serie' : 'Anota las repeticiones para completar la serie')
+      return
+    }
+    filled = false
+    for (const k of Object.keys(fill) as (keyof typeof fill)[]) delete fill[k]
     const restSec = settings.find((x) => x.exerciseId === e.exerciseId)?.restSec ?? (set.kind === 'warmup' ? 60 : e.prescription?.restSec ?? 90)
     // Superserie: A1 → transición → A2 → descanso de la ronda (el mayor de los dos descansos prescritos).
     const list = sRef.current.exercises
@@ -373,6 +395,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
         </div>
       </header>
       <main className="page full" style={{ paddingTop: 12 }}>
+        {saveFailed && <div className="note danger" role="alert"><TriangleAlert aria-hidden /><span className="small"><strong>No se ha podido guardar el último cambio.</strong> Lo que ves sigue en pantalla y se reintenta con cada cambio. No cierres la app; libera espacio si el dispositivo está lleno.</span></div>}
         {s.pausedAt && (
           <div className="note info"><Pause aria-hidden /><span className="small">Sesión en pausa. Tus datos están guardados; puedes cerrar la app y volver.</span></div>
         )}
@@ -420,6 +443,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             lowReadiness={level === 'low'}
             onPlates={(kg) => setPlatesFor({ exUid: e.uid, kg })}
             onFillWarmup={(plan) => updEx(e.uid, (ee) => { let i = 0; return { ...ee, sets: ee.sets.map((st) => (st.kind === 'warmup' && !st.completed && plan[i] ? { ...st, weightKg: plan[i].kg, reps: plan[i++].reps } : st)) } }, 'Calentamiento rellenado (sin marcar)')}
+            groupSuggestions={e.prescription?.setGroups?.length ? e.prescription.setGroups.map((g) => ({ g, sug: suggestNext({ exerciseId: e.exerciseId, prescription: groupPrescription(e.prescription!, g), history: historyForGroup(historyFor(e.exerciseId, finished, undefined, s.id), g), increments, incrementOverride: settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg, today, progressionAllowed: allowProg, familiarization: s.familiarization ?? null, available: variantAvailable, context: contextKey(e, s.exercises) }) })) : undefined}
             suggestion={e.prescription ? suggestNext({ exerciseId: e.exerciseId, prescription: e.prescription, history: historyFor(e.exerciseId, finished, undefined, s.id), increments, incrementOverride: settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg, today, progressionAllowed: allowProg, familiarization: s.familiarization ?? null, available: variantAvailable, context: contextKey(e, s.exercises) }) : null}
             pair={(() => { const p = supersetPartner(s.exercises, e.uid); return p < 0 ? null : { first: p > i, partnerName: s.exercises[p].nameSnapshot, kind: pairKind(e.exerciseId, s.exercises[p].exerciseId) } })()}
             stepOverride={settings.find((x) => x.exerciseId === e.exerciseId)?.incrementKg}
@@ -469,10 +493,11 @@ function ActiveWorkout({ initial }: { initial: Session }) {
                 <span className="time" aria-live={restRemaining <= 0 && kind !== 'transition' ? 'assertive' : 'off'}>{restRemaining > 0 ? formatDuration(restRemaining) : `+${formatDuration(-restRemaining)}`}</span>
               </div>
               <span className="grow" />
-              {steps.map((n) => <button key={n} className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: x.rest.durationSec + n } } : x))} aria-label={`Añadir ${n} segundos`}>+{n}</button>)}
+              {(restCollapsed ? steps.slice(0, 1) : steps).map((n) => <button key={n} className="btn" onClick={() => update((x) => (x.rest ? { ...x, rest: { ...x.rest, durationSec: x.rest.durationSec + n } } : x))} aria-label={`Añadir ${n} segundos`}>+{n}</button>)}
               <button className="btn" onClick={() => update((x) => ({ ...x, rest: null }))} aria-label={kind === 'transition' ? 'Cerrar transición' : 'Saltar descanso'}><SkipForward size={18} /></button>
+              <button className="btn" onClick={() => setRestCollapsed(!restCollapsed)} aria-expanded={!restCollapsed} aria-label={restCollapsed ? 'Ampliar el descanso' : 'Plegar el descanso'}>{restCollapsed ? <ArrowUp size={18} /> : <ArrowDown size={18} />}</button>
             </div>
-            <div className="tiny" style={{ textAlign: 'center', opacity: 0.85, paddingBottom: 2 }}>{help}</div>
+            {!restCollapsed && <div className="tiny" style={{ textAlign: 'center', opacity: 0.85, paddingBottom: 2 }}>{help}</div>}
           </div>
         )
       })()}
@@ -510,7 +535,8 @@ function ActiveWorkout({ initial }: { initial: Session }) {
       </Sheet>
 
       <SetMenu target={setMenu} session={s} onClose={() => setSetMenu(null)} update={update} onHelp={setHelp} />
-      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} onNote={(id) => { setExMenu(null); setNoteFor(id) }} onVariant={(uid, id) => { setExMenu(null); void switchVariant(uid, id) }} available={variantAvailable} onReorganize={(uid) => { setExMenu(null); setReorg(uid) }} onHelp={setHelp} />
+      <ExerciseMenu uid={exMenu} session={s} onClose={() => setExMenu(null)} update={update} onReplace={(uid) => { setExMenu(null); setPicker({ replaceUid: uid }) }} onDemo={(id) => { setExMenu(null); setDemoFor(id) }} onNote={(id) => { setExMenu(null); setNoteFor(id) }} onVariant={(uid, id) => { setExMenu(null); void switchVariant(uid, id) }} available={variantAvailable} onReorganize={(uid) => { setExMenu(null); setReorg(uid) }} onHelp={setHelp} onContext={(uid) => { setExMenu(null); setCtxFor(uid) }} />
+      <ContextSheet uid={ctxFor} session={s} settings={settings} onClose={() => setCtxFor(null)} onPick={(uid, ctx) => { updEx(uid, (ee) => ({ ...ee, equipmentContext: ctx ?? undefined }), ctx ? `Material: ${ctx}. Las comparaciones usan solo registros con este material` : 'Material sin especificar'); setCtxFor(null) }} />
       <BlockMenu target={blockMenu} session={s} onClose={() => setBlockMenu(null)} update={update} onHelp={setHelp} onExtra={(exUid, setId) => { const e = s.exercises.find((x) => x.uid === exUid); if (e) blockExtra(e, setId) }} />
       <ReorganizeSheet uid={reorg} session={s} onClose={() => setReorg(null)} update={update} />
       <Sheet open={!!help} onClose={() => setHelp(null)} title={help === 'drop' ? 'Serie descendente' : help === 'rest_pause' ? 'Rest-pause' : 'Superserie'}>
@@ -556,6 +582,10 @@ function DemoSheetBody({ exerciseId, onReference }: { exerciseId: string; onRefe
     <div className="stack">
       <DemoPlayer exerciseId={exerciseId} onOpenReference={onReference} />
       {ex.keys && <ol className="keys small" aria-label="Tres claves">{ex.keys.map((k) => <li key={k}>{k}</li>)}</ol>}
+      <details className="more">
+        <summary>Qué trabaja</summary>
+        <MusclesSummary ex={ex} />
+      </details>
       {ex.variantNote && <p className="small muted">{ex.variantNote}</p>}
       <div className="stack-sm">
         <h3>Cómo se hace</h3>
@@ -565,7 +595,7 @@ function DemoSheetBody({ exerciseId, onReference }: { exerciseId: string; onRefe
         <h3>Errores habituales</h3>
         <ul className="small" style={{ margin: 0, paddingLeft: 20 }}>{ex.errors.map((t) => <li key={t}>{t}</li>)}</ul>
       </div>
-      <p className="tiny muted">Tus datos de la sesión siguen guardados mientras ves esto.</p>
+      <p className="tiny muted">Tus datos, el descanso y el ejercicio activo siguen igual mientras ves esto: cierra la hoja para volver al registro.</p>
     </div>
   )
 }
@@ -603,6 +633,8 @@ function ExerciseBlock(props: {
   onEffort: (setId: string) => void
   onSwitchVariant: (exerciseId: string) => void
   focus?: boolean
+  /** Objetivos por serie: una sugerencia por grupo (cada uno con su referencia). */
+  groupSuggestions?: { g: SetGroup; sug: Suggestion }[]
   /** «Fuerza», «Trabajo complementario» o «Adaptación». */
   roleLabel?: string
   pair: { first: boolean; partnerName: string; kind: 'distinct' | 'same' } | null
@@ -615,7 +647,10 @@ function ExerciseBlock(props: {
   const lt = e.loadTypeSnapshot
   const p = e.prescription
   // Última vez COMPARABLE: mismo rango prescrito (banca 4–6 no se compara con banca 8–10).
-  const lastH = (p ? history.find((h) => h.ex.prescription && sameScheme(h.ex.prescription, p, isTimePrescription(p, ex))) : null) ?? history[0]
+  // Comparable: mismo rango prescrito y mismo contexto de material (si se indicó). Lo demás se ve aparte, etiquetado.
+  const sameRx = (h: (typeof history)[number]) => !!p && !!h.ex.prescription && sameScheme(h.ex.prescription, p, isTimePrescription(p, ex))
+  const lastH = history.find((h) => sameRx(h) && (h.ex.equipmentContext ?? null) === (e.equipmentContext ?? null)) ?? (p ? history.find(sameRx) : null) ?? history[0]
+  const ctxNote = lastH && e.equipmentContext && lastH.ex.equipmentContext !== e.equipmentContext ? (lastH.ex.equipmentContext ? `con «${lastH.ex.equipmentContext}», otro material` : 'contexto de material anterior no especificado') : null
   const otherH = p ? history.find((h) => h !== lastH && h.ex.prescription && !sameScheme(h.ex.prescription, p, isTimePrescription(p, ex))) : undefined
   const lastWork = lastH ? conventionalWork(lastH.ex.sets).filter((x) => x.completed) : []
   const lastBlocks = lastH ? blocksOf(lastH.ex.sets).filter((x) => x.completed) : []
@@ -690,6 +725,7 @@ function ExerciseBlock(props: {
           <div className="small">
             <span className="muted">Última vez{lastH.ex.prescription && p && sameScheme(lastH.ex.prescription, p, isTimePrescription(p, ex)) && otherH ? ` con ${rangeText(p)}` : ''} ({formatDateShort(lastH.date)}): </span>
             <strong className="num">{lastSummary || '—'}</strong>
+            {ctxNote && <span className="tiny muted"> · {ctxNote}: solo como consulta, no se compara</span>}
             {otherH && otherH.ex.prescription && (
               <details className="tiny muted">
                 <summary>Ver también {rangeText(otherH.ex.prescription)} ({formatDateShort(otherH.date)})</summary>
@@ -700,7 +736,16 @@ function ExerciseBlock(props: {
         ) : (
           <div className="small muted">Sin registros anteriores de este ejercicio.</div>
         )}
-        {sug && (
+        {props.groupSuggestions && props.groupSuggestions.map(({ g, sug: gs }) => (
+          <div key={g.id} className="suggestion stack-sm" aria-label={`Sugerencia del grupo ${g.label ? GROUP_LABEL[g.label] : ''} ${g.count}×${g.repMin}–${g.repMax}`}>
+            <span className="label"><Lightbulb aria-hidden /> {g.label ? GROUP_LABEL[g.label] : 'Grupo'} {g.count}×{g.repMin}–{g.repMax} · {gs.title}</span>
+            <span className="small">{gs.detail}</span>
+            {gs.targetWeightKg !== undefined && gs.kind !== 'increment_review' && lt !== 'assisted' && (
+              <button className="btn small soft" style={{ alignSelf: 'flex-start' }} onClick={() => props.onFill((st) => (st.groupId === g.id ? { weightKg: gs.targetWeightKg ?? null } : {}))}>Usar {formatNumber(gs.targetWeightKg)} kg en este grupo</button>
+            )}
+          </div>
+        ))}
+        {sug && !props.groupSuggestions && (
           <div className="suggestion stack-sm">
             <span className="label"><Lightbulb aria-hidden /> Sugerencia · {sug.title}</span>
             <span className="small">{sug.detail}</span>
@@ -734,7 +779,7 @@ function ExerciseBlock(props: {
               return { weightKg: src.weightKg, reps: src.reps, assistKg: src.assistKg, addedKg: src.addedKg, bandLabel: src.bandLabel, durationSec: src.durationSec }
             })}
           >
-            <Copy size={16} /> Copiar lo de la última vez (sin marcar)
+            <Copy size={16} /> Usar valores anteriores (sin completar)
           </button>
         )}
         {warmPlan.length > 0 && (
@@ -770,8 +815,11 @@ function ExerciseBlock(props: {
             )
           }
           const prevInSession = e.sets.slice(0, si).reverse().find((x) => x.completed && !isBlock(x))
-          const ph = placeholderFor(lt, sug && sug.kind !== 'paused_pain' && sug.kind !== 'paused_scope' ? sug : null, lastWork[Math.max(0, workN - 1)], prevInSession, p?.repMin)
+          const rowGroup = set.groupId ? props.groupSuggestions?.find((x) => x.g.id === set.groupId) : undefined
+          const rowSug = rowGroup ? rowGroup.sug : sug
+          const ph = placeholderFor(lt, rowSug && rowSug.kind !== 'paused_pain' && rowSug.kind !== 'paused_scope' ? rowSug : null, rowGroup ? undefined : lastWork[Math.max(0, workN - 1)], prevInSession && (!set.groupId || prevInSession.groupId === set.groupId) ? prevInSession : undefined, rowGroup ? rowGroup.g.repMin : p?.repMin)
           const tag = set.kind === 'warmup' ? 'C' : String(workN)
+          const prevSet = set.kind === 'work' && lastH ? lastWork[workN - 1] : undefined
           const warmN = e.sets.slice(0, si + 1).filter((x) => x.kind === 'warmup').length
           const setName = set.kind === 'warmup' ? `calentamiento ${warmN}` : `serie ${workN}`
           return (
@@ -788,6 +836,7 @@ function ExerciseBlock(props: {
               onRir={() => props.onRir(set.id)}
               onEffort={() => props.onEffort(set.id)}
               onMenu={() => props.onSetMenu(set.id)}
+              prev={prevSet && lastH ? `${describeSet(prevSet, lt)} · ${formatDateShort(lastH.date)}` : undefined}
             />
           )
         })}
@@ -795,10 +844,10 @@ function ExerciseBlock(props: {
       <div className="row" style={{ marginTop: 8 }}>
         <button className="btn ghost small" onClick={props.onAddSet}><Plus size={16} /> Serie</button>
         <span className="grow" />
-        <button className="btn ghost small" onClick={() => showNotes[1](!showNotes[0])}><StickyNote size={16} /> Nota</button>
+        <button className="btn ghost small" onClick={() => showNotes[1](!showNotes[0])}><StickyNote size={16} /> Nota de hoy</button>
       </div>
       {(showNotes[0] || e.notes) && (
-        <textarea className="input" aria-label={`Notas de ${e.nameSnapshot}`} maxLength={1000} value={e.notes} onChange={(ev) => props.onNotes(ev.target.value)} placeholder="Notas de este ejercicio (agarre, máquina, sensaciones…)" />
+        <textarea className="input" aria-label={`Nota de esta sesión: ${e.nameSnapshot}`} maxLength={1000} value={e.notes} onChange={(ev) => props.onNotes(ev.target.value)} placeholder="Nota de esta sesión (p. ej. hoy había cola). Para lo que quieras recordar siempre, usa «Nota para próximas veces» en el menú." />
       )}
       <p className="tiny muted" style={{ marginTop: 6 }}>{LOAD_LABEL[lt].help}</p>
     </section>
@@ -980,12 +1029,12 @@ function describeSet(x: SetEntry, lt: LoadType): string {
   return `${formatNumber(x.weightKg)}×${reps}`
 }
 
-function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, onEffort, onMenu }: { set: SetEntry; setName: string; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onEffort: () => void; onMenu: () => void }) {
+function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, onEffort, onMenu, prev }: { set: SetEntry; setName: string; lt: LoadType; tag: string; ph: Partial<SetEntry>; useAssist: boolean; onSet: (p: Partial<SetEntry>) => void; onToggle: () => void; onRir: () => void; onEffort: () => void; onMenu: () => void; prev?: string }) {
   const fmt = (n: number | null | undefined) => (n === null || n === undefined ? '' : formatNumber(n))
   const sideTxt = set.side === 'left' ? ' I' : set.side === 'right' ? ' D' : ''
   return (
     <>
-      <button className={`set-tag ${set.kind === 'warmup' ? 'warm' : ''}`} onClick={onMenu} aria-label={`Opciones de ${setName}`}>{tag}{sideTxt}</button>
+      <button className={`set-tag ${set.kind === 'warmup' ? 'warm' : ''}`} onClick={onMenu} aria-label={`Opciones de ${setName}`}>{set.completed ? <span aria-hidden>✓</span> : null}{tag}{sideTxt}</button>
       {lt === 'time' ? (
         <>
           <DecimalInput label={`Segundos, ${setName}`} integer value={set.durationSec} onChange={(v) => onSet({ durationSec: v })} placeholder={fmt(ph.durationSec)} max={3600} />
@@ -1009,6 +1058,7 @@ function SetRow({ set, setName, lt, tag, ph, useAssist, onSet, onToggle, onRir, 
       <button className="set-done" aria-pressed={set.completed} onClick={onToggle} aria-label={set.completed ? `Desmarcar ${setName}` : `Marcar ${setName} como hecha`}>
         <Check aria-hidden />
       </button>
+      {prev && !set.completed && <span className="set-prev">Anterior: {prev}</span>}
     </>
   )
 }
@@ -1070,7 +1120,7 @@ function SetMenu({ target, session, onClose, update, onHelp }: { target: { exUid
   )
 }
 
-function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote, onVariant, available, onReorganize, onHelp }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void; onNote: (exerciseId: string) => void; onVariant: (uid: string, exerciseId: string) => void; available: (id: string) => boolean; onReorganize: (uid: string) => void; onHelp: (k: 'drop' | 'rest_pause' | 'superset') => void }) {
+function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote, onVariant, available, onReorganize, onHelp, onContext }: { uid: string | null; session: Session; onClose: () => void; update: Upd; onReplace: (uid: string) => void; onDemo: (id: string) => void; onNote: (exerciseId: string) => void; onVariant: (uid: string, exerciseId: string) => void; available: (id: string) => boolean; onReorganize: (uid: string) => void; onHelp: (k: 'drop' | 'rest_pause' | 'superset') => void; onContext: (uid: string) => void }) {
   const idx = session.exercises.findIndex((x) => x.uid === uid)
   const e = session.exercises[idx]
   const isBw = e?.loadTypeSnapshot === 'bodyweight'
@@ -1081,7 +1131,11 @@ function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote
       {e && (
         <div className="list">
           <button className="list-item" onClick={() => onDemo(e.exerciseId)}><CircleHelp size={20} /> Ver cómo se hace</button>
-          <button className="list-item" onClick={() => onReplace(e.uid)}><Repeat size={20} /> Sustituir ejercicio</button>
+          {e.sets.some((x) => x.kind === 'work' && !x.completed) && idx < session.exercises.length - 1 && (
+            <button className="list-item" onClick={() => { update((x) => ({ ...x, exercises: doLater(x.exercises, e.uid) }), supersetPartner(session.exercises, e.uid) >= 0 ? 'Superserie movida al final (las dos juntas)' : 'Movido al final: lo hecho se conserva'); onClose() }}><ArrowDown size={20} /> Hacer después (máquina ocupada)</button>
+          )}
+          <button className="list-item" onClick={() => onReplace(e.uid)}><Repeat size={20} /> Sustituir hoy (solo esta sesión)</button>
+          <button className="list-item" onClick={() => onContext(e.uid)}><Pin size={20} /> Material: {e.equipmentContext ?? 'sin especificar'}</button>
           {(() => {
             const def = getExercise(e.exerciseId)
             const easier = def?.easier && available(def.easier) ? getExercise(def.easier) : undefined
@@ -1093,7 +1147,7 @@ function ExerciseMenu({ uid, session, onClose, update, onReplace, onDemo, onNote
               </>
             )
           })()}
-          <button className="list-item" onClick={() => onNote(e.exerciseId)}><Pin size={20} /> Nota fija (asiento, agarre, máquina…)</button>
+          <button className="list-item" onClick={() => onNote(e.exerciseId)}><Pin size={20} /> Nota para próximas veces (asiento, agarre…)</button>
           {e.loadTypeSnapshot !== 'time' && pendingConventional(e).length >= 2 && supersetPartner(session.exercises, e.uid) < 0 && (
             <button className="list-item" onClick={() => onReorganize(e.uid)}><Repeat size={20} /> Reorganizar 2 series pendientes en un bloque…</button>
           )}
@@ -1169,11 +1223,11 @@ function PinnedNoteSheet({ exerciseId, onClose }: { exerciseId: string | null; o
   const value = text ?? setting?.note ?? ''
   const close = () => { setText(null); onClose() }
   return (
-    <Sheet open={!!exerciseId} onClose={close} title="Nota fija del ejercicio">
+    <Sheet open={!!exerciseId} onClose={close} title="Nota para próximas veces">
       {exerciseId && (
         <div className="stack">
           <p className="small muted">Se muestra cada vez que hagas {getExercise(exerciseId)?.name ?? 'este ejercicio'}: altura del asiento, agarre, número de máquina, ajuste de la polea…</p>
-          <textarea className="input" aria-label="Nota fija" maxLength={300} value={value} onChange={(ev) => setText(ev.target.value)} placeholder="Ej.: asiento en 4, respaldo en 2, agarre ancho" />
+          <textarea className="input" aria-label="Nota para próximas veces" maxLength={300} value={value} onChange={(ev) => setText(ev.target.value)} placeholder="Ej.: asiento en 4, respaldo en 2, agarre ancho" />
           <button className="btn primary" onClick={async () => { const cur = (await db().exerciseSettings.get(exerciseId)) ?? { exerciseId }; await db().exerciseSettings.put({ ...cur, exerciseId, note: value.trim() || undefined }); toast(value.trim() ? 'Nota fija guardada' : 'Nota fija borrada'); close() }}>Guardar</button>
         </div>
       )}
@@ -1219,4 +1273,37 @@ function PlatesBody({ e, initialKg, increments, plates }: { e: SessionExercise; 
 
 function rangeText(p: Prescription): string {
   return p.unit === 'time' ? `${p.timeMinSec ?? '?'}–${p.timeMaxSec ?? '?'} s` : `${p.repMin}–${p.repMax}`
+}
+
+/** Contexto de material (1.5): nombre libre por ejercicio. Opcional; un contexto nuevo empieza sin referencia automática. */
+function ContextSheet({ uid, session, settings, onClose, onPick }: { uid: string | null; session: Session; settings: { exerciseId: string; contexts?: string[] }[]; onClose: () => void; onPick: (uid: string, ctx: string | null) => void }) {
+  const e = session.exercises.find((x) => x.uid === uid)
+  const [name, setName] = useState('')
+  const saved = e ? settings.find((x) => x.exerciseId === e.exerciseId)?.contexts ?? [] : []
+  const pick = async (ctx: string | null) => {
+    if (!e) return
+    if (ctx && !saved.includes(ctx)) {
+      const cur = await db().exerciseSettings.get(e.exerciseId)
+      await db().exerciseSettings.put({ ...(cur ?? { exerciseId: e.exerciseId }), contexts: [...(cur?.contexts ?? []), ctx].slice(-8) })
+    }
+    setName('')
+    onPick(e.uid, ctx)
+  }
+  return (
+    <Sheet open={!!e} onClose={onClose} title="Material de este ejercicio">
+      {e && (
+        <div className="stack">
+          <p className="small muted">Opcional. Sirve para no comparar números de máquinas o poleas distintas: con un material nuevo no hay referencia automática; lo anterior sigue visible con su etiqueta. No hace falta configurarlo para entrenar.</p>
+          <div className="list">
+            <button className="list-item" aria-pressed={!e.equipmentContext} onClick={() => void pick(null)}>Sin especificar</button>
+            {saved.map((c) => <button key={c} className="list-item" aria-pressed={e.equipmentContext === c} onClick={() => void pick(c)}>{c}</button>)}
+          </div>
+          <div className="row">
+            <input className="input grow" maxLength={30} aria-label="Nombre del material" placeholder="Ej.: Polea A, prensa de mi gimnasio" value={name} onChange={(ev) => setName(ev.target.value)} />
+            <button className="btn soft" disabled={!name.trim()} onClick={() => void pick(name.trim())}>Usar</button>
+          </div>
+        </div>
+      )}
+    </Sheet>
+  )
 }

@@ -6,7 +6,7 @@ import { CONTINUITY_LABEL, EXPERIENCE_LABEL, continuityOf, experienceOf } from '
 import { APP_VERSION, BackupError, backupFileName, exportBackup, markBackupDone, parseBackupText, previewBackup, restoreBackup, sessionsToCsv, type BackupPreview } from '../../data/backup'
 import { SCHEMA_VERSION, TABLES, db } from '../../data/db'
 import { clearDemo, loadDemo } from '../../data/demo'
-import { DEMO_CACHE, clearDemos, demoCacheInfo, downloadDemos, formatBytes } from '../../data/offline'
+import { DEMO_CACHE, routineOfflineStatus, clearDemos, demoCacheInfo, downloadDemos, formatBytes } from '../../data/offline'
 import { getMeta, getProgramState, getRoutineBundle, saveProfile, setMeta, updateProgramState } from '../../data/repo'
 import { HELP_TEXT } from '../../domain/techniques'
 import { EXERCISES } from '../../domain/catalog/exercises'
@@ -130,6 +130,8 @@ export function SettingsScreen({ section }: { section?: string }) {
         <span className="title grow">Ajustes</span>
       </header>
       <main className="page">
+        <h2 className="section-title">Perfil y programa</h2>
+
         <Section id="perfil" title="Perfil" icon={<User aria-hidden />}>
           {profile ? (
             <p className="small">{EXPERIENCE_LABEL[experienceOf(profile)]} · {CONTINUITY_LABEL[continuityOf(profile)].toLowerCase()} · {GOAL_TXT[profile.goal]} · {profile.days.length} días disponibles · {profile.minutesPerSession} min</p>
@@ -137,6 +139,14 @@ export function SettingsScreen({ section }: { section?: string }) {
           <a className="btn soft" href={href('perfil')}>Editar perfil</a>
           <p className="tiny muted">Cambiar el perfil no modifica tu rutina actual; te ofrecerá una propuesta nueva para comparar.</p>
         </Section>
+
+        <Section id="tecnicas" title="Fases y técnicas opcionales">
+          <p className="small">{HELP_TEXT.phases}</p>
+          <a className="btn soft small" style={{ alignSelf: 'flex-start' }} href={href('progreso/fase')}>Ver mi fase y su revisión</a>
+          <Toggle checked={!!program.techniquesConsent} onChange={(v) => void updateProgramState((st) => ({ ...st, techniquesConsent: v }), v ? 'Técnicas opcionales activadas' : 'Técnicas opcionales desactivadas')} label="Quiero usar técnicas para ahorrar tiempo o variar" desc="Series descendentes, rest-pause y superseries como PROPUESTAS opcionales (en Progresión o con nivel intermedio declarado, fuera de familiarización y readaptación). No son necesarias para progresar. Registrar lo que hagas en una sesión es posible siempre." />
+        </Section>
+
+        <h2 className="section-title">Material</h2>
 
         {profile && (
           <Section id="incrementos" title="Incrementos de carga">
@@ -159,8 +169,9 @@ export function SettingsScreen({ section }: { section?: string }) {
           </Section>
         )}
 
-        <Section id="apariencia" title="Apariencia y avisos">
-          <Segmented label="Tema" value={theme} onChange={(v) => { setTheme(v); try { if (v === 'auto') localStorage.removeItem('forja-theme'); else localStorage.setItem('forja-theme', v) } catch { /* sin almacenamiento */ } if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v }} options={[{ value: 'auto', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />
+        <h2 className="section-title">Durante el entrenamiento</h2>
+
+        <Section id="entreno" title="Durante el entrenamiento">
           <div className="stack-sm" id="s-sonido">
             <span className="label"><Volume2 size={16} aria-hidden /> Aviso al terminar el descanso</span>
             <Segmented label="Aviso al terminar el descanso" value={sound} onChange={(v) => { setSound(v); setSoundMode(v) }} options={[{ value: 'always', label: 'Siempre' }, { value: 'mix', label: 'Con música' }, { value: 'off', label: 'Sin sonido' }]} />
@@ -175,13 +186,16 @@ export function SettingsScreen({ section }: { section?: string }) {
           <Toggle checked={awake} onChange={(v) => { setAwake(v); setKeepAwake(v) }} label="Pantalla encendida durante el entrenamiento" desc={`Evita que el iPhone se bloquee mientras entrenas, para que el aviso del descanso pueda sonar. Con la pantalla bloqueada o la app en segundo plano, una web no puede avisar; el tiempo sí se recalcula al volver.${wakeLockSupported() ? '' : ' (Este navegador no lo permite.)'}`} />
         </Section>
 
-        <Section id="tecnicas" title="Fases y técnicas opcionales">
-          <p className="small">{HELP_TEXT.phases}</p>
-          <a className="btn soft small" style={{ alignSelf: 'flex-start' }} href={href('progreso/fase')}>Ver mi fase y su revisión</a>
-          <Toggle checked={!!program.techniquesConsent} onChange={(v) => void updateProgramState((st) => ({ ...st, techniquesConsent: v }), v ? 'Técnicas opcionales activadas' : 'Técnicas opcionales desactivadas')} label="Quiero usar técnicas para ahorrar tiempo o variar" desc="Series descendentes, rest-pause y superseries como PROPUESTAS opcionales (en Progresión o con nivel intermedio declarado, fuera de familiarización y readaptación). No son necesarias para progresar. Registrar lo que hagas en una sesión es posible siempre." />
+        <h2 className="section-title">Apariencia</h2>
+
+        <Section id="apariencia" title="Apariencia">
+          <Segmented label="Tema" value={theme} onChange={(v) => { setTheme(v); try { if (v === 'auto') localStorage.removeItem('forja-theme'); else localStorage.setItem('forja-theme', v) } catch { /* sin almacenamiento */ } if (v === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = v }} options={[{ value: 'auto', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }]} />
         </Section>
 
-        <Section id="demos" title="Demostraciones sin conexión" icon={<WifiOff aria-hidden />}>
+        <h2 className="section-title">Sin conexión y datos</h2>
+
+        <Section id="demos" title="Preparar mi rutina sin conexión" icon={<WifiOff aria-hidden />}>
+          <OfflineStatus exerciseIds={routineExIds} hasRoutine={!!bundle} />
           <p className="small">Las ilustraciones (Everkinetic, CC BY-SA 4.0) y las animaciones de Wikimedia Commons, con permisos documentados, se pueden guardar en el dispositivo. Las <strong>demostraciones externas</strong> (NASM, ACE, University of Wyoming) y los vídeos de YouTube <strong>solo funcionan con conexión</strong>: no se descargan ni se guardan.</p>
           <p className="small">Descargado: <strong>{cache ? `${cache.files} archivos · ${formatBytes(cache.bytes)}` : '…'}</strong> {!online && <span className="badge warn">Sin conexión</span>}</p>
           {bundle && <button className="btn primary" disabled={!!dl || !online} onClick={() => void doDownload(routineExIds)}><Download size={18} /> Descargar las de mi rutina ({formatBytes(demoBytes(routineExIds))})</button>}
@@ -268,6 +282,19 @@ export function SettingsScreen({ section }: { section?: string }) {
           )}
         </Section>
 
+        <Section id="borrar" title="Borrar todos mis datos">
+          <p className="small">Elimina perfil, rutinas, sesiones, medidas, fotos y ajustes de este dispositivo. No se puede deshacer: exporta una copia antes.</p>
+          <button className="btn danger solid" onClick={async () => {
+            if (!(await confirm({ title: '¿Borrar todos tus datos?', body: 'Perfil, rutinas, sesiones, pesos, medidas, fotos y ejercicios propios de este dispositivo.', confirm: 'Continuar', danger: true }))) return
+            if (!(await confirm({ title: 'Confirmación final', body: 'Esta acción no se puede deshacer.', confirm: 'Borrar definitivamente', danger: true }))) return
+            await db().transaction('rw', TABLES.map((t) => db().table(t)), async () => { for (const t of TABLES) await db().table(t).clear() })
+            window.location.hash = '#/hoy'
+            toast('Datos borrados')
+          }}><Trash2 size={18} /> Borrar todo</button>
+        </Section>
+
+        <h2 className="section-title">Ayuda y versión</h2>
+
         <Section id="aprender" title="Aprender y fuentes">
           <p className="small">Artículos breves (fuerza y músculo, volumen y frecuencia, RIR, descanso, progreso, recorrido y variantes, primera carga) y la biblioteca de fuentes con el alcance real de cada consulta. Funcionan sin conexión.</p>
           <div className="row wrap">
@@ -303,18 +330,34 @@ export function SettingsScreen({ section }: { section?: string }) {
           <p className="small">Código de la app: licencia MIT. Fuente tipográfica Bricolage Grotesque (SIL Open Font License). Iconos Lucide (ISC).</p>
           <p className="tiny muted">App {APP_VERSION} · motor de rutinas {ENGINE_VERSION} · build <span data-testid="build-commit">{__BUILD_COMMIT__}</span> · esquema de datos v{SCHEMA_VERSION} · {TABLES.length} tablas locales. Sin analítica, sin publicidad, sin envío de datos a terceros.</p>
         </Section>
-
-        <Section id="borrar" title="Borrar todos mis datos">
-          <p className="small">Elimina perfil, rutinas, sesiones, medidas, fotos y ajustes de este dispositivo. No se puede deshacer: exporta una copia antes.</p>
-          <button className="btn danger solid" onClick={async () => {
-            if (!(await confirm({ title: '¿Borrar todos tus datos?', body: 'Perfil, rutinas, sesiones, pesos, medidas, fotos y ejercicios propios de este dispositivo.', confirm: 'Continuar', danger: true }))) return
-            if (!(await confirm({ title: 'Confirmación final', body: 'Esta acción no se puede deshacer.', confirm: 'Borrar definitivamente', danger: true }))) return
-            await db().transaction('rw', TABLES.map((t) => db().table(t)), async () => { for (const t of TABLES) await db().table(t).clear() })
-            window.location.hash = '#/hoy'
-            toast('Datos borrados')
-          }}><Trash2 size={18} /> Borrar todo</button>
-        </Section>
       </main>
     </>
+  )
+}
+
+/**
+ * Estado REAL de preparación sin conexión de la rutina (1.5): app en caché del service worker, demostraciones locales
+ * guardadas (X de Y), recursos externos que necesitan internet y ejercicios sin recurso. No se basa en navigator.onLine
+ * ni cuenta una URL de YouTube como archivo descargado.
+ */
+function OfflineStatus({ exerciseIds, hasRoutine }: { exerciseIds: string[]; hasRoutine: boolean }) {
+  const [st, setSt] = useState<Awaited<ReturnType<typeof routineOfflineStatus>> | null>(null)
+  useEffect(() => {
+    let alive = true
+    const load = () => void routineOfflineStatus(exerciseIds).then((r) => { if (alive) setSt(r) })
+    load()
+    const t = window.setInterval(load, 3000)
+    return () => { alive = false; window.clearInterval(t) }
+  }, [exerciseIds.join(',')])
+  if (!hasRoutine) return <p className="small muted">Elige una rutina para ver qué está preparado para entrenar sin conexión.</p>
+  if (!st) return <p className="small muted">Comprobando…</p>
+  return (
+    <ul className="small" style={{ margin: 0, paddingLeft: 18 }} aria-label="Estado sin conexión de tu rutina">
+      <li>App y registro: {st.appCached ? <strong>preparados en este dispositivo</strong> : <strong>aún no preparados</strong>}{st.appCached ? '' : ' (abre la app con conexión hasta que termine de instalarse)'}.</li>
+      <li>Fichas y textos de tus {st.total} ejercicios: disponibles sin conexión (van con la app).</li>
+      <li>Demostraciones locales: <strong>{st.prepared} de {st.local}</strong> preparadas{st.local > st.prepared ? ' (pulsa «Descargar las de mi rutina»)' : ''}.</li>
+      <li>Vídeos o páginas externas que necesitan internet: {st.external}.</li>
+      <li>Sin demostración (solo texto y mapa muscular): {st.none}.</li>
+    </ul>
   )
 }

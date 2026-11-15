@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { acceptProposal, onboard } from './helpers'
+import { acceptProposal, onboard, markDone } from './helpers'
 
 async function noHorizontalOverflow(page: Page) {
   const r = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: window.innerWidth }))
@@ -45,7 +45,7 @@ test('Caso 14 · entrenamiento: campos y botones táctiles, teclado decimal y ba
   const bb = await done.boundingBox()
   expect(bb!.height).toBeGreaterThanOrEqual(44)
   expect(bb!.width).toBeGreaterThanOrEqual(44)
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   // Con el temporizador de descanso visible, enfocar un campo de la última tarjeta: debe quedar por encima de la barra
   const lastCard = page.locator('section.wk-ex').last()
   const lastInput = lastCard.getByRole('textbox').last()

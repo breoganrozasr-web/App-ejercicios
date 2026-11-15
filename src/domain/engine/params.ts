@@ -7,10 +7,12 @@ import { BUDGET_REGIONS } from './contribution'
  */
 
 /**
+ * 2.3.0 (encargo 4): objetivos por serie con progresión por grupo, vuelta gradual manual y sin carga calculada por
+ * porcentaje tras una pausa; experiencia y situación actual separadas (nivel efectivo).
  * 2.2.0: 26 recetas editoriales con dosis propia, mapa muscular 2 (anexo B), contexto de prescripción y modelo de tiempo
  * con aproximaciones por básico (encargo del 15/11/2026). 2.1.0: días válidos, fases y técnicas registrables.
  */
-export const ENGINE_VERSION = '2.2.0'
+export const ENGINE_VERSION = '2.3.0'
 
 export type SlotRole = 'main' | 'secondary' | 'accessory'
 

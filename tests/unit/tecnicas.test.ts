@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { exportBackup, parseBackupText, restoreBackup, sessionsToCsv } from '../../src/data/backup'
+import { BACKUP_FORMAT_VERSION, exportBackup, parseBackupText, restoreBackup, sessionsToCsv } from '../../src/data/backup'
 import { db, useDatabase } from '../../src/data/db'
 import {
   closeOpenBlocks, createRoutine, familiarizationStatus, finishSession, getProgramState, saveRoutineVersion, saveSession, startSessionFromDay, updateProgramState,
@@ -445,7 +445,7 @@ describe('B20–B21 · copias, CSV y propuestas', () => {
     await db().sessions.put(s)
     await updateProgramState((x) => ({ ...enterProgression(x, '2026-11-01', ''), techniquesConsent: true }), 'prueba')
     const file = await exportBackup()
-    expect(file.formatVersion).toBe(3)
+    expect(file.formatVersion).toBe(BACKUP_FORMAT_VERSION)
     const text = JSON.stringify(file)
     useDatabase(`tec-restore-${n++}`)
     await restoreBackup(parseBackupText(text), 'replace')
@@ -456,11 +456,11 @@ describe('B20–B21 · copias, CSV y propuestas', () => {
     expect(ps.techniquesConsent).toBe(true)
     const csv = sessionsToCsv([s])
     const lines = csv.split('\r\n')
-    expect(lines[0]).toMatch(/;metodo;id_bloque;tramo;pausa_s;estado_bloque;superserie;rango_prescrito;corregida;dificultad_sesion$/)
+    expect(lines[0]).toMatch(/;metodo;id_bloque;tramo;pausa_s;estado_bloque;superserie;rango_prescrito;corregida;dificultad_sesion;grupo_prescripcion;objetivo_serie;contexto_material$/)
     const blockLines = lines.filter((l) => l.includes(';descendente;'))
     expect(blockLines).toHaveLength(2)
-    expect(blockLines[0]).toMatch(/;40;10;1;.*;descendente;[^;]+;0;;completo;;10–15;;$/)
-    expect(blockLines[1]).toMatch(/;30;8;0;.*;descendente;[^;]+;1;12;completo;;10–15;;$/)
+    expect(blockLines[0]).toMatch(/;40;10;1;.*;descendente;[^;]+;0;;completo;;10–15;;;;;$/)
+    expect(blockLines[1]).toMatch(/;30;8;0;.*;descendente;[^;]+;1;12;completo;;10–15;;;;;$/)
     expect(lines.find((l) => l.includes(';convencional;'))).toBeTruthy()
     // Copia antigua (formato 1, sin bloques ni programa)
     const old = { ...file, formatVersion: 1, appVersion: '1.2.0', tables: { ...file.tables, meta: [] } }

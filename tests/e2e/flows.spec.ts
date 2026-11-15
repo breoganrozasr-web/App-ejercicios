@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { acceptProposal, collectErrors, countSessions, onboard } from './helpers'
+import { acceptProposal, collectErrors, countSessions, onboard, markDone } from './helpers'
 
 test('Caso 1/8 · perfil → rutina → entrenar con coma decimal → recargar → reanudar → terminar parcial', async ({ page }) => {
   const errors = collectErrors(page)
@@ -22,7 +22,7 @@ test('Caso 1/8 · perfil → rutina → entrenar con coma decimal → recargar �
   // RIR opcional
   await first.getByRole('button', { name: 'RIR serie 1: sin anotar' }).click()
   await page.getByRole('dialog').getByRole('button', { name: '2', exact: true }).click()
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   await expect(page.getByRole('timer', { name: 'Descanso' })).toBeVisible()
 
   // Recargar: todo sigue ahí (sin duplicar)
@@ -81,9 +81,9 @@ test('Caso 5 · sustituir durante la sesión conserva lo hecho y no copia los kg
   const name = (await first.locator('h3').textContent())!.replace(/^1\.\s*/, '')
   await first.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('80')
   await first.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('12')
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   await first.getByRole('button', { name: `Opciones de ${name}` }).click()
-  await page.getByRole('button', { name: 'Sustituir ejercicio' }).click()
+  await page.getByRole('button', { name: /Sustituir hoy/ }).click()
   await page.locator('.sheet .list-item').first().click()
   await expect(page.getByText(/Sustituido por/)).toBeVisible()
   // El original conserva su serie hecha; el sustituto empieza vacío y sin los 80 kg
@@ -128,7 +128,7 @@ test('Caso 11 · editar rutina crea versión nueva y las sesiones pasadas no cam
   await page.getByRole('button', { name: /^Empezar$/ }).click()
   const first = page.locator('section.wk-ex').first()
   const original = await first.locator('h3').textContent()
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   await page.getByRole('button', { name: 'Terminar' }).click()
   await page.getByRole('button', { name: 'Guardar como parcial' }).click()
   await expect(page.getByRole('button', { name: 'Editar sesión' })).toBeVisible()

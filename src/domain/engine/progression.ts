@@ -1,4 +1,6 @@
 import { getExercise } from '../catalog'
+import { groupPrescription } from '../setGroups'
+import type { SetGroup } from '../types'
 import { blockModified, blockText, blocksOf, contextKey, conventionalWork, segmentLoad } from '../techniques'
 import type { Exercise, Increments, LoadType, Prescription, Session, SessionExercise, SetEntry } from '../types'
 import { daysBetween, formatNumber, round2 } from '../util'
@@ -127,7 +129,7 @@ export function historyContext(h: HistoryItem): string {
 
 /** «con series normales», «con un bloque descendente», «en superserie»… */
 export function describeContext(key: string): string {
-  const [blocks, group] = key.split('|')
+  const [blocks, group, mat] = key.split('|')
   const parts: string[] = []
   if (blocks === 'convencional') parts.push('con series normales')
   else {
@@ -136,6 +138,7 @@ export function describeContext(key: string): string {
     parts.push(`con ${n === 1 ? 'un bloque' : `${n} bloques`} ${[...kinds].join(' y ')}`)
   }
   parts.push(group === 'superserie' ? 'en superserie' : 'por separado')
+  parts.push(mat ? `con «${mat.replace(/^mat:/, '')}»` : 'sin contexto de material especificado')
   return parts.join(', ')
 }
 
@@ -474,3 +477,21 @@ export function blockAdvice(set: SetEntry, lt: LoadType, history: HistoryItem[],
 }
 
 export type { SessionExercise }
+
+/**
+ * Historial de UN grupo de prescripción (objetivos por serie, 1.5): de cada exposición solo cuentan las series de ese
+ * grupo (por id estable, no por posición en pantalla) y su prescripción. Las exposiciones sin grupos se conservan tal
+ * cual: solo serán comparables si su rango coincide (referencia coherente con la prescripción anterior); las que tenían
+ * grupos distintos no se mezclan.
+ */
+export function historyForGroup(history: HistoryItem[], g: SetGroup): HistoryItem[] {
+  const out: HistoryItem[] = []
+  for (const h of history) {
+    const hp = h.ex.prescription
+    if (!hp?.setGroups?.length) { out.push(h); continue }
+    const hg = hp.setGroups.find((x) => x.id === g.id)
+    if (!hg) continue
+    out.push({ ...h, ex: { ...h.ex, prescription: groupPrescription(hp, hg), sets: h.ex.sets.filter((x) => x.kind !== 'work' || (!x.method && x.groupId === g.id)) } })
+  }
+  return out
+}

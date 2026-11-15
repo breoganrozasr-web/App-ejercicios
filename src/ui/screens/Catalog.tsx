@@ -178,12 +178,15 @@ function RecipeCard({ f, fav, onFav, comparing, onCompare, first = false }: { f:
         <span className="badge">{r.standardOf ? 'Dosis breve' : 'Dosis estándar'}</span>
         {r.sbd && <span className="badge">Práctica de básicos</span>}
       </div>
-      <span className="tiny">{frequencySummary(f.build)}</span>
-      {info.length > 0 && (
-        <ul className="tiny muted" style={{ margin: 0, paddingLeft: 18 }}>
-          {info.map((c) => <li key={c.text}>{c.hard ? 'No encaja: ' : ''}{c.text}</li>)}
-        </ul>
-      )}
+      <details className="tiny">
+        <summary>{f.fits ? (info.length ? `Encaja · ${info.length} ${info.length === 1 ? 'aviso' : 'avisos'}` : 'Encaja con tu perfil') : `No encaja del todo · ver por qué`}</summary>
+        <span className="muted">{frequencySummary(f.build)}.</span>
+        {info.length > 0 && (
+          <ul className="muted" style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+            {info.map((c) => <li key={c.text}>{c.hard ? 'No encaja: ' : ''}{c.text}</li>)}
+          </ul>
+        )}
+      </details>
       <div className="row">
         <a className="btn soft small grow" href={href(`rutinas/plantillas/${r.id}`)}>Elegir y revisar</a>
         <button className="chip" aria-pressed={comparing} onClick={onCompare}>Comparar</button>

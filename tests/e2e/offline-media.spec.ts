@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { acceptProposal, onboard } from './helpers'
+import { acceptProposal, onboard, markDone } from './helpers'
 
 test('Caso 9 · tras la primera carga funciona sin conexión; las demos descargadas se ven y las demás avisan', async ({ page, context, browserName }) => {
   // En WebKit, context.setOffline() de Playwright corta también las respuestas del service worker ("internal error").
@@ -45,7 +45,7 @@ test('Caso 12 · archivo de demostración roto: aviso comprensible y el registro
   await expect(page.getByText('No se pudo cargar la demostración')).toBeVisible()
   await page.getByRole('button', { name: 'Cerrar' }).click()
   const first = page.locator('section.wk-ex').first()
-  await first.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(first, 1)
   await expect(first.getByRole('button', { name: 'Desmarcar serie 1' })).toBeVisible()
 })
 

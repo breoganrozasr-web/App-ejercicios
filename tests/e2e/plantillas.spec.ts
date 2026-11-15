@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { acceptProposal, collectErrors, onboard } from './helpers'
+import { acceptProposal, collectErrors, onboard, markDone } from './helpers'
 
 async function count(page: Page, store: string): Promise<number> {
   return page.evaluate((st) => new Promise<number>((resolve) => {
@@ -90,7 +90,7 @@ test('C16 · corregir una sesión guardada con vista previa y deshacer; toleranc
   const ex = page.locator('section.wk-ex').first()
   await ex.getByRole('textbox', { name: /, serie 1$/ }).first().fill('40')
   await ex.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await ex.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex, 1)
   await page.getByRole('button', { name: 'Terminar', exact: true }).click()
   await page.getByRole('button', { name: 'Guardar como parcial' }).click()
   await page.getByRole('button', { name: 'Cerrar y pasar a la siguiente' }).click().catch(() => {})

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { acceptProposal, collectErrors, countSessions, onboard } from './helpers'
+import { acceptProposal, collectErrors, countSessions, onboard, markDone } from './helpers'
 
 async function finishAll(page: Page) {
   await page.getByRole('button', { name: 'Terminar' }).click()
@@ -31,7 +31,7 @@ test('Preparación del día, récord en directo, resumen con calorías y nota fi
   const ex1 = page.locator('section.wk-ex').first()
   await ex1.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('50')
   await ex1.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await ex1.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex1, 1)
   await finishAll(page)
   await expect(page.getByLabel('Resumen de la sesión')).toBeVisible()
   await expect(page.getByText('Sesión demasiado corta para estimar calorías.')).toBeVisible() // < 5 min
@@ -54,15 +54,15 @@ test('Preparación del día, récord en directo, resumen con calorías y nota fi
   // Nota fija desde el menú del ejercicio
   const ex = page.locator('section.wk-ex').first()
   await ex.getByRole('button', { name: /^Opciones de / }).first().click()
-  await page.getByRole('button', { name: /Nota fija/ }).click()
-  await page.getByRole('textbox', { name: 'Nota fija' }).fill('Asiento en 4')
+  await page.getByRole('button', { name: /Nota para próximas veces/ }).click()
+  await page.getByRole('textbox', { name: 'Nota para próximas veces' }).fill('Asiento en 4')
   await page.getByRole('dialog').getByRole('button', { name: 'Guardar' }).click()
   await expect(ex.getByText('Asiento en 4')).toBeVisible()
 
   // Récord: más peso para las mismas repeticiones
   await ex.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('52,5')
   await ex.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('10')
-  await ex.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex, 1)
   await expect(page.getByRole('status').filter({ hasText: /Récord: 52,5 kg × 10/ })).toBeVisible()
   await finishAll(page)
   await expect(page.getByText('Récords en esta sesión')).toBeVisible()
@@ -91,7 +91,7 @@ test('Registrar una sesión pasada y cambiarle la fecha', async ({ page }) => {
   const ex1 = page.locator('section.wk-ex').first()
   await ex1.getByRole('textbox', { name: 'kg de la máquina, serie 1' }).fill('40')
   await ex1.getByRole('textbox', { name: 'Repeticiones, serie 1' }).fill('12')
-  await ex1.getByRole('button', { name: 'Marcar serie 1 como hecha' }).click()
+  await markDone(ex1, 1)
   await expect(page.getByRole('timer', { name: 'Descanso' })).toHaveCount(0) // sin descanso en registros a posteriori
   await finishAll(page)
   await expect(page.getByText('Registrada después')).toBeVisible()

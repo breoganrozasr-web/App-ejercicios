@@ -1,4 +1,5 @@
 import { demoUrls } from '../domain/catalog/media'
+import { hasExternalDemo } from '../domain/catalog/external'
 
 /** Caché de demostraciones descargadas (contenido con licencia que permite uso offline). Nunca incluye vídeos de YouTube. */
 export const DEMO_CACHE = 'forja-demos-v1'
@@ -58,4 +59,31 @@ export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`
   return `${(n / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
+}
+
+/** Estado sin conexión de una lista de ejercicios: comprueba la caché real y el service worker (no navigator.onLine). */
+export async function routineOfflineStatus(exerciseIds: string[]): Promise<{ total: number; local: number; prepared: number; external: number; none: number; appCached: boolean }> {
+  const ids = [...new Set(exerciseIds)]
+  const cached = await cachedUrls()
+  let local = 0
+  let prepared = 0
+  let external = 0
+  let none = 0
+  for (const id of ids) {
+    const urls = demoUrls([id])
+    if (urls.length) {
+      local++
+      if (urls.every((u) => cached.has(new URL(u, location.href).pathname))) prepared++
+    } else if (hasExternalDemo(id)) external++
+    else none++
+  }
+  let appCached = false
+  try {
+    const sw = typeof navigator !== 'undefined' && 'serviceWorker' in navigator ? navigator.serviceWorker.controller : null
+    const names = cachesAvailable() ? await caches.keys() : []
+    appCached = !!sw && names.some((n) => n.includes('precache'))
+  } catch {
+    appCached = false
+  }
+  return { total: ids.length, local, prepared, external, none, appCached }
 }

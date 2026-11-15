@@ -285,6 +285,24 @@ export interface Prescription {
   unit?: 'reps' | 'time' | 'distance'
   /** Ejercicio de referencia de fuerza (se practica primero). */
   reference?: boolean
+  /**
+   * 1.5: objetivos por serie de trabajo («Personalizar series»). Grupos de series CONVENCIONALES con su rango, RIR y
+   * descanso (p. ej. 1×4–6 principal + 2×6–8 complementarias). Sin valor = todas las series iguales (como antes).
+   * Si existe, `sets` es la suma de `count` y repMin/repMax/rir/restSec reflejan el primer grupo (compatibilidad).
+   */
+  setGroups?: SetGroup[]
+}
+
+/** Grupo de prescripción con identificador ESTABLE (reordenar no cambia su identidad ni une referencias distintas). */
+export interface SetGroup {
+  id: string
+  label?: 'principal' | 'complementaria' | null
+  count: number
+  repMin: number
+  repMax: number
+  rirMin: number
+  rirMax: number
+  restSec: number
 }
 
 export interface RoutineExercise {
@@ -464,6 +482,8 @@ export interface SetEntry {
    */
   method?: SetMethod
   block?: SpecialBlock
+  /** 1.5: grupo de prescripción de esta serie de trabajo (objetivos por serie). Sin valor = grupo único implícito. */
+  groupId?: string
 }
 
 /** Tramo REAL de un bloque: su propia carga y repeticiones (40 kg × 10 → 30 kg × 8 son dos tramos, no 40 × 18). */
@@ -531,6 +551,12 @@ export interface SessionExercise {
   replacedFrom?: string
   /** Ejercicios de peso corporal: el campo de kg es lastre (añadido) o asistencia (restada). */
   bwMode?: 'added' | 'assist'
+  /** 1.5: posición en el plan del día al crear la sesión (el orden real se deduce de las horas de las series). */
+  plannedIndex?: number
+  /** 1.5: «Hacer después» aplicado en esta sesión (solo reordena lo pendiente; no cambia la rutina). */
+  movedLater?: boolean
+  /** 1.5: contexto de material con nombre libre («Polea A»). Sin valor = contexto no especificado. No se comparan contextos distintos. */
+  equipmentContext?: string
 }
 
 export type SessionStatus = 'active' | 'completed' | 'partial' | 'discarded'
@@ -696,7 +722,10 @@ export interface ExerciseSetting {
   exerciseId: string
   incrementKg?: number
   restSec?: number
+  /** «Nota para próximas veces» (persistente): asiento, agarre, máquina… */
   note?: string
+  /** 1.5: contextos de material guardados para este ejercicio («Polea A», «Prensa de mi gimnasio»). */
+  contexts?: string[]
 }
 
 export interface MetaEntry {

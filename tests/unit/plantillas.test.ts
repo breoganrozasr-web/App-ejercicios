@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { exportBackup, parseBackupText, restoreBackup, sessionsToCsv } from '../../src/data/backup'
+import { BACKUP_FORMAT_VERSION, exportBackup, parseBackupText, restoreBackup, sessionsToCsv } from '../../src/data/backup'
 import { db, useDatabase } from '../../src/data/db'
 import { createRoutine, familiarizationStatus, saveSession, startSessionFromDay, finishSession } from '../../src/data/repo'
 import { getExercise } from '../../src/domain/catalog'
 import { describeChanges, diffCorrection, lastOpenCorrection, undoLastCorrection } from '../../src/domain/corrections'
 import { dayDuration, recoveryOverlaps, weeklyRegionVolume } from '../../src/domain/engine/analysis'
 import { contributionOf, muscleMapFor } from '../../src/domain/engine/contribution'
+import { ENGINE_VERSION } from '../../src/domain/engine/params'
 import { generateRoutine } from '../../src/domain/engine/generator'
 import { applyFamiliarization } from '../../src/domain/engine/prescription'
 import { historyFor, suggestNext } from '../../src/domain/engine/progression'
@@ -281,7 +282,7 @@ describe('C16–C17 · correcciones de sesiones guardadas', () => {
     expect(seg.map((g) => [g.weightKg, g.reps])).toEqual([[40, 10], [30, 9]])
     const csv = sessionsToCsv([corrected]).split('\r\n').filter((l) => l.includes(';descendente;'))
     expect(csv).toHaveLength(2)
-    expect(csv[1]).toMatch(/;30;9;0;.*;descendente;[^;]+;1;12;completo;;[^;]*;sí;$/)
+    expect(csv[1]).toMatch(/;30;9;0;.*;descendente;[^;]+;1;12;completo;;[^;]*;sí;;;;$/)
     const undone = undoLastCorrection(corrected, 9)!
     expect(undone.exercises.find((e) => e.uid === exu.uid)!.sets.find((x) => x.method === 'drop')!.block!.segments.map((g) => g.reps)).toEqual([10, 8])
     expect(lastOpenCorrection(undone)).toBeNull()
@@ -296,14 +297,14 @@ describe('C21 · copia de seguridad con las propiedades nuevas', () => {
     const b = buildFromRecipe(R('A15'), prof({ level: 'intermediate' }))
     await createRoutine(b.draft)
     const file = await exportBackup()
-    expect(file.formatVersion).toBe(3)
+    expect(file.formatVersion).toBe(BACKUP_FORMAT_VERSION)
     const v = file.tables.routineVersions![0] as { plan: { template: { code: string }; muscleMap: string }; days: { exercises: { origin: { base: { sets: number } } }[] }[] }
     expect(v.plan.template.code).toBe('A15')
     expect(v.plan.muscleMap).toBe('v2')
     expect(v.days[0].exercises[0].origin.base.sets).toBe(3)
     const text = JSON.stringify(file)
     const before = await db().routines.count()
-    expect(() => parseBackupText(text.replace('"formatVersion":3', '"formatVersion":4'))).toThrow(/versión más nueva/)
+    expect(() => parseBackupText(text.replace(`"formatVersion":${BACKUP_FORMAT_VERSION}`, `"formatVersion":${BACKUP_FORMAT_VERSION + 1}`))).toThrow(/versión más nueva/)
     expect(await db().routines.count()).toBe(before)
     useDatabase(`p3-restore-${Date.now()}`)
     await restoreBackup(parseBackupText(text), 'replace')
@@ -349,6 +350,6 @@ describe('Ficha y sesión con los ejercicios nuevos', () => {
     const s = await startSessionFromDay(routine.id, 'd4', '2026-11-13')
     expect(s.exercises[0].exerciseId).toBe('peso_muerto_convencional')
     expect(s.exercises[0].prescription?.sets).toBe(2)
-    expect(s.engineVersion).toBe('2.2.0')
+    expect(s.engineVersion).toBe(ENGINE_VERSION)
   })
 })

@@ -10,6 +10,7 @@ import type {
 } from '../domain/types'
 import { addDays, daysBetween, newId, toLocalDate, weekStart } from '../domain/util'
 import { db } from './db'
+import { groupForIndex } from '../domain/setGroups'
 
 // ───────────────────────── Meta ─────────────────────────
 
@@ -252,7 +253,10 @@ export function makeSessionExercise(exerciseId: string, prescription: Prescripti
   if (prescription) {
     for (let i = 0; i < prescription.warmupSets; i++) sets.push(emptySet('warmup'))
     const rows = plannedWorkRows(prescription, superset ? undefined : technique, ex?.loadType ?? 'machine')
-    for (let i = 0; i < rows.conventional; i++) sets.push(emptySet('work'))
+    for (let i = 0; i < rows.conventional; i++) {
+      const g = groupForIndex(prescription, i)
+      sets.push(g ? { ...emptySet('work'), groupId: g.id } : emptySet('work'))
+    }
     if (rows.block) sets.push(makeBlockSet(rows.block.method, 'routine', rows.block.extra, 'both', rows.block.replaces))
   } else {
     sets.push(emptySet('work'))
@@ -347,7 +351,7 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
       pausedAt: null,
       pausedTotalMs: 0,
       // Durante la familiarización o la readaptación no se usan bloques especiales: series normales con más margen.
-      exercises: day.exercises.map((re: RoutineExercise) => makeSessionExercise(re.exerciseId, fam ? applyFamiliarization(re.prescription, getExercise(re.exerciseId)) : ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset, fam || ramp ? undefined : re.technique)),
+      exercises: day.exercises.map((re: RoutineExercise, i: number) => ({ ...makeSessionExercise(re.exerciseId, fam ? applyFamiliarization(re.prescription, getExercise(re.exerciseId)) : ramp ? applyRamp(re.prescription) : structuredClone(re.prescription), re.superset, fam || ramp ? undefined : re.technique), plannedIndex: i })),
       notes: '',
       rampApplied: ramp || !!fam,
       familiarization: fam,

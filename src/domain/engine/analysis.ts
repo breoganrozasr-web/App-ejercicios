@@ -7,6 +7,7 @@ import { DEFAULT_TARGET_REGIONS, OPTIONAL_PANEL_REGIONS, PANEL_REGIONS, REGION_L
 export type VersionLike = Pick<RoutineVersion, 'days' | 'schedule'> & { engineVersion?: string; plan?: Partial<RoutinePlanInfo> | null }
 import { blockExecSec, plannedWorkRows } from '../techniques'
 import { DURATION } from './params'
+import { groupForIndex, groupPrescription } from '../setGroups'
 import { isTimePrescription } from './prescription'
 
 /** Ponderación de series secundarias: 0,5 (convención aproximada; no es una equivalencia biológica exacta). */
@@ -183,13 +184,21 @@ export function dayDuration(day: RoutineDay): { minutes: number; rounded: number
     pair.forEach((re, k) => {
       b.warmupSetsMin += wu[i + k]
       const rows = plannedWorkRows(re.prescription, re.technique, getExercise(re.exerciseId)?.loadType ?? 'machine')
-      b.workMin += (rows.conventional * execSecPerSet(re.exerciseId, re.prescription)) / 60
+      if (re.prescription.setGroups?.length) {
+        for (let k2 = 0; k2 < rows.conventional; k2++) {
+          const g = groupForIndex(re.prescription, k2)
+          b.workMin += execSecPerSet(re.exerciseId, g ? groupPrescription(re.prescription, g) : re.prescription) / 60
+        }
+      } else b.workMin += (rows.conventional * execSecPerSet(re.exerciseId, re.prescription)) / 60
       // Bloque: tramos + cambios de carga o pausas breves (el descanso normal va después del bloque).
       if (rows.block) b.workMin += blockExecSec(rows.block.method, rows.block.extra, DURATION.secPerRep, getExercise(re.exerciseId)?.unilateral ? 2 : 1) / 60
     })
     const sets = Math.max(...pair.map((re) => { const r = workRowsOf(re); return r.conventional + r.blocks }))
     const rest = Math.max(...pair.map((re) => re.prescription.restSec))
-    b.restMin += (Math.max(0, sets - 1) * rest) / 60
+    if (pair.length === 1 && cur.prescription.setGroups?.length) {
+      // Objetivos por serie: el descanso tras cada serie es el de su grupo.
+      for (let k2 = 0; k2 < sets - 1; k2++) b.restMin += (groupForIndex(cur.prescription, k2)?.restSec ?? rest) / 60
+    } else b.restMin += (Math.max(0, sets - 1) * rest) / 60
     if (pair.length === 2) b.transitionsMin += (sets * 15) / 60 // paso de un ejercicio al otro dentro de la superserie
     i += pair.length
     if (i < ex.length) b.transitionsMin += Math.max(rest, DURATION.transitionSec) / 60

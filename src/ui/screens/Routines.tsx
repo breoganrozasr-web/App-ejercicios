@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { RECIPES, RETIRED_TEMPLATES } from '../../domain/engine/recipes'
+import { groupFromPrescription, groupsText, withGroups } from '../../domain/setGroups'
 import { AdoptionCard } from './Adoption'
 import { RecommendedTemplates } from './Catalog'
 import { useApp } from '../../App'
@@ -20,7 +21,7 @@ import { isTimePrescription } from '../../domain/engine/prescription'
 import { checkScope } from '../../domain/engine/scope'
 import { PHASE_LABEL, pairExercises, setTechnique, supersetProposals, techniqueCandidates, techniqueGate } from '../../domain/program'
 import { METHOD_LABEL, canUseMethod, pairKind, techniqueBeforeAfter } from '../../domain/techniques'
-import type { Prescription, Region, Routine, RoutineDay, RoutineTechnique, RoutineVersion, ScheduleOverride, SetMethod } from '../../domain/types'
+import type { Prescription, Region, SetGroup, Routine, RoutineDay, RoutineTechnique, RoutineVersion, ScheduleOverride, SetMethod } from '../../domain/types'
 import { PrepareReturn, useProgram } from './Phase'
 import { experienceOf, wantsReturnAdaptation } from '../../domain/profile'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, formatDateShort, newId, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
@@ -414,29 +415,33 @@ export function RoutineEditScreen({ routineId }: { routineId: string }) {
                     <button className="icon-btn" aria-label="Subir" disabled={i === 0} onClick={() => updDay(day.id, (x) => { const e = x.exercises; [e[i - 1], e[i]] = [e[i], e[i - 1]]; return x })}><ArrowUp /></button>
                     <button className="icon-btn" aria-label="Bajar" disabled={i === day.exercises.length - 1} onClick={() => updDay(day.id, (x) => { const e = x.exercises; [e[i + 1], e[i]] = [e[i], e[i + 1]]; return x })}><ArrowDown /></button>
                   </div>
+                  {re.prescription.setGroups?.length ? <span className="small">{groupsText(re.prescription)} · {re.prescription.sets} series (objetivos por serie)</span> : null}
                   <div className="row wrap" style={{ gap: 6 }}>
-                    <Num label="Series" v={re.prescription.sets} on={(v) => setP({ sets: Math.max(1, v ?? 1) })} />
+                    {!re.prescription.setGroups?.length && <Num label="Series" v={re.prescription.sets} on={(v) => setP({ sets: Math.max(1, v ?? 1) })} />}
                     {ex?.loadType === 'time' ? (
                       <>
                         <Num label="Seg. mín." v={re.prescription.timeMinSec ?? 20} on={(v) => setP({ timeMinSec: v ?? 20 })} />
                         <Num label="Seg. máx." v={re.prescription.timeMaxSec ?? 40} on={(v) => setP({ timeMaxSec: v ?? 40 })} />
                       </>
-                    ) : (
+                    ) : re.prescription.setGroups?.length ? null : (
                       <>
                         <Num label="Rep. mín." v={re.prescription.repMin} on={(v) => setP({ repMin: Math.max(1, v ?? 1) })} />
                         <Num label="Rep. máx." v={re.prescription.repMax} on={(v) => setP({ repMax: Math.max(re.prescription.repMin, v ?? re.prescription.repMin) })} />
                       </>
                     )}
-                    {!isTimePrescription(re.prescription, ex) && (
+                    {!isTimePrescription(re.prescription, ex) && !re.prescription.setGroups?.length && (
                       <>
                         <Num label="RIR mín." v={re.prescription.rirMin} on={(v) => setP({ rirMin: v ?? 0 })} />
                         <Num label="RIR máx." v={re.prescription.rirMax} on={(v) => setP({ rirMax: Math.max(re.prescription.rirMin, v ?? 0) })} />
                       </>
                     )}
-                    <Num label="Desc. (s)" v={re.prescription.restSec} on={(v) => setP({ restSec: Math.max(0, v ?? 90) })} />
+ {!re.prescription.setGroups?.length && <Num label="Desc. (s)" v={re.prescription.restSec} on={(v) => setP({ restSec: Math.max(0, v ?? 90) })} />}
                     <Num label="Aprox." v={re.prescription.warmupSets} on={(v) => setP({ warmupSets: Math.max(0, v ?? 0) })} />
                   </div>
                   {re.prescription.restSec < 60 && <span className="tiny" style={{ color: 'var(--warn)' }}>Descansos por debajo de 60 s pueden restar calidad a las series.</span>}
+                  {ex && !isTimePrescription(re.prescription, ex) && (
+                    <GroupsEditor p={re.prescription} name={ex.name} onChange={(groups) => updDay(day.id, (x) => ({ ...x, exercises: x.exercises.map((e) => (e.uid === re.uid ? { ...e, prescription: withGroups(e.prescription, groups) } : e)) }))} />
+                  )}
                   {adultScope && ex && ex.loadType !== 'time' && (() => {
                     const inPair = !!re.superset && day.exercises.filter((x) => x.superset === re.superset).length === 2
                     const methods = (['drop', 'rest_pause'] as SetMethod[]).filter((m) => canUseMethod(m, ex.loadType))
@@ -647,5 +652,54 @@ function Num({ label, v, on }: { label: string; v: number; on: (v: number | null
       <span className="tiny muted">{label}</span>
       <DecimalInput label={label} value={v} onChange={on} integer className="num-input" />
     </label>
+  )
+}
+
+/**
+ * «Personalizar series» (1.5): objetivos por serie de trabajo con identificador estable por grupo. Son series
+ * convencionales con descanso normal: no es un drop set ni impone reducir la carga. Es una opción manual de
+ * organización, no una recomendación nueva; disponible para cualquier nivel.
+ */
+function GroupsEditor({ p, name, onChange }: { p: Prescription; name: string; onChange: (g: SetGroup[] | undefined) => void }) {
+  const groups = p.setGroups
+  const upd = (id: string, patch: Partial<SetGroup>) => onChange(groups?.map((g) => (g.id === id ? { ...g, ...patch } : g)))
+  return (
+    <details className="more" open={!!groups?.length}>
+      <summary>Personalizar series{groups?.length ? ` · ${groupsText(p)}` : ''}</summary>
+      <div className="stack-sm" style={{ paddingTop: 6 }}>
+        {!groups?.length ? (
+          <>
+            <p className="tiny muted">Objetivos distintos por serie dentro de «{name}» (p. ej. una principal 4–6 y dos complementarias 6–8). Son series normales con su descanso; cada grupo progresa con su propia referencia.</p>
+            <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={() => onChange([groupFromPrescription(p, newId('grp'))])}>Usar objetivos por serie</button>
+          </>
+        ) : (
+          <>
+            {groups.map((g, gi) => (
+              <div key={g.id} className="card flat tight stack-sm" aria-label={`Grupo ${gi + 1}`}>
+                <div className="row wrap" style={{ gap: 6 }}>
+                  <select className="input" style={{ width: 150, minHeight: 44 }} aria-label={`Etiqueta del grupo ${gi + 1}`} value={g.label ?? ''} onChange={(e) => upd(g.id, { label: (e.target.value || null) as SetGroup['label'] })}>
+                    <option value="">Sin etiqueta</option>
+                    <option value="principal">Principal</option>
+                    <option value="complementaria">Complementaria</option>
+                  </select>
+                  <Num label="Series" v={g.count} on={(v) => upd(g.id, { count: Math.max(1, v ?? 1) })} />
+                  <Num label="Rep. mín." v={g.repMin} on={(v) => upd(g.id, { repMin: Math.max(1, v ?? 1) })} />
+                  <Num label="Rep. máx." v={g.repMax} on={(v) => upd(g.id, { repMax: Math.max(g.repMin, v ?? g.repMin) })} />
+                  <Num label="RIR mín." v={g.rirMin} on={(v) => upd(g.id, { rirMin: v ?? 0 })} />
+                  <Num label="RIR máx." v={g.rirMax} on={(v) => upd(g.id, { rirMax: Math.max(g.rirMin, v ?? 0) })} />
+                  <Num label="Desc. (s)" v={g.restSec} on={(v) => upd(g.id, { restSec: Math.max(0, v ?? 90) })} />
+                </div>
+                <div className="row wrap">
+                  <button className="btn ghost small" onClick={() => onChange([...groups.slice(0, gi + 1), { ...g, id: newId('grp') }, ...groups.slice(gi + 1)])}>Duplicar</button>
+                  {groups.length > 1 && <button className="btn ghost small" onClick={() => onChange(groups.filter((x) => x.id !== g.id))}>Quitar</button>}
+                </div>
+              </div>
+            ))}
+            <button className="btn ghost small" style={{ alignSelf: 'flex-start' }} onClick={() => onChange(undefined)}>Volver a series iguales</button>
+            <p className="tiny muted">La carga de cada grupo la eliges tú; no se aplica ningún porcentaje automático. Al guardar se crea una versión nueva de la rutina y el historial no cambia.</p>
+          </>
+        )}
+      </div>
+    </details>
   )
 }

@@ -317,15 +317,17 @@ describe('Caso 13 · rutinas incluidas con medios de la variante y atribuciones'
     const expected: Record<string, string> = {
       T1: 'press_pecho_maquina', T2: 'peso_muerto_rumano_mancuernas', T3: 'curl_femoral_sentado', T4: 'prensa_sentada', T5: 'flexiones_inclinadas',
       T6: 'flexiones_rodillas', T7: 'puente_gluteo', T8: 'plancha_frontal', T9: 'zancada_atras_peso_corporal',
+      // Encargo 4 (D25): V01–V04 asociados a la variante exacta (sin fusionar convencional con rumano).
+      V01: 'peso_muerto_convencional', V02: 'hip_thrust_barra', V03: 'remo_pecho_apoyado', V04: 'remo_banda_anclaje',
     }
-    expect(EXTERNAL_DEMOS).toHaveLength(9)
+    expect(EXTERNAL_DEMOS).toHaveLength(13)
     for (const d of EXTERNAL_DEMOS) {
       expect(d.exerciseId).toBe(expected[d.code])
       expect(getExercise(d.exerciseId), d.exerciseId).toBeTruthy()
       expect(d.pageUrl).toMatch(/^https:\/\//)
     }
     const videos = Object.fromEntries(EXTERNAL_DEMOS.filter((d) => d.videoUrl).map((d) => [d.code, d.videoUrl]))
-    expect(videos).toEqual({ T1: 'https://www.youtube.com/watch?v=lRo9zZ7EwpM', T2: 'https://www.youtube.com/watch?v=V8Hdl1FiNt4', T3: 'https://www.youtube.com/watch?v=_2Kd0d-JEUM', T5: 'https://www.youtube.com/watch?v=0JUrOH--Kdk', T7: 'https://www.youtube.com/watch?v=Z3cY3d3BBo4', T9: 'https://www.youtube.com/watch?v=gd1a7i7-CMY' })
+    expect(videos).toEqual({ T1: 'https://www.youtube.com/watch?v=lRo9zZ7EwpM', T2: 'https://www.youtube.com/watch?v=V8Hdl1FiNt4', T3: 'https://www.youtube.com/watch?v=_2Kd0d-JEUM', T5: 'https://www.youtube.com/watch?v=0JUrOH--Kdk', T7: 'https://www.youtube.com/watch?v=Z3cY3d3BBo4', T9: 'https://www.youtube.com/watch?v=gd1a7i7-CMY', V01: 'https://www.youtube.com/watch?v=Z6gcRfPNcZo', V04: 'https://www.youtube.com/watch?v=qykwviNOIyc' })
     // La zancada atrás no usa una zancada al frente como sustituto
     expect(APPROX_REFERENCE.zancada_atras_peso_corporal).toBeUndefined()
   })

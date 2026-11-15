@@ -52,3 +52,21 @@ export function supersetPartner(list: Pick<SessionExercise, 'uid' | 'superset'>[
 export function inSuperset(list: Pick<SessionExercise, 'uid' | 'superset'>[], uid: string): boolean {
   return supersetPartner(list, uid) >= 0
 }
+
+/**
+ * «Hacer después» (1.5): lleva un ejercicio pendiente (y su pareja de superserie, como grupo) al final del trabajo de esta
+ * sesión. Conserva lo terminado y el orden planificado (`plannedIndex`); no toca descansos ni la rutina base.
+ * Devuelve la lista sin cambios si no hay nada pendiente o ya es lo último.
+ */
+export function doLater<T extends Pick<SessionExercise, 'uid' | 'superset' | 'sets' | 'plannedIndex' | 'movedLater'>>(list: T[], uid: string): T[] {
+  const withPlan = list.map((e, i) => (e.plannedIndex === undefined ? { ...e, plannedIndex: i } : e))
+  const i = withPlan.findIndex((e) => e.uid === uid)
+  if (i < 0) return list
+  const p = supersetPartner(withPlan, uid)
+  const idx = p >= 0 ? [Math.min(i, p), Math.max(i, p)] : [i]
+  const group = idx.map((k) => withPlan[k])
+  const pending = group.some((e) => e.sets.some((x) => x.kind === 'work' && !x.completed))
+  if (!pending || idx[idx.length - 1] === withPlan.length - 1) return list
+  const rest = withPlan.filter((_, k) => !idx.includes(k))
+  return [...rest, ...group.map((e) => ({ ...e, movedLater: true }))]
+}

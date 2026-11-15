@@ -64,7 +64,10 @@ function youthPrescription(ex: Exercise, role: SlotRole): Prescription {
  * (y demás calistenia), salvo rangos base más altos; RIR 3–4. Isométricos: mismo tiempo, sin RIR. No modifica el original.
  * 2.2: las referencias de fuerza con rangos 4–6/6–8 aprenden con 6–8 y margen (carga elegida por la persona; sin 1RM).
  */
-export function applyFamiliarization(p: Prescription, ex: Exercise | undefined): Prescription {
+export function applyFamiliarization(p0: Prescription, ex: Exercise | undefined): Prescription {
+  // Con objetivos por serie, la dosis temporal usa un único grupo (el primero) con la regla habitual; el plan base no cambia.
+  const { setGroups: _g, ...p } = p0
+  void _g
   const sets = Math.max(1, Math.ceil(p.sets / 2))
   if (!ex || isTimeEx(ex) || p.unit === 'time') return { ...p, sets }
   let repMin = p.repMin
@@ -89,6 +92,7 @@ export function isTimePrescription(p: Prescription, ex?: Exercise): boolean {
 export function describePrescription(p: Prescription, ex?: Exercise): string {
   const sets = `${p.sets} ${p.sets === 1 ? 'serie' : 'series'}`
   if (isTimePrescription(p, ex)) return `${sets} × ${p.timeMinSec ?? 15}–${p.timeMaxSec ?? 30} s${ex?.unilateral ? ' por lado' : ''}`
+  if (p.setGroups?.length) return `${p.setGroups.map((g) => `${g.count}×${g.repMin === g.repMax ? g.repMin : `${g.repMin}–${g.repMax}`}`).join(' + ')} rep${ex?.unilateral ? ' por lado' : ''}`
   const reps = p.repMin === p.repMax ? `${p.repMin}` : `${p.repMin}–${p.repMax}`
   return `${sets} × ${reps} rep${ex?.unilateral ? ' por lado' : ''}`
 }

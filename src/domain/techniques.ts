@@ -370,9 +370,10 @@ export function blockText(set: SetEntry, lt: LoadType, fmt: (n: number) => strin
  * Solo se compara automáticamente dentro del mismo contexto (cambiar a superserie o convertir series en un bloque
  * inicia una referencia nueva).
  */
-export function contextKey(ex: Pick<SessionExercise, 'uid' | 'sets'>, list: Pick<SessionExercise, 'uid' | 'superset'>[]): string {
+export function contextKey(ex: Pick<SessionExercise, 'uid' | 'sets' | 'equipmentContext'>, list: Pick<SessionExercise, 'uid' | 'superset'>[]): string {
   const blocks = blocksOf(ex.sets).map((s) => `${s.method}${s.block?.plannedSegments ?? 0}`).sort().join(',')
-  return `${blocks || 'convencional'}|${inSuperset(list, ex.uid) ? 'superserie' : 'individual'}`
+  // 1.5: el contexto de material forma parte de la comparación solo si se indicó (los registros antiguos no cambian de clave).
+  return `${blocks || 'convencional'}|${inSuperset(list, ex.uid) ? 'superserie' : 'individual'}${ex.equipmentContext ? `|mat:${ex.equipmentContext}` : ''}`
 }
 
 /** Tipo de pareja: grupos distintos (p. ej. bíceps + tríceps) o el mismo músculo (solo por elección manual). */

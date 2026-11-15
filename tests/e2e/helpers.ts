@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export async function onboard(page: Page, opts: { days?: string[]; freq?: string; home?: boolean; level?: 'Intermedio' | 'Vuelvo tras una pausa' } = {}) {
   await page.goto('/')
@@ -46,4 +46,21 @@ export function collectErrors(page: Page): string[] {
   page.on('pageerror', (e) => errors.push(e.message))
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED|net::ERR/.test(m.text())) errors.push(m.text()) })
   return errors
+}
+
+/**
+ * Completa la serie n (1.5): si faltaban datos, el primer toque solo prepara los valores anteriores/propuestos en los
+ * campos y hace falta confirmar con un segundo toque (un dato propuesto nunca se convierte en serie hecha sin confirmar).
+ */
+export async function markDone(scope: Page | Locator, n: number | string): Promise<void> {
+  const page = 'page' in scope && typeof scope.page === 'function' ? (scope as Locator).page() : (scope as Page)
+  const name = typeof n === 'number' ? `serie ${n}` : n
+  const b = scope.getByRole('button', { name: `Marcar ${name} como hecha` })
+  await b.first().click()
+  const done = scope.getByRole('button', { name: `Desmarcar ${name}` })
+  if (!(await done.count())) {
+    await page.waitForTimeout(700)
+    await b.first().click()
+  }
+  await expect(done.first()).toBeVisible()
 }

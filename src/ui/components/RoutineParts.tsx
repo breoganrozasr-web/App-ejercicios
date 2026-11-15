@@ -15,6 +15,7 @@ import type { EquipmentId, Exercise, Level, Profile, Region, RoutineDay, Routine
 import { WEEKDAY_NAME, formatDuration } from '../../domain/util'
 import { techniqueBeforeAfter } from '../../domain/techniques'
 import { Sheet } from './overlay'
+import { useFavoriteExercises, useRecentExercises } from '../favorites'
 
 export function Thumb({ exerciseId }: { exerciseId: string }) {
   const m = mediaForExercise(exerciseId)
@@ -179,15 +180,21 @@ function fmt(n: number): string {
 export function ExercisePicker({ open, onClose, onPick, replacing, equipment, level, title }: { open: boolean; onClose: () => void; onPick: (e: Exercise) => void; replacing?: string; equipment?: EquipmentId[]; level: Level; title?: string }) {
   const [q, setQ] = useState('')
   const [onlyMine, setOnlyMine] = useState(!!equipment)
+  const [fav] = useFavoriteExercises()
+  const recent = useRecentExercises()
   const list = useMemo(() => {
     if (replacing && !q) return alternativesFor(replacing, onlyMine ? equipment ?? null : null, level).map((a) => ({ ex: a.exercise, why: a.reasons.join(' · ') }))
     const nq = q.trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
     return allExercises()
       .filter((e) => !onlyMine || !equipment || hasEquipment(equipment, e))
       .filter((e) => !nq || [e.name, ...e.synonyms, PATTERN_LABEL[e.pattern], ...e.primary.map((m) => MUSCLE_LABEL[m])].some((s) => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').includes(nq)))
-      .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-      .map((ex) => ({ ex, why: `${PATTERN_LABEL[ex.pattern]} · ${ex.primary.map((m) => MUSCLE_LABEL[m]).join(', ')}` }))
-  }, [q, replacing, onlyMine, equipment, level])
+      .sort((a, b) => {
+        // Sin búsqueda: favoritos y recientes primero.
+        const rank = (id: string) => (nq ? 0 : fav.includes(id) ? 0 : recent.includes(id) ? 1 : 2)
+        return rank(a.id) - rank(b.id) || a.name.localeCompare(b.name, 'es')
+      })
+      .map((ex) => ({ ex, why: `${fav.includes(ex.id) ? '★ ' : recent.includes(ex.id) ? 'Reciente · ' : ''}${PATTERN_LABEL[ex.pattern]} · ${ex.primary.map((m) => MUSCLE_LABEL[m]).join(', ')}` }))
+  }, [q, replacing, onlyMine, equipment, level, fav, recent])
   return (
     <Sheet open={open} onClose={onClose} title={title ?? (replacing ? `Sustituir ${getExercise(replacing)?.name ?? ''}` : 'Añadir ejercicio')}>
       <div className="stack">
