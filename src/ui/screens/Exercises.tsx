@@ -12,6 +12,7 @@ import { FAMILIES, REGION_LABEL, contributionOf } from '../../domain/engine/cont
 import { externalDemoFor } from '../../domain/catalog/external'
 import { SourceChips } from './Learn'
 import { alternativesFor } from '../../domain/engine/substitution'
+import { functionText } from '../../domain/content/functions'
 import { computeRecords, exerciseTrend } from '../../domain/records'
 import type { EquipmentId, Exercise, LoadType, MuscleId, Pattern, Session } from '../../domain/types'
 import { formatDateShort, formatNumber, newId } from '../../domain/util'
@@ -108,7 +109,7 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
           </div>
         </div>
         <DemoPlayer exerciseId={ex.id} onOpenReference={(id) => go(`ejercicios/${id}`)} />
-        {ex.variantNote && ex.demoStatus === 'verificada' && <p className="small muted">{ex.variantNote}</p>}
+        {ex.variantNote && (ex.demoStatus === 'verificada' || !ex.variantNote.startsWith('Demostración')) && <p className="small muted">{ex.variantNote}</p>}
         {ex.keys ? (
           <section className="card stack-sm">
             <h3>Tres claves</h3>
@@ -117,6 +118,12 @@ export function ExerciseDetailScreen({ exerciseId }: { exerciseId: string }) {
         ) : null}
         <section className="card stack-sm" aria-label="Aprender este ejercicio">
           <h3>Aprender este ejercicio</h3>
+          {functionText(ex) && (
+            <>
+              <span className="label">Qué aporta</span>
+              <p className="small" style={{ margin: 0 }}>{functionText(ex)}</p>
+            </>
+          )}
           {ex.learn ? (
             <>
               <span className="label">Preparación y ejecución</span>

@@ -1,6 +1,20 @@
 # Estado del proyecto (punto de continuación)
 
-Última actualización: **15 de noviembre de 2026** (versión 1.3). Rama: `claude/app-from-spec-1c0pa7`.
+Última actualización: **15 de noviembre de 2026** (versión 1.4). Rama: `claude/app-from-spec-1c0pa7`.
+
+## Versión 1.4 (15/11/2026): 26 plantillas, dosis explicable y fuerza + hipertrofia
+
+**Terminado y probado (automático, no en iPhone físico):**
+- **26 plantillas** del anexo A con su dosis propia (no aplanada por el perfil), generadas desde el texto del anexo (`scripts/recipes_from_annex.py` → `src/domain/engine/recipes-data.ts`) y con los controles editoriales comprobados por cálculo. Ids estables: continúan `fb2_gym`, `fb3_gym`, `ul4_gym`, `ppl3_gym`, `ppl6_gym`, `home_none` y `park_calisthenics` (versión editorial 2); retiradas del catálogo `strength3_gym`, `mixed4_gym` y `home_basic` (sus rutinas siguen funcionando). Tabla generada: [PLANTILLAS.md](PLANTILLAS.md).
+- **Catálogo** «Buscar plantilla» destacado en Rutinas: alias, filtros (días, objetivo, lugar, reparto, duración calculada), «Encajan con tu perfil» / «Ver todas», favoritas, comparador de hasta tres, vista previa sin cambiar la rutina, conflictos de tiempo con alternativas y días separados. Selección determinista con reparto preferido. La propuesta del perfil muestra arriba las plantillas que encajan; la propuesta a medida (motor por bloques) se mantiene debajo.
+- **Dosis explicable**: tres capas (receta base, adaptaciones, dosis de hoy); «Por qué estas series» con cifras calculadas y comparación de +1 serie; Hoy con «Hoy: adaptación… Plan base después… días válidos» y duración de hoy frente al plan base; etiquetas «Fuerza», «Trabajo complementario» y «Adaptación» en el entrenamiento; textos de aprendizaje unificados en días válidos (contados en todas las rutinas).
+- **Fuerza + hipertrofia**: referencias SBD con RIR 2–3 y 180 s; contexto de prescripción (banca 4–6 y 8–10 por separado); 4 fichas nuevas (convencional, hip thrust, remo con pecho apoyado, remo con banda y anclaje) y material «anclaje para bandas».
+- **Mapa muscular 2** versionado (las rutinas y sesiones anteriores conservan el mapa 1). Modelo de tiempo con aproximaciones por básico.
+- **Adopción de mejoras** («Hay nuevas opciones para revisar tu rutina», comparar, «Mantener», nueva versión o rutina nueva; nunca durante un entrenamiento). **Correcciones** de sesiones guardadas (incluidos tramos) con vista previa y deshacer. **Tolerancia** opcional al terminar y aviso ante varias sesiones muy duras (sin añadir series).
+- **Aprender**: 9 textos con nivel de certeza; fuentes F01–F21 con tabla de equivalencias. Fichas de las 49 usadas por plantillas con «tres claves» y «Qué aporta»; sustituciones con motivo. Etiquetas «Animación de posiciones» y «Vídeo externo · requiere conexión» con estados de comprobación separados.
+- **Copia formato 3** (aditiva; una 1.3 la rechaza) y CSV con rango prescrito, corrección y dificultad.
+
+**Pendientes reales:** prueba en iPhone físico (uso con una mano, VoiceOver, Safari como app); demostraciones de las 4 fichas nuevas (los recursos externos localizados no se pudieron abrir desde el entorno: no se presentan en la app) y las 4 demostraciones locales que siguen siendo externas; abrir F01–F21, R1–R5 y T1–T9 desde un entorno con acceso; revisión profesional de las fichas (no la ha habido); las recetas, umbrales y valores iniciales son decisiones editoriales sin validación clínica ni ensayos como conjunto; los bloques no cambian de método al corregir (solo valores); no hay importación de CSV.
 
 ## Versión 1.3 (15/11/2026): series descendentes, rest-pause, superseries y fases
 

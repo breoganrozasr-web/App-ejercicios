@@ -13,13 +13,17 @@ import { loadCustomExercises, log, setMeta } from './repo'
  * Versión 2 (app 1.3): bloques especiales en las series (method + block con tramos) y estado del programa (meta «program»).
  * Es aditiva: las copias de versión 1 se restauran igual (sin bloques = series convencionales).
  * Una app anterior rechaza las copias de versión 2 en lugar de malinterpretar los bloques.
+ * Versión 3 (app 1.4): ejercicios nuevos del catálogo (peso muerto convencional, hip thrust, remos), origen de la dosis
+ * por ejercicio (receta base y adaptaciones), plantilla y mapa muscular de cada versión de rutina, correcciones de
+ * sesiones guardadas (con valores anteriores) y tolerancia declarada. Aditiva: las copias 1 y 2 se restauran igual.
+ * Una app 1.3 o anterior rechaza la versión 3 (no conoce esos ejercicios ni el mapa muscular 2).
  * Incluye imágenes propias (data URL) de ejercicios creados por la persona. No incluye demostraciones de terceros.
  * Las fotos de progreso solo se incluyen si se pide expresamente (tabla «photos» ausente = la copia no las lleva).
  */
 export const BACKUP_FORMAT = 'forja-backup'
-export const BACKUP_FORMAT_VERSION = 2
+export const BACKUP_FORMAT_VERSION = 3
 export const MAX_BACKUP_BYTES = 100 * 1024 * 1024
-export const APP_VERSION = '1.3.0'
+export const APP_VERSION = '1.4.0'
 
 export interface BackupFile {
   format: string
@@ -226,6 +230,7 @@ function csvCell(v: string | number | null | undefined): string {
 }
 
 const METHOD_CSV = { drop: 'descendente', rest_pause: 'rest-pause' } as const
+const DIFF_CSV = { easy: 'fácil', normal: 'normal', hard: 'dura', very_hard: 'muy dura' } as const
 const BLOCK_STATE_CSV = { complete: 'completo', early: 'terminado antes de tiempo' } as const
 
 /**
@@ -237,6 +242,7 @@ export function sessionsToCsv(sessions: Session[]): string {
   const head = [
     'fecha', 'sesion', 'estado', 'ejercicio', 'id_ejercicio', 'tipo_carga', 'significado_peso', 'tipo_serie', 'n_serie', 'peso_kg', 'repeticiones', 'rir', 'segundos', 'distancia_m', 'asistencia_kg', 'lastre_kg', 'banda', 'lado', 'completada', 'molestia', 'notas_ejercicio',
     'metodo', 'id_bloque', 'tramo', 'pausa_s', 'estado_bloque', 'superserie',
+    'rango_prescrito', 'corregida', 'dificultad_sesion',
   ]
   const lines = [head.join(';')]
   const sorted = [...sessions].filter((s) => s.status === 'completed' || s.status === 'partial').sort((a, b) => a.startedAt - b.startedAt)
@@ -245,6 +251,9 @@ export function sessionsToCsv(sessions: Session[]): string {
     for (const e of s.exercises) {
       let n = 0
       const ss = supersetPartner(s.exercises, e.uid) >= 0 ? e.superset ?? '' : ''
+      const rx = e.prescription ? (e.prescription.unit === 'time' ? `${e.prescription.timeMinSec ?? ''}–${e.prescription.timeMaxSec ?? ''} s` : `${e.prescription.repMin}–${e.prescription.repMax}`) : ''
+      const corrected = (id: string) => ((s.corrections ?? []).some((c) => !c.undoneAt && c.changes.some((ch) => ch.setId === id)) ? 'sí' : '')
+      const diff = s.tolerance?.difficulty ? DIFF_CSV[s.tolerance.difficulty] : ''
       const common = [s.date, s.title, s.status === 'partial' ? 'parcial' : 'completada', e.nameSnapshot, e.exerciseId, e.loadTypeSnapshot, LOAD_LABEL[e.loadTypeSnapshot]?.field ?? '']
       for (const set of e.sets) {
         if (set.kind === 'work') n++
@@ -253,11 +262,11 @@ export function sessionsToCsv(sessions: Session[]): string {
           const state = b.ended ? BLOCK_STATE_CSV[b.ended] : 'sin terminar'
           const method = METHOD_CSV[set.method as keyof typeof METHOD_CSV]
           if (!b.segments.length) {
-            lines.push([...common, 'trabajo', n, null, null, null, null, null, null, null, null, side(set.side), 'no', e.painFlag ? 'sí' : '', e.notes, method, set.id, null, null, state, ss].map(csvCell).join(';'))
+            lines.push([...common, 'trabajo', n, null, null, null, null, null, null, null, null, side(set.side), 'no', e.painFlag ? 'sí' : '', e.notes, method, set.id, null, null, state, ss, rx, corrected(set.id), diff].map(csvCell).join(';'))
             continue
           }
           b.segments.forEach((seg, i) => {
-            lines.push([...common, 'trabajo', n, seg.weightKg, seg.reps, seg.rir, null, null, seg.assistKg ?? null, seg.addedKg ?? null, null, side(set.side), 'sí', e.painFlag ? 'sí' : '', e.notes, method, set.id, i, seg.pauseSec, state, ss].map(csvCell).join(';'))
+            lines.push([...common, 'trabajo', n, seg.weightKg, seg.reps, seg.rir, null, null, seg.assistKg ?? null, seg.addedKg ?? null, null, side(set.side), 'sí', e.painFlag ? 'sí' : '', e.notes, method, set.id, i, seg.pauseSec, state, ss, rx, corrected(set.id), diff].map(csvCell).join(';'))
           })
           continue
         }
@@ -265,7 +274,7 @@ export function sessionsToCsv(sessions: Session[]): string {
           ...common,
           set.kind === 'warmup' ? 'calentamiento' : 'trabajo', set.kind === 'work' ? n : '', set.weightKg, set.reps, set.rir, set.durationSec, set.distanceM, set.assistKg, set.addedKg, set.bandLabel,
           side(set.side), set.completed ? 'sí' : 'no', e.painFlag ? 'sí' : '', e.notes,
-          set.kind === 'work' ? 'convencional' : '', '', '', '', '', ss,
+          set.kind === 'work' ? 'convencional' : '', '', '', '', '', ss, set.kind === 'work' ? rx : '', corrected(set.id), diff,
         ].map(csvCell).join(';'))
       }
     }

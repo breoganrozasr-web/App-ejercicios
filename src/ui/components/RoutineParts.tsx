@@ -4,13 +4,14 @@ import { allExercises, getExercise, hasEquipment } from '../../domain/catalog'
 import { MUSCLE_LABEL, PATTERN_LABEL } from '../../domain/catalog/exercises'
 import { hasExternalDemo } from '../../domain/catalog/external'
 import { mediaForExercise, assetUrl } from '../../domain/catalog/media'
-import { durationText, recoveryOverlaps, weeklyRegionVolume } from '../../domain/engine/analysis'
+import { durationText, recoveryOverlaps, weeklyRegionVolume, type VersionLike } from '../../domain/engine/analysis'
+import { whySets } from '../../domain/explain'
 import { DEFAULT_TARGET_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
-import { familiarizationPreview } from '../../domain/engine/generator'
+import { familiarizationPreview, type FrequencyRow } from '../../domain/engine/generator'
 import { weeklyBudget } from '../../domain/engine/params'
 import { describePrescription, describeRir } from '../../domain/engine/prescription'
 import { alternativesFor } from '../../domain/engine/substitution'
-import type { EquipmentId, Exercise, Level, Profile, Region, RoutineDay, RoutineVersion } from '../../domain/types'
+import type { EquipmentId, Exercise, Level, Profile, Region, RoutineDay, RoutineExercise, RoutineVersion } from '../../domain/types'
 import { WEEKDAY_NAME, formatDuration } from '../../domain/util'
 import { techniqueBeforeAfter } from '../../domain/techniques'
 import { Sheet } from './overlay'
@@ -29,11 +30,11 @@ export function DemoBadge({ exerciseId }: { exerciseId: string }) {
   const ex = getExercise(exerciseId)
   if (!ex || ex.custom || ex.demoStatus === 'verificada') return null
   return hasExternalDemo(exerciseId)
-    ? <span className="badge" style={{ alignSelf: 'flex-start' }}>Demostración externa · requiere internet</span>
+    ? <span className="badge" style={{ alignSelf: 'flex-start' }}>Vídeo o página externa · requiere conexión</span>
     : <span className="badge warn" style={{ alignSelf: 'flex-start' }}>Demostración pendiente</span>
 }
 
-export function DayView({ day, weekdays, onOpenExercise, familiarization }: { day: RoutineDay; weekdays?: number[]; onOpenExercise?: (id: string) => void; familiarization?: { sessions: number } | null }) {
+export function DayView({ day, weekdays, onOpenExercise, familiarization, version }: { day: RoutineDay; weekdays?: number[]; onOpenExercise?: (id: string) => void; familiarization?: { sessions: number } | null; version?: VersionLike }) {
   return (
     <section className="card stack-sm" aria-label={day.name}>
       <div className="row between">
@@ -47,7 +48,8 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
           const ex = getExercise(re.exerciseId)
           const fam = familiarization ? familiarizationPreview(re) : null
           return (
-            <button key={re.uid} className="list-item" onClick={() => onOpenExercise?.(re.exerciseId)} disabled={!onOpenExercise}>
+            <div key={re.uid} className="stack-sm" style={{ gap: 0 }}>
+            <button className="list-item" onClick={() => onOpenExercise?.(re.exerciseId)} disabled={!onOpenExercise}>
               <Thumb exerciseId={re.exerciseId} />
               <span className="grow stack-sm" style={{ gap: 2 }}>
                 <span style={{ fontWeight: 650 }}>
@@ -59,9 +61,9 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
                 </span>
                 {fam ? (
                   <span className="small">
-                    <span className="muted">Hoy (familiarización):</span> {fam.today}
+                    <span className="muted">Hoy (adaptación):</span> {fam.today}
                     <br />
-                    <span className="muted">Después:</span> {fam.after} · desc. {formatDuration(re.prescription.restSec)}
+                    <span className="muted">Plan base después:</span> {fam.after} · desc. {formatDuration(re.prescription.restSec)}
                   </span>
                 ) : (
                   <span className="small muted">
@@ -75,6 +77,8 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
               </span>
               {onOpenExercise && <ChevronRight size={18} className="faint" aria-hidden />}
             </button>
+            {version && <WhySetsDetails re={re} dayId={day.id} version={version} adaptationToday={familiarization ? Math.max(1, Math.ceil(re.prescription.sets / 2)) : null} />}
+            </div>
           )
         })}
       </div>
@@ -82,19 +86,19 @@ export function DayView({ day, weekdays, onOpenExercise, familiarization }: { da
   )
 }
 
-export function RoutineDaysView({ version, onOpenExercise }: { version: Pick<RoutineVersion, 'days' | 'schedule'> & { familiarization?: RoutineVersion['familiarization'] }; onOpenExercise?: (id: string) => void }) {
+export function RoutineDaysView({ version, onOpenExercise }: { version: VersionLike & { familiarization?: RoutineVersion['familiarization'] }; onOpenExercise?: (id: string) => void }) {
   return (
     <div className="stack">
       {version.familiarization && (
         <div className="note info">
           <Info aria-hidden />
           <span className="small">
-            {version.familiarization.reason === 'returning' ? 'Adaptación tras la pausa' : 'Familiarización'}: las primeras {version.familiarization.sessions} sesiones completadas (al menos el 70 % de las series) llevan la mitad de series, rangos de aprendizaje y RIR 3–4, sin subidas automáticas. Debajo ves la dosis de hoy y la posterior.
+            {version.familiarization.reason === 'returning' ? 'Adaptación tras la pausa' : 'Aprendizaje'}: los primeros {version.familiarization.sessions} días válidos (al menos el 70 % de las series; como máximo uno por fecha) llevan max(1, mitad de series), rangos de aprendizaje y RIR 3–4, sin subidas automáticas. Debajo ves la dosis de hoy y la del plan base.
           </span>
         </div>
       )}
       {version.days.map((d) => (
-        <DayView key={d.id} day={d} weekdays={version.schedule.filter((s) => s.dayId === d.id).map((s) => s.weekday)} onOpenExercise={onOpenExercise} familiarization={version.familiarization} />
+        <DayView key={d.id} day={d} weekdays={version.schedule.filter((s) => s.dayId === d.id).map((s) => s.weekday)} onOpenExercise={onOpenExercise} familiarization={version.familiarization} version={version} />
       ))}
     </div>
   )
@@ -196,7 +200,7 @@ export function ExercisePicker({ open, onClose, onPick, replacing, equipment, le
             <input type="checkbox" className="check" checked={onlyMine} onChange={(e) => setOnlyMine(e.target.checked)} /> Solo con mi material
           </label>
         )}
-        {replacing && !q && <p className="small muted">Ordenadas por parecido: mismo patrón y músculo, tu material y nivel. Los kilos NO se copian: cada ejercicio tiene su propio historial.</p>}
+        {replacing && !q && <p className="small muted">Primero, las de la misma función con tu material; después, las que cambian el plan (lo indican). «Mismo músculo» no basta para prometer equivalencia. Los kilos NO se copian: cada ejercicio tiene su propio historial.</p>}
         <div className="list">
           {list.slice(0, 80).map(({ ex, why }) => (
             <button key={ex.id} className="list-item" onClick={() => onPick(ex)}>
@@ -213,5 +217,81 @@ export function ExercisePicker({ open, onClose, onPick, replacing, equipment, le
         </div>
       </div>
     </Sheet>
+  )
+}
+
+/** Tabla real de frecuencia (días con trabajo directo; aparte, días solo indirectos). */
+export function FrequencyTable({ rows, compact = false }: { rows: FrequencyRow[]; compact?: boolean }) {
+  const shown = compact ? rows.filter((r) => r.target) : rows.filter((r) => r.target || r.direct > 0 || r.secondaryOnlyDays > 0)
+  return (
+    <table className="freq-table small">
+      <thead>
+        <tr><th scope="col">Grupo</th><th scope="col">Pedida</th><th scope="col" title="Días con trabajo directo">Días dir.</th><th scope="col" title="Días solo con trabajo indirecto (no se suman)">Solo ind.</th></tr>
+      </thead>
+      <tbody>
+        {shown.map((r) => (
+          <tr key={r.region} className={r.desired !== null && r.directDays < r.desired ? 'short' : ''}>
+            <th scope="row">{REGION_LABEL[r.region]}</th>
+            <td className="num">{r.desired ?? (r.target ? 'auto' : '—')}</td>
+            <td className="num">{r.directDays}</td>
+            <td className="num">{r.secondaryOnlyDays || '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+      <caption className="tiny muted" style={{ captionSide: 'bottom', textAlign: 'left', paddingTop: 4 }}>«Pedida» vacía: grupo sin objetivo de frecuencia (se muestra el resultado real). Las columnas no se suman.</caption>
+    </table>
+  )
+}
+
+/** Asigna días de la semana a cada día de la rutina (se puede empezar cualquier día). */
+export function ScheduleEditor({ days, schedule, onChange }: { days: RoutineDay[]; schedule: { weekday: number; dayId: string }[]; onChange: (s: { weekday: number; dayId: string }[]) => void }) {
+  return (
+    <section className="card stack-sm">
+      <h3>Días de la semana</h3>
+      <p className="small muted">Elige qué día de la semana va cada sesión. Puedes empezar cualquier día: la app te propone la siguiente sesión en orden.</p>
+      {days.map((d) => (
+        <label key={d.id} className="row between" style={{ minHeight: 48 }}>
+          <span className="grow">{d.name}</span>
+          <select
+            className="input"
+            style={{ width: 150 }}
+            value={schedule.find((s) => s.dayId === d.id)?.weekday ?? ''}
+            onChange={(e) => {
+              const v = e.target.value
+              const rest = schedule.filter((s) => s.dayId !== d.id)
+              onChange(v === '' ? rest : [...rest.filter((s) => s.weekday !== Number(v)), { weekday: Number(v), dayId: d.id }].sort((a, b) => a.weekday - b.weekday))
+            }}
+          >
+            <option value="">Sin día fijo</option>
+            {WEEKDAY_NAME.map((n, i) => <option key={n} value={i}>{n}</option>)}
+          </select>
+        </label>
+      ))}
+    </section>
+  )
+}
+
+
+/** «Por qué estas series»: explicación calculada y vista previa de añadir una serie (no se aplica sola). */
+export function WhySetsDetails({ re, dayId, version, adaptationToday }: { re: RoutineExercise; dayId: string; version: VersionLike; adaptationToday?: number | null }) {
+  const [open, setOpen] = useState(false)
+  const [cmp, setCmp] = useState(false)
+  const w = useMemo(() => (open ? whySets(re, dayId, version, { adaptationToday }) : null), [open, re, dayId, version, adaptationToday])
+  if (getExercise(re.exerciseId)?.loadType === 'time' && !re.prescription.sets) return null
+  return (
+    <div className="stack-sm" style={{ gap: 4, paddingBottom: 8 }}>
+      <button className="btn ghost small" style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 6px' }} aria-expanded={open} onClick={() => setOpen(!open)}>Por qué estas series</button>
+      {w && (
+        <div className="note info small stack-sm" style={{ display: 'block' }}>
+          <p style={{ margin: 0 }}>{w.text}</p>
+          {w.plusOne && (
+            <>
+              <button className="btn soft small" style={{ marginTop: 6 }} aria-expanded={cmp} onClick={() => setCmp(!cmp)}>Comparar añadir una serie</button>
+              {cmp && <p className="small" style={{ margin: '6px 0 0' }}>Con una serie más: {w.plusOne.weeklyDirect} directas semanales para {w.regionLabel} (ahora {String(w.weeklyDirect).replace('.', ',')}); esta sesión ≈{w.plusOne.dayMinutesBefore} → ≈{w.plusOne.dayMinutesAfter} min. Es solo una comparación: para aplicarla, edita la rutina. Más series no son mejores por sí mismas.</p>}
+            </>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

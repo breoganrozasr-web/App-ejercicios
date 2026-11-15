@@ -886,8 +886,8 @@ function finalizeDraft(i: FinalizeInput): RoutineDraft {
   rationale.push('Progresión: doble progresión. Cuando completes todas las series en el máximo del rango con el margen objetivo, la app te propondrá el siguiente incremento disponible. Tú decides.')
   if (i.familiarization) {
     rationale.push(i.familiarization.reason === 'beginner'
-      ? `Familiarización: tus primeras ${i.familiarization.sessions} sesiones completadas (al menos el 70 % de las series) llevan la mitad de series, rangos de aprendizaje y RIR 3–4, sin subidas automáticas. Se ve la dosis de hoy y la posterior.`
-      : `Adaptación tras la pausa: ${i.familiarization.sessions} sesiones completadas con la mitad de series y RIR 3–4. Puedes quitarla si prefieres empezar directamente.`)
+      ? `Aprendizaje: tus primeros ${i.familiarization.sessions} días válidos (al menos el 70 % de las series; como máximo uno por fecha) llevan max(1, mitad de series), rangos de aprendizaje y RIR 3–4, sin subidas automáticas. Se ve la dosis de hoy y la del plan base.`
+      : `Adaptación tras la pausa: ${i.familiarization.sessions} días válidos con max(1, mitad de series) y RIR 3–4. No te reclasifica como «desde cero»; puedes quitarla si prefieres empezar directamente.`)
   }
   if (st.notes.length) rationale.push(...st.notes)
   if (youth) warnings.push('Programa para menores: debe hacerse con supervisión de un adulto cualificado. Sin fallo, sin máximos y priorizando la técnica.')
@@ -992,7 +992,7 @@ export function buildFromTemplate(t: TemplateDef, profile: Profile, opts: { lear
   const familiarization = famReason ? { sessions: FAMILIARIZATION_SESSIONS, reason: famReason } : null
   const freq = table.filter((r) => r.target).map((r) => `${REGION_LABEL[r.region].toLowerCase()} ${r.directDays}`).join(', ')
   const rationale = dedupe([t.description, ...t.notes.filter((x) => !x.startsWith('⚠')), `Frecuencia directa con el calendario de la plantilla: ${freq}.`])
-  if (familiarization) rationale.push(`Familiarización: las primeras ${familiarization.sessions} sesiones completadas llevan la mitad de series y RIR 3–4.`)
+  if (familiarization) rationale.push(`Aprendizaje: los primeros ${familiarization.sessions} días válidos llevan max(1, mitad de series) y RIR 3–4.`)
   const plan: RoutinePlanInfo = { engineVersion: ENGINE_VERSION, goal: ctx.goal, level: ctx.level, desiredFrequency: 'auto', targetRegions: targets, references: [], minutes: ctx.minutes }
   return {
     draft: { name: t.name, kind: 'template', templateId: t.id, days, schedule, rampWeeks: 0, familiarization, plan, rationale, warnings: dedupe(warnings), engineVersion: ENGINE_VERSION, youth },

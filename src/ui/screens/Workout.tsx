@@ -9,8 +9,9 @@ import { closeOpenBlocks, deleteSession, finishSession, makeSessionExercise, new
 import { getExercise, hasEquipment } from '../../domain/catalog'
 import { LOAD_LABEL } from '../../domain/catalog/exercises'
 import { prescriptionFor } from '../../domain/engine/generator'
-import { describePrescription, describeRir } from '../../domain/engine/prescription'
-import { blockAdvice, historyFor, suggestNext, type BlockAdvice, type Suggestion } from '../../domain/engine/progression'
+import { functionText } from '../../domain/content/functions'
+import { describePrescription, describeRir, isTimePrescription } from '../../domain/engine/prescription'
+import { blockAdvice, historyFor, sameScheme, suggestNext, type BlockAdvice, type Suggestion } from '../../domain/engine/progression'
 import { progressionAllowed } from '../../domain/engine/scope'
 import { DEFAULT_PLATES, describePlates, platesFor, warmupPlan, type WarmupStep } from '../../domain/plates'
 import { DEFAULT_INCREMENTS } from '../../domain/profile'
@@ -21,7 +22,7 @@ import {
   HELP_TEXT, MAX_SEGMENTS, METHOD_LABEL, NEXT_NAME, RP_PAUSE_SEC, addExtraSegment, blockModified, blockText, blocksOf, canRegister, canUseMethod, contextKey, conventionalWork, dropSuggestion, endBlock, extendSet,
   isBlock, pairKind, pendingConventional, registerSegment, reorganizePending, revertBlock, segmentLoad, setDraft, startNextSegment, supersetStep, undoSegment,
 } from '../../domain/techniques'
-import type { Increments, LoadType, Readiness, Session, SessionExercise, SetEntry, SetMethod } from '../../domain/types'
+import type { Increments, LoadType, Prescription, Readiness, Session, SessionExercise, SetEntry, SetMethod } from '../../domain/types'
 import { formatDateShort, formatDuration, formatNumber, newId, toLocalDate } from '../../domain/util'
 import { DemoPlayer } from '../components/DemoPlayer'
 import { DecimalInput } from '../components/inputs'
@@ -364,7 +365,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
             <div className="small muted num" aria-live="off">
               {backdated
                 ? `Registro a posteriori · ${formatDateShort(s.date)} · ${s.manualDurationMin ?? 60} min`
-                : <>{formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.familiarization ? (s.familiarization.reason === 'readaptation' ? `· readaptación ${s.familiarization.index}/${s.familiarization.total}` : s.familiarization.reason === 'extended' ? '· aprendizaje prolongado' : `· familiarización ${s.familiarization.index}/${s.familiarization.total}`) : s.rampApplied ? '· familiarización' : ''}</>}
+                : <>{formatDuration(elapsedMs / 1000)} {s.pausedAt ? '· en pausa' : ''} {s.familiarization ? (s.familiarization.reason === 'readaptation' ? `· readaptación ${s.familiarization.index}/${s.familiarization.total}` : s.familiarization.reason === 'extended' ? '· aprendizaje prolongado' : `· aprendizaje ${s.familiarization.index}/${s.familiarization.total}`) : s.rampApplied ? '· aprendizaje' : ''}</>}
             </div>
           </div>
           {!backdated && <button className="icon-btn soft" onClick={togglePause} aria-label={s.pausedAt ? 'Reanudar' : 'Pausar'}>{s.pausedAt ? <Play /> : <Pause />}</button>}
@@ -408,6 +409,7 @@ function ActiveWorkout({ initial }: { initial: Session }) {
         {s.exercises.map((e, i) => (view === 'focus' && i !== focusIdx ? null :
           <ExerciseBlock
             focus={view === 'focus'}
+            roleLabel={s.familiarization || s.rampApplied ? 'Adaptación' : e.prescription?.reference ? 'Fuerza' : s.exercises.some((x) => x.prescription?.reference) ? 'Trabajo complementario' : undefined}
             key={e.uid}
             e={e}
             index={i}
@@ -601,6 +603,8 @@ function ExerciseBlock(props: {
   onEffort: (setId: string) => void
   onSwitchVariant: (exerciseId: string) => void
   focus?: boolean
+  /** «Fuerza», «Trabajo complementario» o «Adaptación». */
+  roleLabel?: string
   pair: { first: boolean; partnerName: string; kind: 'distinct' | 'same' } | null
   stepOverride?: number
   onHelp: (k: 'drop' | 'rest_pause' | 'superset') => void
@@ -610,7 +614,9 @@ function ExerciseBlock(props: {
   const ex = getExercise(e.exerciseId)
   const lt = e.loadTypeSnapshot
   const p = e.prescription
-  const lastH = history[0]
+  // Última vez COMPARABLE: mismo rango prescrito (banca 4–6 no se compara con banca 8–10).
+  const lastH = (p ? history.find((h) => h.ex.prescription && sameScheme(h.ex.prescription, p, isTimePrescription(p, ex))) : null) ?? history[0]
+  const otherH = p ? history.find((h) => h !== lastH && h.ex.prescription && !sameScheme(h.ex.prescription, p, isTimePrescription(p, ex))) : undefined
   const lastWork = lastH ? conventionalWork(lastH.ex.sets).filter((x) => x.completed) : []
   const lastBlocks = lastH ? blocksOf(lastH.ex.sets).filter((x) => x.completed) : []
   const hasBlocks = blocksOf(e.sets).length > 0
@@ -644,6 +650,7 @@ function ExerciseBlock(props: {
             {e.unilateralSnapshot && <span className="badge">Por lado</span>}
             {e.painFlag && <span className="badge danger"><HeartPulse size={12} aria-hidden /> Molestia</span>}
             {e.replacedFrom && <span className="badge">Sustituto</span>}
+            {props.roleLabel && <span className={`badge ${props.roleLabel === 'Fuerza' ? 'accent' : props.roleLabel === 'Adaptación' ? 'suggest' : ''}`}>{props.roleLabel}</span>}
           </div>
           <h3>{props.index + 1}. {e.nameSnapshot}</h3>
           {props.pinned && <span className="small pinned"><Pin size={14} aria-hidden /> {props.pinned}</span>}
@@ -661,6 +668,12 @@ function ExerciseBlock(props: {
           {ex.keys.map((k) => <li key={k}>{k}</li>)}
         </ol>
       )}
+      {ex && functionText(ex) && (
+        <details className="tiny muted">
+          <summary>Qué aporta</summary>
+          {functionText(ex)}
+        </details>
+      )}
       <div className="row wrap" style={{ marginTop: 8, gap: 6 }}>
         <button className="btn soft small" onClick={props.onDemo}>
           <CircleHelp size={16} /> Ver cómo se hace
@@ -675,8 +688,14 @@ function ExerciseBlock(props: {
       <div className="stack-sm" style={{ marginTop: 10 }}>
         {lastH ? (
           <div className="small">
-            <span className="muted">Última vez ({formatDateShort(lastH.date)}): </span>
+            <span className="muted">Última vez{lastH.ex.prescription && p && sameScheme(lastH.ex.prescription, p, isTimePrescription(p, ex)) && otherH ? ` con ${rangeText(p)}` : ''} ({formatDateShort(lastH.date)}): </span>
             <strong className="num">{lastSummary || '—'}</strong>
+            {otherH && otherH.ex.prescription && (
+              <details className="tiny muted">
+                <summary>Ver también {rangeText(otherH.ex.prescription)} ({formatDateShort(otherH.date)})</summary>
+                {conventionalWork(otherH.ex.sets).filter((x) => x.completed).map((x) => describeSet(x, lt)).join(' · ') || '—'} · otro contexto de prescripción: no se compara de forma automática.
+              </details>
+            )}
           </div>
         ) : (
           <div className="small muted">Sin registros anteriores de este ejercicio.</div>
@@ -1196,4 +1215,8 @@ function PlatesBody({ e, initialKg, increments, plates }: { e: SessionExercise; 
       <p className="tiny muted">Discos disponibles: {plates.map(formatNumber).join(', ')} kg (por lado). Cámbialos en Ajustes → Incrementos de carga. Peso de la barra: {formatNumber(bar)} kg.</p>
     </div>
   )
+}
+
+function rangeText(p: Prescription): string {
+  return p.unit === 'time' ? `${p.timeMinSec ?? '?'}–${p.timeMaxSec ?? '?'} s` : `${p.repMin}–${p.repMax}`
 }

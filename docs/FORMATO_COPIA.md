@@ -5,9 +5,9 @@ Archivo JSON (UTF-8) exportado desde Ajustes → Copias de seguridad → Exporta
 ```json
 {
   "format": "forja-backup",
-  "formatVersion": 2,
+  "formatVersion": 3,
   "schemaVersion": 2,
-  "appVersion": "1.3.0",
+  "appVersion": "1.4.0",
   "exportedAt": "2026-11-13T18:00:00.000Z",
   "tables": {
     "profile": [ ... ],
@@ -54,6 +54,18 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
 - No se exportan: datos de ejemplo (`isDemo`), claves locales del dispositivo (fecha de última copia, persistencia), demostraciones descargadas de terceros (se pueden volver a descargar).
 - Sí se exportan las imágenes propias de ejercicios creados por la persona (data URL en `userMedia`).
 
+## Versión 3 (app 1.4, 15/11/2026)
+
+Aditiva sobre la 2. Novedades:
+- Ejercicios nuevos del catálogo: `peso_muerto_convencional`, `hip_thrust_barra`, `remo_pecho_apoyado`, `remo_banda_anclaje` (y material `band_anchor`).
+- `routineVersions[].plan.template` = `{ id, code, version, contentVersion }` y `plan.muscleMap` = `'v2'` en las rutinas creadas desde una plantilla 1.4. Sin `muscleMap`, el mapa se deduce de `engineVersion` (≤ 2.1 → mapa 1).
+- `routineVersions[].days[].exercises[].origin` = `{ base: { templateId, templateVersion, sets, repMin, repMax, timeMinSec?, timeMaxSec? }, adaptations?: [{ kind, text, at }], role?: 'strength' | 'complement' }`.
+- `sessions[].corrections` = `[{ id, at, changes: [{ exerciseUid, setId, segmentId?, field, from, to }], undoneAt? }]`: valores anteriores de cada corrección (para deshacer).
+- `sessions[].tolerance` = `{ difficulty?: 'easy' | 'normal' | 'hard' | 'very_hard', limitingDiscomfort?: boolean, enoughTime?: boolean }`.
+- `profile.splitPref` y meta `favoriteTemplates` / `adoptionDismissed`.
+
+Las copias 1 y 2 se restauran igual (sin estos campos). **Una app 1.3 o anterior rechaza la versión 3** («copia de una versión más nueva») en lugar de interpretar mal ejercicios o el mapa que no conoce. La restauración sigue siendo transaccional: si la validación falla, no se escribe nada.
+
 ## Restauración
 
 1. Se aceptan copias del esquema 1 (versión 1.0) y 2, y de los formatos de copia 1 y 2. Se valida tamaño (≤ 100 MB), JSON, `format`, versiones (no se aceptan copias de versiones más nuevas), identificadores y estructura de sesiones/rutinas.
@@ -65,6 +77,9 @@ Los tipos de cada registro están en `src/domain/types.ts`. Puntos clave:
 5. Todo ocurre en **una transacción**: si algo falla, la base queda exactamente como estaba.
 
 ## CSV de registros
+
+1.4 añade al final las columnas `rango_prescrito` (p. ej. `4–6` o `15–30 s`: contexto de prescripción), `corregida` (`sí` si la serie o el bloque tiene una corrección vigente) y `dificultad_sesion` (si se anotó).
+
 
 `forja-registros-AAAA-MM-DD.csv`, separador `;`, coma decimal, BOM UTF-8 (abre bien en Excel/Numbers en español). Una fila por serie: fecha, sesión, estado, ejercicio, id, tipo de carga, significado del peso, tipo de serie, nº de serie, peso, repeticiones, RIR, segundos, distancia, asistencia, lastre, banda, lado, completada, molestia, notas. Los textos que empiezan por `=`, `+`, `-` o `@` se escapan para evitar fórmulas.
 

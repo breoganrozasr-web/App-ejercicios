@@ -1,5 +1,5 @@
 import { getExercise } from '../catalog'
-import type { Exercise, MuscleId, Region } from '../types'
+import type { Exercise, MuscleId, MuscleMapVersion, Region } from '../types'
 
 /**
  * Contabilidad muscular del panel orientativo (motor 2, docs/EVIDENCIA.md · R23).
@@ -42,6 +42,10 @@ export type FamilyId =
   | 'extension_triceps'
   | 'gemelos'
   | 'plancha'
+  | 'peso_muerto'
+  | 'aperturas_pecho'
+  | 'abduccion'
+  | 'tronco_dinamico'
 
 const P = (region: Region): Contribution => ({ region, weight: 1, role: 'principal' })
 const S = (region: Region): Contribution => ({ region, weight: 0.5, role: 'secundario' })
@@ -55,7 +59,7 @@ interface FamilyDef {
 }
 
 /** Remos en los que el deltoides posterior se cuenta como secundario (codos separados del tronco en la ficha). */
-const ROW_REAR_DELT = new Set(['remo_polea_baja', 'remo_mancuerna', 'remo_invertido'])
+const ROW_REAR_DELT = new Set(['remo_polea_baja', 'remo_mancuerna', 'remo_invertido', 'remo_pecho_apoyado', 'remo_banda_anclaje'])
 
 export const FAMILIES: Record<FamilyId, FamilyDef> = {
   press_pecho: {
@@ -66,12 +70,12 @@ export const FAMILIES: Record<FamilyId, FamilyDef> = {
   press_vertical: {
     label: 'Press vertical',
     ids: ['press_militar_barra_sentado', 'press_hombro_mancuernas', 'press_hombro_maquina', 'press_arnold', 'press_hombro_unilateral'],
-    items: () => [P('delt_front'), S('triceps')],
-    note: 'No se convierte en serie directa de deltoides lateral.',
+    items: () => [P('delt_front'), S('delt_side'), S('triceps')],
+    note: 'No se convierte en serie directa de deltoides lateral (mapa 2: secundario estimado).',
   },
   remo: {
     label: 'Remo',
-    ids: ['remo_polea_baja', 'remo_mancuerna', 'remo_invertido', 'remo_barra_supino'],
+    ids: ['remo_polea_baja', 'remo_mancuerna', 'remo_invertido', 'remo_barra_supino', 'remo_pecho_apoyado', 'remo_banda_anclaje'],
     items: (id) => [P('back'), S('biceps'), ...(ROW_REAR_DELT.has(id) ? [S('delt_rear')] : [])],
     note: 'El deltoides posterior solo se cuenta en las variantes donde corresponde.',
   },
@@ -99,8 +103,8 @@ export const FAMILIES: Record<FamilyId, FamilyDef> = {
   },
   curl_femoral: { label: 'Curl femoral', ids: ['curl_femoral_tumbado', 'curl_femoral_sentado'], items: () => [P('hamstrings')] },
   puente: {
-    label: 'Puente de glúteo',
-    ids: ['puente_gluteo'],
+    label: 'Puente / hip thrust',
+    ids: ['puente_gluteo', 'hip_thrust_barra'],
     items: () => [P('glutes'), Z('hamstrings')],
     note: 'No da por cubierta la flexión de rodilla de los isquios.',
   },
@@ -116,6 +120,42 @@ export const FAMILIES: Record<FamilyId, FamilyDef> = {
     items: () => [P('core_iso')],
     note: 'Series de tronco por tiempo: apartado propio; no son series de hombro ni equivalen a encogimientos.',
   },
+  peso_muerto: {
+    label: 'Peso muerto convencional',
+    ids: ['peso_muerto_convencional'],
+    items: () => [P('glutes'), S('quads'), S('hamstrings')],
+    note: 'Aproximación de producto: glúteo directo; cuádriceps e isquios como secundarios estimados. Erectores y agarre estabilizan y no se convierten en series de espalda. No es equivalencia biológica.',
+  },
+  aperturas_pecho: { label: 'Aperturas de pecho en máquina', ids: ['contractor_pecho'], items: () => [P('chest')], note: 'Una apertura no reproduce la extensión de codo de un press: no se cuenta tríceps.' },
+  abduccion: { label: 'Abducción de cadera', ids: ['abductores_maquina'], items: () => [P('abductors')], note: 'Abductores aparte: no se suma como si fuera trabajo de glúteo mayor idéntico al hip thrust.' },
+  tronco_dinamico: { label: 'Tronco dinámico', ids: ['crunch_polea', 'elevacion_cadera_rodillas'], items: () => [P('core')] },
+}
+
+/**
+ * Mapa 1 (motor ≤ 2.1): diferencias con el mapa 2. Se conserva para reproducir el cálculo de las rutinas y sesiones
+ * creadas antes (no se reescribe el historial). Ejercicios que no existían en el mapa 1 usan el mapa 2.
+ */
+const V1_DIFF: Record<string, 'legacy' | Contribution[]> = {
+  press_militar_barra_sentado: [P('delt_front'), S('triceps')],
+  press_hombro_mancuernas: [P('delt_front'), S('triceps')],
+  press_hombro_maquina: [P('delt_front'), S('triceps')],
+  press_arnold: [P('delt_front'), S('triceps')],
+  press_hombro_unilateral: [P('delt_front'), S('triceps')],
+  contractor_pecho: 'legacy',
+  abductores_maquina: 'legacy',
+  crunch_polea: 'legacy',
+  elevacion_cadera_rodillas: 'legacy',
+}
+
+export const CURRENT_MUSCLE_MAP: MuscleMapVersion = 'v2'
+
+/** Mapa usado por una rutina/sesión: el guardado o, si falta, el de su versión de motor (2.2.0 en adelante → v2). */
+export function muscleMapFor(info?: { engineVersion?: string; plan?: { muscleMap?: MuscleMapVersion } | null } | null): MuscleMapVersion {
+  if (info?.plan?.muscleMap) return info.plan.muscleMap
+  const ev = info?.engineVersion
+  if (!ev) return CURRENT_MUSCLE_MAP
+  const [maj, min] = ev.split('.').map((x) => Number(x) || 0)
+  return maj > 2 || (maj === 2 && min >= 2) ? 'v2' : 'v1'
 }
 
 const FAMILY_OF: Record<string, FamilyId> = {}
@@ -140,10 +180,12 @@ export function familyOf(exerciseId: string): FamilyId | null {
   return FAMILY_OF[exerciseId] ?? null
 }
 
-export function contributionOf(exOrId: Exercise | string): ExerciseContribution {
+export function contributionOf(exOrId: Exercise | string, map: MuscleMapVersion = CURRENT_MUSCLE_MAP): ExerciseContribution {
   const ex = typeof exOrId === 'string' ? getExercise(exOrId) : exOrId
   if (!ex) return { family: null, legacy: true, items: [] }
-  const fam = ex.custom ? null : FAMILY_OF[ex.id]
+  const v1 = map === 'v1' && !ex.custom ? V1_DIFF[ex.id] : undefined
+  const fam = ex.custom || v1 === 'legacy' ? null : FAMILY_OF[ex.id]
+  if (fam && Array.isArray(v1)) return { family: fam, legacy: false, items: v1 }
   if (fam) {
     const def = FAMILIES[fam]
     return { family: fam, legacy: false, items: def.items(ex.id), note: def.note }
@@ -169,8 +211,8 @@ export function contributionOf(exOrId: Exercise | string): ExerciseContribution 
 }
 
 /** Regiones que reciben trabajo DIRECTO (peso 1) de un ejercicio. */
-export function directRegions(exerciseId: string): Region[] {
-  return contributionOf(exerciseId).items.filter((c) => c.weight === 1).map((c) => c.region)
+export function directRegions(exerciseId: string, map: MuscleMapVersion = CURRENT_MUSCLE_MAP): Region[] {
+  return contributionOf(exerciseId, map).items.filter((c) => c.weight === 1).map((c) => c.region)
 }
 
 export const REGION_LABEL: Record<Region, string> = {
@@ -188,10 +230,13 @@ export const REGION_LABEL: Record<Region, string> = {
   core: 'Tronco (repeticiones)',
   core_iso: 'Tronco por tiempo',
   delt_unspecified: 'Hombro sin región (dato antiguo)',
+  abductors: 'Abductores de cadera',
 }
 
 /** Orden del panel. */
 export const PANEL_REGIONS: Region[] = ['chest', 'back', 'delt_front', 'delt_side', 'delt_rear', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core', 'core_iso']
+/** Regiones que solo se muestran si algún ejercicio las trabaja. */
+export const OPTIONAL_PANEL_REGIONS: Region[] = ['abductors']
 
 /** Grupos a los que se aplica por defecto la frecuencia pedida (3.4). */
 export const DEFAULT_TARGET_REGIONS: Region[] = ['chest', 'back', 'quads', 'hamstrings', 'glutes']

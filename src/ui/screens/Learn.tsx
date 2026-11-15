@@ -1,6 +1,6 @@
 import { ArrowLeft, BookOpen, ExternalLink, Library } from 'lucide-react'
 import { useEffect } from 'react'
-import { ARTICLES, SCOPE_NOTE, SOURCES, SOURCES_CHECKED, SOURCE_BY_CODE } from '../../domain/content/learn'
+import { ARTICLES, SCOPE_NOTE, SOURCES, SOURCES_CHECKED, SOURCES_CHECKED_F, SOURCE_BY_CODE } from '../../domain/content/learn'
 import { back, href } from '../router'
 
 /** «Aprender»: artículos breves y biblioteca de fuentes (disponible sin conexión; los enlaces requieren internet). */
@@ -18,6 +18,7 @@ export function LearnScreen({ section, focus }: { section?: string; focus?: stri
           <section className="card stack">
             <h1 style={{ fontSize: '1.5rem' }}>{article.title}</h1>
             <p>{article.body}</p>
+            {article.certainty && <p className="small muted" style={{ margin: 0 }}><strong>Certeza:</strong> {article.certainty}</p>}
             <SourceChips codes={article.sources} />
             <a className="btn ghost small" style={{ alignSelf: 'flex-start' }} href={href('aprender')}>Todos los artículos</a>
           </section>
@@ -61,7 +62,8 @@ function SourcesScreen({ focus }: { focus: string | null }) {
     const t = window.setTimeout(() => document.getElementById(`src-${focus}`)?.scrollIntoView({ block: 'start' }), 120)
     return () => window.clearTimeout(t)
   }, [focus])
-  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' }[] = [
+  const groups: { title: string; kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' | 'f2026' }[] = [
+    { title: `Investigación de plantillas y dosis (F01–F21, consulta ${SOURCES_CHECKED_F})`, kind: 'f2026' },
     { title: 'Fuentes científicas (E1–E14)', kind: 'cientifica' },
     { title: 'Técnicas avanzadas: descendentes, rest-pause y superseries (R1–R5)', kind: 'avanzada' },
     { title: 'Fuentes técnicas de las fichas (T1–T9)', kind: 'tecnica' },
@@ -81,6 +83,8 @@ function SourcesScreen({ focus }: { focus: string | null }) {
               <article key={s.code} id={`src-${s.code}`} className={`card stack-sm ${focus === s.code ? 'accent-border' : ''}`} style={{ scrollMarginTop: 70 }}>
                 <div className="row"><span className="badge accent">{s.code}</span><strong className="grow small">{s.title}</strong></div>
                 <span className="tiny muted">{s.scope}</span>
+                {s.sameAs && <span className="tiny">Misma publicación que <a href={href(`aprender/fuentes?f=${s.sameAs}`)}>{s.sameAs}</a> (equivalencia; no es una fuente nueva).</span>}
+                {s.kind === 'f2026' && <span className="tiny muted">Consulta hecha por la investigación entregada con el encargo; Forja no ha abierto estos textos desde su entorno.</span>}
                 {s.synthesis && <p className="small" style={{ margin: 0 }}><strong>Síntesis:</strong> {s.synthesis}</p>}
                 {s.decision && <p className="small" style={{ margin: 0 }}><strong>Decisión en Forja:</strong> {s.decision}</p>}
                 <div className="row wrap" style={{ gap: 6 }}>

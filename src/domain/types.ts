@@ -41,6 +41,7 @@ export type EquipmentId =
   | 'chair' // silla/sofá estable (casa)
   | 'step' // escalón o escalera firme
   | 'wall' // pared despejada (flexiones en pared): solo si se confirma
+  | 'band_anchor' // punto de anclaje diseñado para bandas (nunca pomos ni muebles improvisados)
 
 export type Pattern =
   | 'squat' // dominante de rodilla bilateral
@@ -218,6 +219,8 @@ export type Region =
   | 'core_iso'
   /** Hombro sin región: clasificación antigua de ejercicios no revisados con la política nueva. */
   | 'delt_unspecified'
+  /** Abductores de cadera (mapa 2: abducción en máquina). No se suma al glúteo mayor. */
+  | 'abductors'
 
 export interface Profile {
   id: 'me'
@@ -245,7 +248,12 @@ export interface Profile {
   strengthRefs?: string[]
   /** Vuelta tras pausa: empezar con 4 sesiones de adaptación (por defecto sí). */
   returningAdaptation?: boolean
+  /** Reparto preferido para ordenar el catálogo de plantillas (1.4). Sin valor = sin preferencia. */
+  splitPref?: SplitPref
 }
+
+/** Reparto preferido. «none» = sin preferencia. Son criterios de interfaz, no una clasificación científica. */
+export type SplitPref = 'none' | 'full' | 'upper_lower' | 'ppl' | 'ant_post' | 'strength'
 
 // ───────────────────────── Rutinas ─────────────────────────
 
@@ -279,6 +287,20 @@ export interface RoutineExercise {
   optional?: boolean
   /** Técnica elegida para este ejercicio (series descendentes o rest-pause). Sin valor = series normales. */
   technique?: RoutineTechnique
+  /**
+   * Origen de la dosis (1.4): receta base de una plantilla y adaptaciones aceptadas. Sin valor = dato anterior (no se inventa).
+   * La dosis temporal de hoy (aprendizaje/readaptación) NO se guarda aquí: va en la sesión.
+   */
+  origin?: RoutineExerciseOrigin
+}
+
+export interface RoutineExerciseOrigin {
+  /** Receta base de la plantilla (series y rango tal como los define la versión editorial). */
+  base?: { templateId: string; templateVersion: number; sets: number; repMin: number; repMax: number; timeMinSec?: number; timeMaxSec?: number }
+  /** Adaptaciones aceptadas por la persona, en orden. */
+  adaptations?: { kind: 'exclusion' | 'material' | 'dose' | 'range' | 'substitution'; text: string; at: number }[]
+  /** Papel del ejercicio en la plantilla: práctica de fuerza o trabajo complementario. */
+  role?: 'strength' | 'complement'
 }
 
 /** Método de un bloque especial. Sin método = serie convencional. No es un tipo de calentamiento. */
@@ -364,7 +386,14 @@ export interface RoutinePlanInfo {
   /** Fuerza/mixto: referencias en orden de prioridad. */
   references: string[]
   minutes: number
+  /** Plantilla editorial de origen y su versión (1.4). Sin valor = rutina generada, manual o anterior. */
+  template?: { id: string; code: string; version: number; contentVersion: string }
+  /** Versión del mapa muscular usado para la propuesta (1.4). Sin valor: se deduce de engineVersion. */
+  muscleMap?: MuscleMapVersion
 }
+
+/** Versión del mapa de contabilidad muscular: v1 hasta el motor 2.1; v2 desde el 2.2 (anexo B del 15/11/2026). */
+export type MuscleMapVersion = 'v1' | 'v2'
 
 export type RoutineKind = 'template' | 'generated' | 'custom' | 'blank'
 
@@ -528,6 +557,38 @@ export interface Session {
   partialAction?: 'resume' | 'next' | 'repeat'
   /** Familiarización aplicada al crear la sesión (motor 2): número de sesión dentro de la fase. */
   familiarization?: { index: number; total: number; reason?: 'readaptation' | 'extended' } | null
+  /** Tolerancia declarada al terminar (opcional, 1.4). No es una puntuación de recuperación ni un diagnóstico. */
+  tolerance?: SessionTolerance | null
+  /** Correcciones hechas después de guardar (1.4). Cada una guarda los valores anteriores para poder deshacerla. */
+  corrections?: SessionCorrection[]
+}
+
+export interface SessionTolerance {
+  /** Dificultad percibida de la sesión. */
+  difficulty?: 'easy' | 'normal' | 'hard' | 'very_hard' | null
+  /** Hubo una molestia que limitó el movimiento. */
+  limitingDiscomfort?: boolean | null
+  /** El tiempo disponible fue suficiente. */
+  enoughTime?: boolean | null
+}
+
+/** Cambio de un campo de una serie (o de un tramo de un bloque) en una sesión guardada. */
+export interface CorrectionChange {
+  exerciseUid: string
+  setId: string
+  /** Tramo del bloque (si el cambio es en un tramo). */
+  segmentId?: string
+  field: 'weightKg' | 'reps' | 'rir' | 'durationSec' | 'assistKg' | 'addedKg'
+  from: number | null
+  to: number | null
+}
+
+export interface SessionCorrection {
+  id: string
+  at: number
+  changes: CorrectionChange[]
+  /** Deshecha: se conserva en el registro, con los valores restaurados. */
+  undoneAt?: number | null
 }
 
 // ───────────────────────── Programa (fases) ─────────────────────────

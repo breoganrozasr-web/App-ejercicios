@@ -12,7 +12,8 @@ import { LearnScreen } from './ui/screens/Learn'
 import { OnboardingScreen } from './ui/screens/Onboarding'
 import { PhaseScreen } from './ui/screens/Phase'
 import { ProgressScreen, SessionDetailScreen } from './ui/screens/Progress'
-import { GenerateScreen, RoutineDetailScreen, RoutineEditScreen, RoutinesScreen, TemplatePreviewScreen, TemplatesScreen } from './ui/screens/Routines'
+import { TemplateCompareScreen, TemplatePreviewScreen, TemplatesScreen } from './ui/screens/Catalog'
+import { GenerateScreen, RoutineDetailScreen, RoutineEditScreen, RoutinesScreen } from './ui/screens/Routines'
 import { SettingsScreen } from './ui/screens/Settings'
 import { TodayScreen } from './ui/screens/Today'
 import { WorkoutScreen } from './ui/screens/Workout'
@@ -53,7 +54,8 @@ export function App() {
         tab = null
         break
       case 'rutinas':
-        if (route.path[1] === 'plantillas' && route.path[2]) screen = <TemplatePreviewScreen templateId={route.path[2]} />
+        if (route.path[1] === 'plantillas' && route.path[2] === 'comparar') screen = <TemplateCompareScreen ids={(route.query.get('ids') ?? '').split(',').filter(Boolean)} />
+        else if (route.path[1] === 'plantillas' && route.path[2]) screen = <TemplatePreviewScreen templateId={route.path[2]} />
         else if (route.path[1] === 'plantillas') screen = <TemplatesScreen />
         else if (route.path[1] === 'generar') screen = <GenerateScreen />
         else if (route.path[1] && route.path[2] === 'editar') screen = <RoutineEditScreen routineId={route.path[1]} />

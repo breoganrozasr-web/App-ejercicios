@@ -25,7 +25,7 @@ export const GYM_EQUIPMENT: EquipmentId[] = [
 ]
 export const HOME_BASIC_EQUIPMENT: EquipmentId[] = ['dumbbell', 'bands', 'pullup_bar', 'chair']
 export const HOME_NONE_EQUIPMENT: EquipmentId[] = ['chair']
-export const OUTDOOR_EQUIPMENT: EquipmentId[] = ['pullup_bar', 'low_bar', 'chair']
+export const OUTDOOR_EQUIPMENT: EquipmentId[] = ['pullup_bar', 'low_bar', 'chair', 'step']
 
 export const LOCATION_DEFAULT_EQUIPMENT: Record<Location, EquipmentId[]> = {
   gym: GYM_EQUIPMENT,

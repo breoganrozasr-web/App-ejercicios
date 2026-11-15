@@ -32,7 +32,7 @@ const AGES: { v: AgeBand; t: string }[] = [
 const LOCS: { v: Location; t: string }[] = [
   { v: 'gym', t: 'Gimnasio' }, { v: 'home', t: 'Casa' }, { v: 'outdoor', t: 'Exterior / parque' },
 ]
-const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'hyper_bench', 'chair', 'step', 'wall']
+const EQ_ORDER: EquipmentId[] = ['machine', 'cable', 'smith', 'barbell', 'ez_bar', 'rack', 'dumbbell', 'bench', 'pullup_bar', 'low_bar', 'bands', 'band_anchor', 'hyper_bench', 'chair', 'step', 'wall']
 const PRIORITY_REGIONS: Region[] = ['chest', 'back', 'delt_front', 'delt_side', 'delt_rear', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes', 'calves', 'core']
 const EXTRA_FREQ_REGIONS: Region[] = ['delt_front', 'delt_side', 'delt_rear', 'biceps', 'triceps', 'calves']
 
@@ -235,7 +235,7 @@ export function OnboardingScreen({ editing = false }: { editing?: boolean }) {
             </>
           )}
           {p.level === 'returning' && (
-            <Toggle checked={p.returningAdaptation !== false} onChange={(v) => set('returningAdaptation', v)} label="Empezar con 4 sesiones de adaptación" desc="Mitad de series y RIR 3–4 en las 4 primeras sesiones completadas. Puedes quitarla." />
+            <Toggle checked={p.returningAdaptation !== false} onChange={(v) => set('returningAdaptation', v)} label="Empezar con 4 sesiones de adaptación" desc="Max(1, mitad de series) y RIR 3–4 durante 4 días válidos. No te reclasifica como «desde cero». Puedes quitarla." />
           )}
           <details className="more">
             <summary>Ejercicios que no quiero hacer ({p.excludedExercises.length})</summary>

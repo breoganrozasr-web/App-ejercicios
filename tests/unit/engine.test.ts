@@ -244,9 +244,13 @@ describe('A09 · cada cifra de volumen tiene origen; la estabilización no suma'
   it('sentadilla/prensa no da medias series a isquios; puente no cubre isquios; press vertical no es deltoides lateral', () => {
     expect(contributionOf('prensa').items.find((c) => c.region === 'hamstrings')?.weight).toBe(0)
     expect(contributionOf('puente_gluteo').items.find((c) => c.region === 'hamstrings')?.weight ?? 0).toBe(0)
-    expect(contributionOf('press_hombro_mancuernas').items.some((c) => c.region === 'delt_side')).toBe(false)
+    // Mapa 1 (rutinas anteriores): sin deltoides lateral. Mapa 2 (anexo B, 15/11/2026): secundario estimado, nunca directo.
+    expect(contributionOf('press_hombro_mancuernas', 'v1').items.some((c) => c.region === 'delt_side')).toBe(false)
+    expect(contributionOf('press_hombro_mancuernas', 'v2').items.find((c) => c.region === 'delt_side')?.weight).toBe(0.5)
     expect(contributionOf('plancha_frontal').items.map((c) => c.region)).toEqual(['core_iso'])
-    expect(contributionOf('crunch_polea').legacy).toBe(true)
+    // Mapa 1: clasificación heredada; mapa 2: familia «tronco dinámico» (mismo resultado: tronco directo).
+    expect(contributionOf('crunch_polea', 'v1').legacy).toBe(true)
+    expect(contributionOf('crunch_polea', 'v2').items.map((c) => c.region)).toEqual(['core'])
   })
 })
 

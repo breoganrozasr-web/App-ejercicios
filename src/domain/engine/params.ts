@@ -6,8 +6,11 @@ import { BUDGET_REGIONS } from './contribution'
  * universales: los estudios justifican principios generales, no validan este algoritmo (docs/EVIDENCIA.md, sección 2.3).
  */
 
-/** 2.1.0: familiarización por días válidos (uno por fecha), fases del programa y técnicas registrables (ampliación del 14/11/2026). */
-export const ENGINE_VERSION = '2.1.0'
+/**
+ * 2.2.0: 26 recetas editoriales con dosis propia, mapa muscular 2 (anexo B), contexto de prescripción y modelo de tiempo
+ * con aproximaciones por básico (encargo del 15/11/2026). 2.1.0: días válidos, fases y técnicas registrables.
+ */
+export const ENGINE_VERSION = '2.2.0'
 
 export type SlotRole = 'main' | 'secondary' | 'accessory'
 
@@ -146,8 +149,14 @@ export const AUTO_SESSION_CAP: Record<Level, number> = { beginner: 3, returning:
 // ───────────────────────── 3.6 Tiempo (valores de cálculo, no tempos prescritos) ─────────────────────────
 
 export const DURATION = {
-  generalWarmupMin: 5,
-  /** Cada serie de aproximación (pocas repeticiones + cambio de carga). */
+  /** Preparación general (3–5 min): se usa el punto medio. */
+  generalWarmupMin: 4,
+  /** Aproximaciones del primer básico pesado del día (≈6–10 min) y de otro básico pesado (3–5 min adicionales). */
+  firstHeavyWarmupMin: 8,
+  otherHeavyWarmupMin: 4,
+  /** Resto de primeros patrones exigentes con aproximación (2–4 min según las aproximaciones previstas). */
+  otherWarmupMin: [2, 3] as [number, number],
+  /** Compatibilidad: minutos por serie de aproximación (modelo anterior, solo informativo). */
   warmupSetMin: 1,
   secPerRep: 3,
   /** Cambio de lado en ejercicios unilaterales. */

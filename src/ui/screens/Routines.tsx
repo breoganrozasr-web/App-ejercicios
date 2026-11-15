@@ -1,8 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
-  Archive, ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Copy, FilePlus2, Info, Lightbulb, Link2, Pencil, Plus, Repeat, ShieldCheck, Sparkles, Star, Trash2, TriangleAlert, Wand2,
+  Archive, ArrowDown, ArrowLeft, ArrowUp, CalendarDays, Copy, FilePlus2, Info, Lightbulb, Link2, Pencil, Plus, Repeat, Search, ShieldCheck, Star, Trash2, TriangleAlert, Wand2,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { RECIPES, RETIRED_TEMPLATES } from '../../domain/engine/recipes'
+import { AdoptionCard } from './Adoption'
+import { RecommendedTemplates } from './Catalog'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
 import {
@@ -11,10 +14,9 @@ import {
 import { getExercise } from '../../domain/catalog'
 import { analyzeRoutine, dayDuration, durationText } from '../../domain/engine/analysis'
 import { REGION_LABEL } from '../../domain/engine/contribution'
-import { buildFromTemplate, generateRoutine, prescriptionFor, priorityRegionsOf, targetRegionsFor, type FrequencyRow, type GenerateOptions, type GenerateResult, type RoutineDraft } from '../../domain/engine/generator'
+import { generateRoutine, prescriptionFor, priorityRegionsOf, targetRegionsFor, type GenerateOptions, type GenerateResult, type RoutineDraft } from '../../domain/engine/generator'
 import { ENGINE_VERSION, PRIORITY_CEILING, weeklyBudget } from '../../domain/engine/params'
 import { isTimePrescription } from '../../domain/engine/prescription'
-import { TEMPLATES, TEMPLATE_BY_ID } from '../../domain/engine/templates'
 import { checkScope } from '../../domain/engine/scope'
 import { PHASE_LABEL, pairExercises, setTechnique, supersetProposals, techniqueCandidates, techniqueGate } from '../../domain/program'
 import { METHOD_LABEL, canUseMethod, pairKind, techniqueBeforeAfter } from '../../domain/techniques'
@@ -23,7 +25,7 @@ import { useProgram } from './Phase'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, formatDateShort, newId, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { useConfirm, useToast } from '../components/overlay'
-import { ExercisePicker, RoutineDaysView, VolumePanel } from '../components/RoutineParts'
+import { ExercisePicker, FrequencyTable, RoutineDaysView, ScheduleEditor, VolumePanel } from '../components/RoutineParts'
 import { back, go, href } from '../router'
 
 function Header({ title, onBack = () => back('rutinas') }: { title: string; onBack?: () => void }) {
@@ -48,9 +50,9 @@ export function RoutinesScreen() {
       <header className="topbar"><h1 className="grow" style={{ fontSize: '1.6rem' }}>Rutinas</h1></header>
       <main className="page">
         <div className="stack-sm">
-          <a className="btn primary block" href={href('rutinas/generar')}><Wand2 size={18} /> Proponer rutina con mi perfil</a>
+          <a className="btn primary block" href={href('rutinas/plantillas')}><Search size={18} /> Buscar plantilla ({RECIPES.length})</a>
           <div className="row">
-            <a className="btn soft grow" href={href('rutinas/plantillas')}><Sparkles size={18} /> Plantillas</a>
+            <a className="btn soft grow" href={href('rutinas/generar')}><Wand2 size={18} /> Proponer rutina con mi perfil</a>
             <button
               className="btn soft grow"
               onClick={async () => {
@@ -105,29 +107,6 @@ function RoutineCard({ r, current }: { r: Routine; current: boolean }) {
 
 // ───────────────────────── Propuesta del generador ─────────────────────────
 
-/** Tabla real de frecuencia (días con trabajo directo; aparte, días solo indirectos). */
-function FrequencyTable({ rows, compact = false }: { rows: FrequencyRow[]; compact?: boolean }) {
-  const shown = compact ? rows.filter((r) => r.target) : rows.filter((r) => r.target || r.direct > 0 || r.secondaryOnlyDays > 0)
-  return (
-    <table className="freq-table small">
-      <thead>
-        <tr><th scope="col">Grupo</th><th scope="col">Pedida</th><th scope="col" title="Días con trabajo directo">Días dir.</th><th scope="col" title="Días solo con trabajo indirecto (no se suman)">Solo ind.</th></tr>
-      </thead>
-      <tbody>
-        {shown.map((r) => (
-          <tr key={r.region} className={r.desired !== null && r.directDays < r.desired ? 'short' : ''}>
-            <th scope="row">{REGION_LABEL[r.region]}</th>
-            <td className="num">{r.desired ?? (r.target ? 'auto' : '—')}</td>
-            <td className="num">{r.directDays}</td>
-            <td className="num">{r.secondaryOnlyDays || '—'}</td>
-          </tr>
-        ))}
-      </tbody>
-      <caption className="tiny muted" style={{ captionSide: 'bottom', textAlign: 'left', paddingTop: 4 }}>«Pedida» vacía: grupo sin objetivo de frecuencia (se muestra el resultado real). Las columnas no se suman.</caption>
-    </table>
-  )
-}
-
 export function GenerateScreen() {
   const { profile } = useApp()
   const [options0, setOptions] = useState<GenerateOptions>({})
@@ -152,6 +131,8 @@ export function GenerateScreen() {
     <>
       <Header title="Propuesta" onBack={() => back('rutinas')} />
       <main className="page">
+        {result.status !== 'out_of_scope' && !(result.status === 'ok' && result.draft.youth) && <RecommendedTemplates />}
+        {result.status !== 'out_of_scope' && !(result.status === 'ok' && result.draft.youth) && <h2 className="section-title">Propuesta a medida</h2>}
         {result.status === 'out_of_scope' && (
           <section className="card stack">
             <h2>Fuera del alcance del generador</h2>
@@ -272,111 +253,6 @@ export function GenerateScreen() {
   )
 }
 
-// ───────────────────────── Plantillas ─────────────────────────
-
-const LOC_LABEL = { gym: 'Gimnasio', home: 'Casa', outdoor: 'Exterior' }
-const LVL_LABEL = { beginner: 'Desde cero', returning: 'Tras pausa', intermediate: 'Intermedio' }
-
-export function TemplatesScreen() {
-  return (
-    <>
-      <Header title="Plantillas" />
-      <main className="page">
-        <p className="muted small">Rutinas completas y editables. Las series y repeticiones se adaptan a tu nivel y objetivo; los ejercicios, a lo que excluyas.</p>
-        {TEMPLATES.map((t) => (
-          <a key={t.id} className="card stack-sm" href={href(`rutinas/plantillas/${t.id}`)} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <h3>{t.name}</h3>
-            <span className="small muted">{t.description}</span>
-            <div className="row wrap">
-              <span className="badge">{LOC_LABEL[t.location]}</span>
-              <span className="badge">{t.sessions.length} sesiones</span>
-              {t.minLevel !== 'beginner' && <span className="badge warn">Nivel: {LVL_LABEL[t.minLevel]}</span>}
-              {t.goal && <span className="badge accent">{t.goal === 'strength' ? 'Fuerza' : 'Mixta'}</span>}
-            </div>
-          </a>
-        ))}
-        <section className="card stack-sm">
-          <h3>Rutina en blanco</h3>
-          <span className="small muted">Créala a tu manera, ejercicio a ejercicio.</span>
-          <button className="btn soft" onClick={async () => { const r = await createBlankRoutine(); go(`rutinas/${r.id}/editar`) }}>Crear en blanco</button>
-        </section>
-        <section className="card stack-sm">
-          <h3>Sesión libre</h3>
-          <span className="small muted">Registra un entrenamiento sin rutina.</span>
-          <button className="btn soft" onClick={async () => { const s = await startFreeSession(); go(`entreno/${s.id}`) }}>Empezar sesión libre</button>
-        </section>
-      </main>
-    </>
-  )
-}
-
-export function TemplatePreviewScreen({ templateId }: { templateId: string }) {
-  const { profile } = useApp()
-  const t = TEMPLATE_BY_ID[templateId]
-  const { view: program } = useProgram()
-  const learningDone = !!program && program.phase !== 'learning' && (program.validDays > 0 || program.phase === 'progression')
-  const built = useMemo(() => (t && profile ? buildFromTemplate(t, profile, { learningDone }) : null), [t, profile, learningDone])
-  const [schedule, setSchedule] = useState<{ weekday: number; dayId: string }[] | null>(null)
-  const toast = useToast()
-  if (!t || !built || !profile) return <><Header title="Plantilla" /><main className="page"><p>No encontrada.</p></main></>
-  const sched = schedule ?? built.draft.schedule
-  return (
-    <>
-      <Header title="Plantilla" />
-      <main className="page">
-        <h1>{t.name}</h1>
-        <p className="muted">{t.description}</p>
-        {built.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
-        <details className="more card flat">
-          <summary><Info size={18} aria-hidden /> Notas</summary>
-          <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{built.draft.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
-        </details>
-        <ScheduleEditor days={built.draft.days} schedule={sched} onChange={setSchedule} />
-        <RoutineDaysView version={{ days: built.draft.days, schedule: sched, familiarization: built.draft.familiarization }} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
-        <VolumePanel version={{ days: built.draft.days, schedule: sched }} level={profile.level} goal={t.goal ?? profile.goal} priority={priorityRegionsOf(profile)} />
-        <button
-          className="btn primary big block"
-          onClick={async () => {
-            await createRoutine({ ...built.draft, schedule: sched }, { makeCurrent: true, changeNote: `Desde plantilla «${t.name}»` })
-            toast('Plantilla guardada como rutina actual')
-            go('hoy')
-          }}
-        >
-          Usar esta plantilla
-        </button>
-      </main>
-    </>
-  )
-}
-
-/** Asigna días de la semana a cada día de la rutina (se puede empezar cualquier día). */
-function ScheduleEditor({ days, schedule, onChange }: { days: RoutineDay[]; schedule: { weekday: number; dayId: string }[]; onChange: (s: { weekday: number; dayId: string }[]) => void }) {
-  return (
-    <section className="card stack-sm">
-      <h3>Días de la semana</h3>
-      <p className="small muted">Elige qué día de la semana va cada sesión. Puedes empezar cualquier día: la app te propone la siguiente sesión en orden.</p>
-      {days.map((d) => (
-        <label key={d.id} className="row between" style={{ minHeight: 48 }}>
-          <span className="grow">{d.name}</span>
-          <select
-            className="input"
-            style={{ width: 150 }}
-            value={schedule.find((s) => s.dayId === d.id)?.weekday ?? ''}
-            onChange={(e) => {
-              const v = e.target.value
-              const rest = schedule.filter((s) => s.dayId !== d.id)
-              onChange(v === '' ? rest : [...rest.filter((s) => s.weekday !== Number(v)), { weekday: Number(v), dayId: d.id }].sort((a, b) => a.weekday - b.weekday))
-            }}
-          >
-            <option value="">Sin día fijo</option>
-            {WEEKDAY_NAME.map((n, i) => <option key={n} value={i}>{n}</option>)}
-          </select>
-        </label>
-      ))}
-    </section>
-  )
-}
-
 // ───────────────────────── Detalle ─────────────────────────
 
 export function RoutineDetailScreen({ routineId }: { routineId: string }) {
@@ -405,6 +281,7 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
             <span className="badge">motor {version.engineVersion}</span>
           </div>
           <h1>{routine.name}</h1>
+          {routine.templateId && RETIRED_TEMPLATES[routine.templateId] && <span className="tiny muted">Plantilla de origen retirada del catálogo: la rutina sigue funcionando igual.</span>}
         </div>
         <div className="row wrap">
           <a className="btn soft small" href={href(`rutinas/${routine.id}/editar`)}><Pencil size={16} /> Editar</a>
@@ -455,13 +332,14 @@ export function RoutineDetailScreen({ routineId }: { routineId: string }) {
         )}
 
         {version.warnings.map((w) => <div key={w} className="note warn"><TriangleAlert aria-hidden /><span className="small">{w}</span></div>)}
+        <AdoptionCard routine={routine} version={version} />
         <RoutineDaysView version={version} onOpenExercise={(id) => go(`ejercicios/${id}`)} />
         {profile && <VolumePanel version={version} level={profile.level} goal={profile.goal} priority={priorityRegionsOf(profile)} targets={version.plan?.targetRegions} />}
         {profile && <TechniquesSection routine={routine} version={version} />}
         <details className="more card flat">
           <summary><Info size={18} aria-hidden /> Por qué está así</summary>
           <ul className="small stack-sm" style={{ paddingLeft: 18 }}>{version.rationale.map((r) => <li key={r}>{r}</li>)}</ul>
-          {version.familiarization ? <p className="small muted">Familiarización: las primeras {version.familiarization.sessions} sesiones completadas (al menos el 70 % de las series) llevan la mitad de series y RIR 3–4.</p> : version.rampWeeks > 0 && <p className="small muted">Familiarización (motor 1): las primeras {version.rampWeeks} semanas desde el {formatDateShort(routine.startedOn)}, cada sesión empieza con una serie menos y RIR 3–4.</p>}
+          {version.familiarization ? <p className="small muted">Aprendizaje: los primeros {version.familiarization.sessions} días válidos (al menos el 70 % de las series; uno por fecha) llevan max(1, mitad de series) y RIR 3–4.</p> : version.rampWeeks > 0 && <p className="small muted">Familiarización (motor 1): las primeras {version.rampWeeks} semanas desde el {formatDateShort(routine.startedOn)}, cada sesión empieza con una serie menos y RIR 3–4.</p>}
         </details>
         <details className="more card flat">
           <summary>Historial de versiones ({versions.length})</summary>

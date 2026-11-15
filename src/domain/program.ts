@@ -146,7 +146,8 @@ export function computeProgram(i: ProgramInput): ProgramView {
   if (i.routine && i.version && !inProgression) {
     const fam = i.version.familiarization
     if (fam) {
-      const rd = validDates(real, (s) => s.routineId === i.routine?.id)
+      // Días válidos de todas las rutinas: cambiar de plantilla no reinicia ni acelera el aprendizaje (encargo 15/11/2026, 3.2).
+      const rd = validDates(real)
       if (rd.length < fam.sessions) learning = { completed: rd.length, total: fam.sessions, unit: 'days', reason: fam.reason, extended: false }
       else {
         learningDoneOn = rd[fam.sessions - 1]

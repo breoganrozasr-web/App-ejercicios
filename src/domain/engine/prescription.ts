@@ -62,13 +62,15 @@ function youthPrescription(ex: Exercise, role: SlotRole): Prescription {
 /**
  * Familiarización (3.1, motor 2): max(1, ceil(series/2)); aprendizaje 8–12 en dinámicos con carga y 6–12 en flexiones
  * (y demás calistenia), salvo rangos base más altos; RIR 3–4. Isométricos: mismo tiempo, sin RIR. No modifica el original.
+ * 2.2: las referencias de fuerza con rangos 4–6/6–8 aprenden con 6–8 y margen (carga elegida por la persona; sin 1RM).
  */
 export function applyFamiliarization(p: Prescription, ex: Exercise | undefined): Prescription {
   const sets = Math.max(1, Math.ceil(p.sets / 2))
   if (!ex || isTimeEx(ex) || p.unit === 'time') return { ...p, sets }
   let repMin = p.repMin
   let repMax = p.repMax
-  if (p.repMin < 10) {
+  if (p.reference && p.repMax <= 8) [repMin, repMax] = [6, 8]
+  else if (p.repMin < 10) {
     if (isPushUp(ex) || ex.loadType === 'bodyweight') [repMin, repMax] = [6, 12]
     else [repMin, repMax] = [8, 12]
   }

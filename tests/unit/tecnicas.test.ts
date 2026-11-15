@@ -445,7 +445,7 @@ describe('B20–B21 · copias, CSV y propuestas', () => {
     await db().sessions.put(s)
     await updateProgramState((x) => ({ ...enterProgression(x, '2026-11-01', ''), techniquesConsent: true }), 'prueba')
     const file = await exportBackup()
-    expect(file.formatVersion).toBe(2)
+    expect(file.formatVersion).toBe(3)
     const text = JSON.stringify(file)
     useDatabase(`tec-restore-${n++}`)
     await restoreBackup(parseBackupText(text), 'replace')
@@ -456,11 +456,11 @@ describe('B20–B21 · copias, CSV y propuestas', () => {
     expect(ps.techniquesConsent).toBe(true)
     const csv = sessionsToCsv([s])
     const lines = csv.split('\r\n')
-    expect(lines[0]).toMatch(/;metodo;id_bloque;tramo;pausa_s;estado_bloque;superserie$/)
+    expect(lines[0]).toMatch(/;metodo;id_bloque;tramo;pausa_s;estado_bloque;superserie;rango_prescrito;corregida;dificultad_sesion$/)
     const blockLines = lines.filter((l) => l.includes(';descendente;'))
     expect(blockLines).toHaveLength(2)
-    expect(blockLines[0]).toMatch(/;40;10;1;.*;descendente;[^;]+;0;;completo;$/)
-    expect(blockLines[1]).toMatch(/;30;8;0;.*;descendente;[^;]+;1;12;completo;$/)
+    expect(blockLines[0]).toMatch(/;40;10;1;.*;descendente;[^;]+;0;;completo;;10–15;;$/)
+    expect(blockLines[1]).toMatch(/;30;8;0;.*;descendente;[^;]+;1;12;completo;;10–15;;$/)
     expect(lines.find((l) => l.includes(';convencional;'))).toBeTruthy()
     // Copia antigua (formato 1, sin bloques ni programa)
     const old = { ...file, formatVersion: 1, appVersion: '1.2.0', tables: { ...file.tables, meta: [] } }
@@ -498,7 +498,8 @@ describe('Sesiones con técnica de la rutina', () => {
     const d0 = rb.draft.days[0]
     const rt = await createRoutine({ ...rb.draft, kind: 'generated', days: setTechnique(rb.draft.days, d0.exercises[0].uid, { method: 'rest_pause', mode: 'extend', extra: 1 }) })
     const s2 = await startSessionFromDay(rt.id, d0.id, '2026-11-11')
-    expect(s2.familiarization?.index).toBe(1)
+    // 2.2: el día válido de la otra rutina cuenta (cambiar de rutina no reinicia el aprendizaje).
+    expect(s2.familiarization?.index).toBe(2)
     expect(s2.exercises.every((e) => e.sets.every((x) => !x.method))).toBe(true)
     await saveSession(s2)
   })

@@ -8,7 +8,7 @@ test('Caso 1/8 · perfil → rutina → entrenar con coma decimal → recargar �
   await expect(page.getByRole('heading', { name: 'Series semanales por grupo' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Frecuencia real de esta propuesta' })).toBeVisible()
   // A07: la familiarización se ve ANTES de empezar, con la dosis de hoy y la posterior
-  await expect(page.getByText(/Hoy \(familiarización\):/).first()).toBeVisible()
+  await expect(page.getByText(/Hoy \(adaptación\):/).first()).toBeVisible()
   await acceptProposal(page)
   // Doble toque en Empezar: una sola sesión
   const start = page.getByRole('button', { name: /^Empezar$/ })
@@ -144,17 +144,19 @@ test('Caso 11 · editar rutina crea versión nueva y las sesiones pasadas no cam
   await expect(page.getByRole('link', { name: original!.replace(/^1\.\s*/, '') })).toBeVisible()
 })
 
-test('Plantillas: todas se abren y se pueden activar sin errores', async ({ page }) => {
+test('Plantillas: las 26 se abren, se pueden revisar y una se activa sin errores', async ({ page }) => {
   const errors = collectErrors(page)
   await onboard(page)
   await page.goto('/#/rutinas/plantillas')
-  await expect(page.getByRole('heading', { name: 'Cuerpo completo · 2 días' })).toBeVisible()
-  const links = await page.locator('a.card').evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute('href')))
-  expect(links.length).toBeGreaterThanOrEqual(10)
+  await expect(page.getByRole('heading', { name: /Encajan con tu perfil/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Ver todas (26)' }).click()
+  const links = [...new Set(await page.getByRole('link', { name: 'Elegir y revisar' }).evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute('href'))))]
+  expect(links).toHaveLength(26)
   for (const l of links) {
     await page.goto(`/${l}`)
     await expect(page.getByRole('button', { name: 'Usar esta plantilla' })).toBeVisible()
   }
+  await page.goto('/#/rutinas/plantillas/fb2_gym')
   await page.getByRole('button', { name: 'Usar esta plantilla' }).click()
   await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible()
   expect(errors).toEqual([])

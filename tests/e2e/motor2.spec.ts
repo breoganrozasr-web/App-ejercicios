@@ -95,9 +95,9 @@ test('A19/A11 · demostración externa honesta; plancha con segundos y esfuerzo,
   await expect(page.getByRole('link', { name: 'Abrir la página oficial' })).toHaveAttribute('href', 'https://www.uwyo.edu/rec/group-fitness/exercise-video-library.html')
   await expect(page.getByRole('region', { name: 'Aprender este ejercicio' })).toContainText('No obligues a tocar el suelo con la rodilla')
   await page.goto('/#/ejercicios/press_pecho_maquina')
-  await expect(page.getByText('Dos posiciones ilustradas · se alternan')).toBeVisible()
+  await expect(page.getByText('Animación de posiciones: dos posturas · se alternan')).toBeVisible()
   await expect(page.getByLabel('Tres claves').first()).toContainText('Asiento a la altura de tu pecho')
-  await page.getByRole('button', { name: 'Ver demostración · requiere internet' }).click()
+  await page.getByRole('button', { name: /Vídeo externo · requiere conexión/ }).click()
   await expect(page.getByText(/NASM \(National Academy of Sports Medicine\) — «Chest Press Machine»/)).toBeVisible()
 
   await page.goto('/#/hoy')

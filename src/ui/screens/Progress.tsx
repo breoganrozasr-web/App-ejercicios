@@ -14,7 +14,9 @@ import { METHOD_LABEL, blockText, isBlock } from '../../domain/techniques'
 import { PhaseCard } from './Phase'
 import { PANEL_REGIONS, REGION_LABEL } from '../../domain/engine/contribution'
 import { priorityRegionsOf } from '../../domain/engine/generator'
-import type { Session, SetEntry } from '../../domain/types'
+import type { BlockSegment, Session, SessionTolerance, SetEntry } from '../../domain/types'
+import { describeChanges, diffCorrection, lastOpenCorrection, undoLastCorrection } from '../../domain/corrections'
+import { newId } from '../../domain/util'
 import { WEEKDAY_SHORT, addDays, weekStart, formatDateLong, formatDateShort, formatNumber, formatTime, toLocalDate } from '../../domain/util'
 import { LineChart, WeekBars } from '../components/Charts'
 import { DecimalInput } from '../components/inputs'
@@ -173,7 +175,14 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
   const saveEdit = async () => {
     if (!edit) return
     let next: Session = { ...edit, status: sessionWorkSummary(edit).done < sessionWorkSummary(edit).planned ? 'partial' : 'completed' }
-    const changes: string[] = ['Sesión editada a mano']
+    // Corrección de valores (carga, repeticiones, RIR, tramos): vista previa y posibilidad de deshacer la última.
+    const corr = diffCorrection(s, next)
+    if (corr.length) {
+      const lines = describeChanges(s, corr, formatNumber)
+      if (!(await confirm({ title: 'Revisar la corrección', body: <ul style={{ margin: 0, paddingLeft: 18 }}>{lines.map((l, i) => <li key={i}>{l}</li>)}</ul>, confirm: 'Guardar corrección' }))) return
+      next = { ...next, corrections: [...(s.corrections ?? []), { id: newId('cor'), at: Date.now(), changes: corr }] }
+    }
+    const changes: string[] = [corr.length ? `Corrección: ${corr.length} ${corr.length === 1 ? 'valor' : 'valores'}` : 'Sesión editada a mano']
     if (when && /^\d{4}-\d{2}-\d{2}$/.test(when.date)) {
       const d0 = new Date(s.startedAt)
       const hh0 = `${String(d0.getHours()).padStart(2, '0')}:${String(d0.getMinutes()).padStart(2, '0')}`
@@ -191,6 +200,8 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
     toast('Cambios guardados')
   }
   const setVal = (ei: number, si: number, patch: Partial<SetEntry>) => setEdit((x) => { if (!x) return x; const c = structuredClone(x); c.exercises[ei].sets[si] = { ...c.exercises[ei].sets[si], ...patch }; return c })
+  const setSeg = (ei: number, si: number, gi: number, patch: Partial<BlockSegment>) => setEdit((x) => { if (!x) return x; const c = structuredClone(x); const b = c.exercises[ei].sets[si].block; if (b) b.segments[gi] = { ...b.segments[gi], ...patch }; return c })
+  const openCorr = lastOpenCorrection(s)
   return (
     <>
       <header className="topbar">
@@ -234,11 +245,29 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
               <div className="stack-sm">
                 {e.sets.map((x, si) => {
                   if (x.kind === 'work') n++
+                  if (isBlock(x) && x.method && edit && x.block?.segments.length) {
+                    return (
+                      <div key={x.id} className="stack-sm" style={{ gap: 4 }}>
+                        <span className="small">Bloque {n} · {METHOD_LABEL[x.method]} <span className="tiny muted">(se corrigen los tramos; el método no cambia)</span></span>
+                        {x.block.segments.map((g, gi) => {
+                          const t = gi === 0 ? 'tramo inicial' : `tramo ${gi + 1}`
+                          return (
+                            <div key={g.id} className="row" style={{ gap: 6 }}>
+                              <span className="tiny" style={{ width: 92 }}>{gi === 0 ? 'Inicial' : `Tramo ${gi + 1}`}</span>
+                              <DecimalInput label={`Peso ${t} del bloque ${n}`} className="num-input" value={g.weightKg} onChange={(v) => setSeg(ei, si, gi, { weightKg: v })} placeholder="kg" />
+                              <DecimalInput label={`Repeticiones ${t} del bloque ${n}`} className="num-input" integer value={g.reps} onChange={(v) => setSeg(ei, si, gi, { reps: v })} placeholder="rep" />
+                              <DecimalInput label={`RIR ${t} del bloque ${n}`} className="num-input" integer value={g.rir} onChange={(v) => setSeg(ei, si, gi, { rir: v })} placeholder="RIR" max={10} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  }
                   if (isBlock(x) && x.method) {
                     return (
                       <div key={x.id} className={`row small ${x.completed || x.block?.segments.length ? '' : 'faint'}`} style={{ alignItems: 'flex-start' }}>
                         <span style={{ width: 110 }}>Bloque {n}<br /><span className="tiny muted">{METHOD_LABEL[x.method]}</span></span>
-                        <span className="grow num">{blockText(x, e.loadTypeSnapshot, formatNumber)}{edit ? ' (los bloques no se editan aquí)' : ''}</span>
+                        <span className="grow num">{blockText(x, e.loadTypeSnapshot, formatNumber)}</span>
                         {!x.block?.segments.length && <span className="badge">No hecho</span>}
                       </div>
                     )
@@ -250,6 +279,7 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
                         <span className="small" style={{ width: 92 }}>{tag}</span>
                         <DecimalInput label={`Peso ${tag}`} className="num-input" value={x.weightKg} onChange={(v) => setVal(ei, si, { weightKg: v })} placeholder="kg" />
                         <DecimalInput label={`Repeticiones ${tag}`} className="num-input" integer value={x.reps} onChange={(v) => setVal(ei, si, { reps: v })} placeholder="rep" />
+                        {x.kind === 'work' && e.loadTypeSnapshot !== 'time' && <DecimalInput label={`RIR ${tag}`} className="num-input" integer value={x.rir} onChange={(v) => setVal(ei, si, { rir: v })} placeholder="RIR" max={10} />}
                         <input type="checkbox" className="check" aria-label={`${tag} hecha`} checked={x.completed} onChange={(ev) => setVal(ei, si, { completed: ev.target.checked, completedAt: ev.target.checked ? x.completedAt ?? Date.now() : null })} />
                       </div>
                     )
@@ -277,6 +307,13 @@ export function SessionDetailScreen({ sessionId }: { sessionId: string }) {
         ) : (
           <>
             {s.notes && <section className="card"><p className="small">{s.notes}</p></section>}
+            {!s.isDemo && <ToleranceCard s={s} />}
+            {openCorr && (
+              <section className="card flat stack-sm" aria-label="Corrección guardada">
+                <span className="small">Última corrección ({new Date(openCorr.at).toLocaleString('es-ES')}): {describeChanges(s, openCorr.changes, formatNumber).join(' · ')}</span>
+                <button className="btn soft small" onClick={async () => { const r = undoLastCorrection(s, Date.now()); if (r) { await updateFinishedSession(r, 'Corrección deshecha: valores originales restaurados'); toast('Corrección deshecha') } }}>Deshacer la última corrección</button>
+              </section>
+            )}
             {logs.length > 0 && (
               <details className="more card flat">
                 <summary>Registro de cambios ({logs.length})</summary>
@@ -411,6 +448,42 @@ function MonthCalendar({ sessions }: { sessions: Session[] }) {
           )
         })}
       </div>
+    </section>
+  )
+}
+
+const DIFF_OPTS: { v: NonNullable<SessionTolerance['difficulty']>; label: string }[] = [
+  { v: 'easy', label: 'Fácil' }, { v: 'normal', label: 'Normal' }, { v: 'hard', label: 'Dura' }, { v: 'very_hard', label: 'Muy dura' },
+]
+
+/**
+ * Seguimiento de tolerancia (6.6): tres datos opcionales. No se convierten en una puntuación de recuperación ni en un
+ * diagnóstico; solo sirven para ofrecer revisar descanso, carga o dosis si varias sesiones seguidas son muy duras.
+ */
+function ToleranceCard({ s }: { s: Session }) {
+  const t = s.tolerance ?? {}
+  const set = (patch: Partial<SessionTolerance>) => void db().sessions.update(s.id, { tolerance: { ...t, ...patch } })
+  const yesNo = (label: string, value: boolean | null | undefined, key: 'limitingDiscomfort' | 'enoughTime') => (
+    <div className="stack-sm" role="group" aria-label={label} style={{ gap: 4 }}>
+      <span className="small">{label}</span>
+      <div className="row" style={{ gap: 6 }}>
+        <button className="chip" aria-pressed={value === true} onClick={() => set({ [key]: value === true ? null : true })}>Sí</button>
+        <button className="chip" aria-pressed={value === false} onClick={() => set({ [key]: value === false ? null : false })}>No</button>
+      </div>
+    </div>
+  )
+  return (
+    <section className="card flat stack-sm" aria-label="Cómo fue (opcional)">
+      <h3>Cómo fue <span className="tiny muted">(opcional)</span></h3>
+      <div className="stack-sm" role="group" aria-label="Dificultad percibida" style={{ gap: 4 }}>
+        <span className="small">Dificultad percibida</span>
+        <div className="row wrap" style={{ gap: 6 }}>
+          {DIFF_OPTS.map((o) => <button key={o.v} className="chip" aria-pressed={t.difficulty === o.v} onClick={() => set({ difficulty: t.difficulty === o.v ? null : o.v })}>{o.label}</button>)}
+        </div>
+      </div>
+      {yesNo('¿Alguna molestia limitó el movimiento?', t.limitingDiscomfort, 'limitingDiscomfort')}
+      {yesNo('¿Tuviste tiempo suficiente?', t.enoughTime, 'enoughTime')}
+      <span className="tiny muted">No es una puntuación de recuperación ni un diagnóstico. Si una molestia persiste o empeora, consulta a un profesional sanitario.</span>
     </section>
   )
 }

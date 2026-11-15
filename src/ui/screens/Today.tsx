@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { CalendarPlus, Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Play, Repeat, Settings, SkipForward, Wand2 } from 'lucide-react'
+import { CalendarPlus, Check, ChevronRight, Clock, Dumbbell, HardDriveDownload, Info, Play, Repeat, Settings, SkipForward, Wand2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useApp } from '../../App'
 import { db } from '../../data/db'
@@ -10,7 +10,7 @@ import { familiarizationPreview } from '../../domain/engine/generator'
 import { lastTrainedByRegion } from '../../domain/records'
 import { durationText } from '../../domain/engine/analysis'
 import type { ScheduleOverride, Session } from '../../domain/types'
-import type { Region } from '../../domain/types'
+import type { Region, RoutineExercise } from '../../domain/types'
 import { WEEKDAY_NAME, WEEKDAY_SHORT, addDays, daysBetween, formatDateLong, formatDateShort, toLocalDate, weekStart, weekdayMon0 } from '../../domain/util'
 import { DecimalInput } from '../components/inputs'
 import { Sheet, useToast } from '../components/overlay'
@@ -18,6 +18,8 @@ import { useNow } from '../hooks'
 import { requestPersistence } from '../pwa'
 import { go, href } from '../router'
 import { TodayProgramCards, useProgram } from './Phase'
+import { useAdoptionPending } from './Adoption'
+import { applyFamiliarization } from '../../domain/engine/prescription'
 
 export function TodayScreen() {
   const { currentRoutineId, activeSession } = useApp()
@@ -86,6 +88,7 @@ export function TodayScreen() {
   const openPartial = !activeSession && lastFinished?.status === 'partial' && !lastFinished.partialAction ? lastFinished : null
   const fam = bundle ? familiarizationStatus(bundle.version, sessions, bundle.routine.id) : null
   const { view: program, state: programState } = useProgram()
+  const adoptPending = useAdoptionPending(bundle?.routine, bundle?.version)
   const inProgression = !!programState.progressionSince
   const famShown = inProgression ? null : fam
   const extended = !famShown && !inProgression && !!programState.extendLearning && !!bundle?.version.familiarization
@@ -104,6 +107,12 @@ export function TodayScreen() {
       </header>
       <main className="page">
         <TodayProgramCards hasActive={!!activeSession} />
+        {!activeSession && toughStreak(done) && bundle && (
+          <section className="note info" aria-label="Sesiones muy duras">
+            <Info aria-hidden />
+            <span className="small">Tus últimos entrenamientos los marcaste como muy duros o con molestias que limitaban. Si quieres, revisa el descanso, la carga o la dosis de tu rutina (<a href={href(`rutinas/${bundle.routine.id}/editar`)}>editar</a>). Forja no añade series ni programa descargas por su cuenta; si una molestia persiste, consulta a un profesional.</span>
+          </section>
+        )}
         {openPartial && (
           <section className="card stack" aria-label="Sesión parcial">
             <span className="small muted">Sesión parcial · {formatDateShort(openPartial.date)}</span>
@@ -131,12 +140,16 @@ export function TodayScreen() {
             <span className="small muted">{isFirst ? 'Primera sesión de la rutina' : todayPlanned ? 'Hoy está planificado' : 'Siguiente sesión'}</span>
             <div className="hero-day">{next.name}</div>
             <a className="small" href={href(`rutinas/${bundle.routine.id}`)} style={{ alignSelf: 'flex-start' }}>{bundle.routine.name}</a>
+            {adoptPending && <a className="tiny" href={href(`rutinas/${bundle.routine.id}`)} style={{ alignSelf: 'flex-start' }}>Hay nuevas opciones para revisar tu rutina</a>}
             <span className="small muted">
-              {next.exercises.length} ejercicios · {durationText(next)}
+              {next.exercises.length} ejercicios · {famShown || extended || readapt ? `hoy ${durationText({ ...next, exercises: next.exercises.map((e) => ({ ...e, technique: undefined, prescription: applyFamiliarization(e.prescription, getExercise(e.exerciseId)) })) })} (adaptación) · plan base ${durationText(next)}` : durationText(next)}
               {!todayPlanned && nextPlannedDate ? ` · planificada el ${WEEKDAY_NAME[weekdayMon0(nextPlannedDate)]}, pero puedes hacerla hoy` : ''}
             </span>
             {famShown ? (
-              <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{bundle.version.familiarization?.reason === 'returning' ? 'Adaptación' : 'Familiarización'}: sesión {famShown.index} de {famShown.total} · mitad de series y RIR 3–4</span>
+              <span className="stack-sm" style={{ gap: 2 }}>
+                <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>{bundle.version.familiarization?.reason === 'returning' ? 'Adaptación tras la pausa' : 'Aprendizaje'}: día válido {famShown.index} de {famShown.total}</span>
+                <span className="small" data-testid="adaptation-line">Hoy: adaptación · {seriesText(next.exercises, true)}. Plan base después: {seriesText(next.exercises, false)}. {famShown.total - famShown.completed === 1 ? 'Te queda 1 día válido' : `Te quedan ${famShown.total - famShown.completed} días válidos`}: tu avance depende de días válidos, no de que pase una semana.</span>
+              </span>
             ) : extended ? (
               <span className="badge suggest" style={{ alignSelf: 'flex-start', whiteSpace: 'normal' }}>Aprendizaje prolongado: mitad de series y RIR 3–4</span>
             ) : readapt ? (
@@ -253,4 +266,16 @@ function agoShort(d: number): string {
 
 function nameOf(id: string): string {
   return getExercise(id)?.name ?? id
+}
+
+/** Total de series de trabajo de la sesión: con la dosis de adaptación (max(1, mitad)) o con el plan base. */
+function seriesText(exs: RoutineExercise[], adapted: boolean): string {
+  const n = exs.reduce((a, e) => a + (adapted ? Math.max(1, Math.ceil(e.prescription.sets / 2)) : e.prescription.sets), 0)
+  return `${n} ${n === 1 ? 'serie' : 'series'} de trabajo`
+}
+
+/** Dos de las tres últimas sesiones marcadas como muy duras o con molestia limitante (dato declarado, no diagnóstico). */
+function toughStreak(done: Session[]): boolean {
+  const last = [...done].filter((s) => !s.isDemo).sort((a, b) => b.startedAt - a.startedAt).slice(0, 3)
+  return last.filter((s) => s.tolerance?.difficulty === 'very_hard' || s.tolerance?.limitingDiscomfort === true).length >= 2
 }

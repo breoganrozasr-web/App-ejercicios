@@ -1,7 +1,41 @@
 # Evidencia científica y decisiones del motor de rutinas
 
-Versión vigente del motor: **2.1.0** (14 de noviembre de 2026, `src/domain/engine/params.ts`). App 1.3.0.
+Versión vigente del motor: **2.2.0** (15 de noviembre de 2026, `src/domain/engine/params.ts`). App 1.4.0.
 Las rutinas guardadas conservan la versión del motor con la que se crearon (`engineVersion` y `plan` en cada versión de rutina): las reglas nuevas solo se aplican a propuestas y versiones nuevas aceptadas; las sesiones pasadas no cambian.
+
+## Ampliación 1.4 (motor 2.2.0): 26 plantillas, dosis explicable y fuerza + hipertrofia
+
+Procede del **«Prompt 3: 26 plantillas, dosis explicable y fuerza + hipertrofia» (15/11/2026)**. La investigación (F01–F21) la hizo y declaró quien redactó el encargo; **el entorno de desarrollo de Forja no pudo abrir esos enlaces** (red restringida: PubMed, PMC, Springer, NASM, YouTube y PureGym respondieron sin conexión). Se conservan sus fuentes, alcance de consulta y conclusiones acotadas; no se atribuye a ninguna la validación de las recetas como conjunto. Las 26 recetas son **propuestas editoriales de Forja**, no rutinas evaluadas en ensayos.
+
+### Tabla de equivalencias (sin duplicar fuentes)
+
+| Nuevo | Equivale a | Nota |
+|---|---|---|
+| F01 ACSM / Currier 2026 | E1 | Misma publicación; F01 declara texto completo (PMC12965823). |
+| F02 Pelland 2025/2026 | E3 | Misma publicación. |
+| F03 Ramos-Campo 2024 | E7 | Misma publicación. |
+| F04 Currier 2023 | E2 | Misma publicación. |
+| F05 Robinson 2024 | E4 | Misma publicación (enlace editorial distinto). |
+| F06 Refalo 2024 | E5 | Misma publicación. |
+| F07 Singer 2024 | E6 | Misma publicación. |
+| F20 Superset vs traditional 2025 | ¿R2? | No se ha comprobado si coincide con R2 (Zhang 2025): se listan por separado. |
+| F08–F19, F21 | — | Nuevas en la biblioteca. |
+
+Los identificadores E/R/T anteriores se conservan con sus enlaces. En la app, cada F con equivalencia muestra «Misma publicación que …». Novedades exploradas que **no** se convierten en reglas: preprint de volumen por sesión (Remmert/Pelland, apertura 403), reanálisis preprint de Boutagy/McKean (oct. 2026), Pancar 2026 sobre descargas (registro parcial) y TikTok (inaccesible; no se copiaron rutinas).
+
+### Reglas de producto 1.4 (decisiones de Forja, revisables)
+
+- **P15 · Dosis propia por receta.** Series y rangos del anexo A tal cual; el perfil no los aplana (un principiante ve 3 series donde la receta dice 3). El perfil decide elegibilidad (edad, salud, material), orden del catálogo y la dosis **temporal** de aprendizaje/readaptación. Tres capas guardadas: receta base (`origin.base` con id y versión editorial), adaptaciones aceptadas (`origin.adaptations`) y dosis de hoy (en la sesión).
+- **P16 · Aprendizaje.** 4 días válidos (uno por fecha, ≥ 70 %), contados en **todas** las rutinas: cambiar de plantilla no reinicia ni acelera. Hoy: max(1, ceil(base/2)), RIR 3–4; referencias 4–6/6–8 → 6–8; demás compuestos → 8–12; planchas en segundos sin RIR. Sin test de 1RM.
+- **P17 · Valores iniciales (3.3).** Referencias de fuerza (sentadilla, banca y convencional a ≤ 8 repeticiones en A14–A18): RIR 2–3 y 180 s (convencional: se ofrece 240–300 s). Compuestos: 150 s, RIR 2–3 (desde cero) o 1–3. Accesorios: 90 s, RIR 1–3. Calistenia de tirón/empuje: 120 s. Tronco: 60 s. Editables y con +30/+60 s.
+- **P18 · Mapa muscular 2 (anexo B).** Principales 1, secundarios 0,5; nuevos: convencional (glúteo 1; cuádriceps e isquios 0,5), press vertical con deltoides lateral 0,5, contractor solo pecho, abductores aparte, tronco dinámico. **Versionado**: las rutinas y sesiones de motores ≤ 2.1 se siguen contando con el mapa 1 (no se reescribe el historial).
+- **P19 · Selección determinista (4.3).** Orden: elegibilidad (edad/salud, material, lugar), días reales (objetivo = min(días marcados, 3/4/5 según nivel)), reparto preferido, objetivo, frecuencia pedida (se informa, no se oculta), tiempo, y desempate fijo: A01, A02, A06, A15, A14, A17, A18, A16, A11, A08, A13, A12, A09, A05, A21, A22, A20, A23, A26, A25, A24, A03, A04, A07, A19, A10. PPL 6 solo por elección explícita; A19 solo con prioridad de pierna/glúteos. Criterios de interfaz, no una clasificación científica de repartos.
+- **P20 · Modelo de tiempo (4.4).** Preparación ≈4 min; aproximaciones: primer básico pesado ≈8 min, otro ≈4, resto 2–3; ejecución 3 s por repetición del punto medio (ambos lados en unilaterales +15 s); (n−1) descansos por ejercicio; entre ejercicios max(descanso, 60 s). Intervalo ±10 % redondeado a 5 min; duración de aprendizaje aparte. Si no cabe, se comparan alternativas (más minutos, variante breve, otro reparto, edición concreta); nada se recorta sin aceptación.
+- **P21 · Contexto de prescripción (6.3).** La sugerencia de carga usa la última exposición del **mismo rango** (banca 4–6 y banca 8–10 se siguen por separado); sin exposición del rango, se trata como cambio de esquema. No se trasladan kg entre ejercicios ni se cambia el 1RM estimado.
+- **P22 · Adopción y correcciones.** Rutinas de un motor o versión editorial anterior: tarjeta discreta «Hay nuevas opciones…», comparación y «Mantener»; aceptar crea versión o rutina nueva, nunca durante un entrenamiento. Correcciones de sesiones guardadas con vista previa y «deshacer la última», incluidos tramos de bloques (40×10 → 30×8 sigue siendo dos tramos); no cambian fechas ni decisiones de fase aceptadas.
+- **P23 · Tolerancia (6.6).** Dificultad, molestia limitante y tiempo suficiente, opcionales. Si 2 de las 3 últimas sesiones son «muy duras» o con molestia limitante, se ofrece revisar descanso, carga o dosis; nunca se añaden series ni descargas automáticas.
+
+Tabla generada desde las recetas (series, frecuencias, duración, material, conflictos): [docs/PLANTILLAS.md](PLANTILLAS.md).
 
 ## Ampliación 1.3 (motor 2.1.0): series descendentes, rest-pause, superseries y fases
 

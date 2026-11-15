@@ -1,6 +1,47 @@
 # Pruebas: comandos, resultados reales y comprobaciones pendientes
 
-Última ejecución: **15 de noviembre de 2026** (app 1.3.0, motor 2.1.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). Las secciones de la 1.2 y la 1.1 se conservan debajo. **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+Última ejecución: **15 de noviembre de 2026** (app 1.4.0, motor 2.2.0), en el contenedor de desarrollo (Linux, Node 22.23, Chromium 1243 y WebKit 26.6 vía Playwright 1.63). Las secciones de la 1.2 y la 1.1 se conservan debajo. **WebKit para Linux es el motor de Safari, no un iPhone real: no se ha probado en un iPhone físico.**
+
+## Versión 1.4 (encargo 3: 26 plantillas, dosis explicable, fuerza + hipertrofia): resultados y criterios C01–C22
+
+Ejecución del 15/11/2026 en el contenedor de desarrollo. **WebKit para Linux no es un iPhone: no se ha probado en un iPhone físico** (ni el uso con una mano, ni VoiceOver real, ni Safari instalado como app).
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` | ✅ sin errores |
+| `npm test` | ✅ **154/154** (6 ficheros; 24 nuevas en `plantillas.test.ts`; 4 anteriores ajustadas a decisiones nuevas: mapa muscular 2, formato de copia 3, 99 ejercicios, días válidos contados en todas las rutinas) |
+| `npm run build` | ✅ precache ≈1117 KB |
+| E2E Chromium (iPhone 13, SE y 15 Pro Max) + WebKit 26.6 (`webkit-iphone-13`) | ✅ **75 pasan, 1 omitida** (la de sin conexión en WebKit, limitación de Playwright). Incluye 6 nuevas en `plantillas.spec.ts` y la prueba de diseño ampliada al catálogo, la vista previa, el comparador y la ficha del convencional en claro y oscuro |
+| Actualización real **1.3 → 1.4** con datos (builds en `/App-ejercicios/`, Chromium **y** WebKit, `upgrade14.cjs`) | ✅ 7/7 en cada motor: con la 1.3, una sesión completa, una parcial con 52,5 kg y la rutina marcada como del motor 1.0.0; copia exportada. Tras «Actualizar ahora»: «App 1.4.0 · motor de rutinas 2.2.0»; sesiones y versiones intactas y la rutina **sin migrar** (sigue en 1.0.0); Hoy muestra «Hay nuevas opciones para revisar tu rutina»; la parcial se retoma con 52,5; el catálogo abre. La copia de la 1.3 se restaura en una 1.4 limpia sin pérdidas. Sin errores |
+| Controles editoriales del anexo A | ✅ las 26 recetas reproducen exactamente las series directas y los días de pecho, espalda, cuádriceps, isquios y glúteos, las series por sesión y la contribución secundaria del convencional (1 y 1,5) — calculado, no copiado |
+| Revisión visual | ✅ catálogo, comparador y vista previa (iPhone SE), Hoy con la línea de adaptación y el entrenamiento con la etiqueta «Adaptación» (iPhone SE, oscuro). Ajustados: selector de reparto a ancho completo, recetas de otro lugar fuera de «Encajan», duración de hoy frente al plan base en Hoy y «aprendizaje» en la cabecera del entrenamiento |
+
+| # | Criterio | Dónde se prueba | Estado |
+|---|---|---|---|
+| C01 | 26 recetas completas; búsqueda por PPL, powerbuilding, anterior/posterior, SBD; sin duplicados | `plantillas.test.ts`, `plantillas.spec.ts`, `flows.spec.ts` (las 26 abren y una se activa) | ✅ |
+| C02 | Estándar conserva 3 series con perfil principiante; hoy reduce solo por adaptación y lo explica | `plantillas.test.ts`, `plantillas.spec.ts` («Hoy: adaptación · 10 series… Plan base después: 16… Te quedan 4 días válidos») | ✅ |
+| C03 | Días válidos, sesiones el mismo día, pausa y cambio de plantilla no reinician ni aceleran | `plantillas.test.ts` (los días válidos se cuentan en todas las rutinas) | ✅ |
+| C04 | PPL 3 frecuencia 1; PPL 6 y PPL+torso/pierna calculan la suya; pedir frecuencia 2 muestra el conflicto sin ocultar PPL | `plantillas.test.ts`, `plantillas.spec.ts` | ✅ |
+| C05 | A15: pecho 10, espalda 10, cuádriceps 10, isquios 7; convencional +1 secundaria a cuádriceps e isquios; calentamientos y bloques aparte | `plantillas.test.ts` | ✅ |
+| C06 | A15: banca 2 días, sentadilla 1, convencional 1; el rumano no cuenta como convencional | `plantillas.test.ts`, comparador en `plantillas.spec.ts` | ✅ |
+| C07 | A16 redistribuye brazos/hombros | `plantillas.test.ts` | ✅ |
+| C08 | Unilateral: tiempo con los dos lados, series no duplicadas por músculo; aprendizaje ≠ base | `plantillas.test.ts`, vista previa en `plantillas.spec.ts` | ✅ |
+| C09 | 30 min frente a receta larga: conflicto y alternativas sin quitar series | `plantillas.test.ts` | ✅ |
+| C10 | Sin banco/anclaje no se proponen recetas que los requieren; casa sin material no anuncia espalda ni isquios | `plantillas.test.ts` | ✅ |
+| C11 | Domingo→lunes, días seguidos y anterior/posterior con músculos reales | `plantillas.test.ts` (L-M comparten glúteos; con L X V D queda el domingo→lunes) | ✅ |
+| C12 | Banca 4–6 y 8–10 con sugerencias separadas; los ejercicios nuevos no heredan kg | `plantillas.test.ts`; «Última vez con 4–6» y «Ver también 8–10» en el entrenamiento | ✅ |
+| C13 | Misma entrada → misma propuesta; la preferencia de reparto cambia el orden de forma explicable | `plantillas.test.ts` | ✅ |
+| C14 | Ver, comparar y cancelar no cambia nada; aceptar guarda; no durante un entrenamiento | `plantillas.spec.ts`, `plantillas.test.ts` | ✅ |
+| C15 | Copia anterior y actualización desde 1.3 con sesiones, rutina del motor 1.0, bloques y parciales | `upgrade14.cjs` (Chromium y WebKit), `plantillas.spec.ts` (tarjeta y «Mantener»), `tecnicas.test.ts` (copias 1 y 2) | ✅ |
+| C16 | Corrección guardada incluidos dos tramos 40×10→30×8; CSV/JSON/progreso coherentes; deshacer | `plantillas.test.ts`, `plantillas.spec.ts` (vista previa «40 → 42,5 kg», deshacer) | ✅ |
+| C17 | Una corrección que cambia el 70 % no duplica días válidos ni borra decisiones de fase | `plantillas.test.ts` (una fecha = un día); las decisiones aceptadas viven en `program` y no se tocan | ✅ |
+| C18 | Catálogo, artículos y fichas sin conexión; externos marcados; un fallo de vídeo no impide registrar | `plantillas.spec.ts` (Chromium; en WebKit Playwright no emula bien sin conexión), `offline-media.spec.ts` | ✅ Chromium |
+| C19 | Actualización disponible durante una sesión: no recarga ni pierde filas | Banner existente: «Se aplicará cuando termines el entrenamiento en curso» (sin botón); `upgrade14.cjs` actualiza fuera de sesión | ✅ (lógica previa, sin cambios) |
+| C20 | iPhone pequeño sin desplazamiento horizontal; táctiles ≥ 44 px; nombres accesibles | `layout.spec.ts` (SE, 13, 15 Pro Max, claro/oscuro), `plantillas.spec.ts` | ✅ emulado; VoiceOver real pendiente |
+| C21 | Copia transaccional con propiedades nuevas; versión 3; una app anterior no la malinterpreta | `plantillas.test.ts`, `tecnicas.test.ts` | ✅ |
+| C22 | Menores y señales de salud: las recetas adultas no se saltan protecciones | `plantillas.test.ts` | ✅ |
+
+**Qué no prueban estas pruebas:** que una receta maximice la hipertrofia de una persona, que los textos de las fichas estén revisados por un profesional (no lo están) ni el funcionamiento en un iPhone físico.
 
 ## Versión 1.3 (ampliación: técnicas y fases): resultados y criterios B01–B22
 

@@ -2,6 +2,7 @@ import { hasExternalDemo } from '../catalog/external'
 import { allExercises, getExercise, hasEquipment } from '../catalog'
 import { LEVEL_RANK } from '../catalog/exercises'
 import type { EquipmentId, Exercise, Level, Pattern } from '../types'
+import { patternChangeNote } from '../content/functions'
 
 /** Patrones "cercanos" para cuando no hay alternativa del mismo patrón. */
 const NEAR: Partial<Record<Pattern, Pattern[]>> = {
@@ -42,16 +43,18 @@ export function alternativesFor(exerciseId: string, equipment: EquipmentId[] | n
     if (!same && !near) continue
     const reasons: string[] = []
     let score = 0
-    if (same) { score += 50; reasons.push('mismo patrón') } else { score += 20; reasons.push('patrón parecido') }
+    if (same) { score += 50; reasons.push('misma función') } else { score += 20; reasons.push(patternChangeNote(base.pattern, ex.pattern) ?? 'cambia el patrón: revisa la cobertura del plan') }
     const sharedPrimary = ex.primary.filter((m) => base.primary.includes(m)).length
     score += sharedPrimary * 10
     if (sharedPrimary) reasons.push('mismo músculo principal')
     const available = equipment ? hasEquipment(equipment, ex) : true
-    if (available) score += 15
+    // Orden (6.4): primero misma función con tu material; después, las que cambian el plan.
+    if (available) score += 25
     else reasons.push('requiere otro material')
     if (LEVEL_RANK[ex.minLevel] <= LEVEL_RANK[level]) score += 5
     else { score -= 10; reasons.push('más técnico para tu nivel') }
     if (ex.loadType === base.loadType) score += 3
+    else reasons.push('otro tipo de carga: los kg no se comparan')
     if (ex.demoStatus === 'verificada') score += 4
     else if (hasExternalDemo(ex.id)) {
       score += 2

@@ -11,6 +11,9 @@ const R = (pattern: Pattern, ...prefer: string[]): Slot => ({ pattern, role: 'ma
 const N = (slot: Slot, sets: number): Slot => ({ ...slot, sets })
 
 /**
+ * PLANTILLAS ANTERIORES (motor 2.0/2.1). Desde la app 1.4 el catálogo visible son las 26 recetas de `recipes.ts`; estas
+ * definiciones se conservan para reproducir propuestas antiguas y por compatibilidad de pruebas (no se muestran).
+ *
  * Plantillas completas y editables (motor 2). Los ejercicios se eligen con la misma maquinaria que el generador
  * (respetan material, exclusiones y nivel). La frecuencia real se CALCULA y se muestra en la vista previa:
  * las descripciones no prometen cifras. Días: 0 = lunes … 6 = domingo.

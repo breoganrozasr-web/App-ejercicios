@@ -1,6 +1,6 @@
 import { getExercise } from './catalog'
 import { INDIRECT_WEIGHT } from './engine/analysis'
-import { PANEL_REGIONS, contributionOf } from './engine/contribution'
+import { PANEL_REGIONS, contributionOf, muscleMapFor } from './engine/contribution'
 import { blocksOf, contextKey, conventionalWork, exerciseTonnage, isBlock } from './techniques'
 import type { LoadType, Region, Session, SetEntry } from './types'
 import { addDays, round2, weekStart } from './util'
@@ -166,7 +166,8 @@ export function weeklyRegionSets(sessions: Session[], weeks: number, today: stri
       const doneBlocks = blocksOf(ex.sets).filter((x) => x.completed)
       const segs = doneBlocks.reduce((a, b) => a + (b.block?.segments.length ?? 0), 0)
       if (!n && !doneBlocks.length) continue
-      for (const c of contributionOf(ex.exerciseId).items) {
+      // Cada sesión se cuenta con el mapa de su versión de motor (no se reescribe el cálculo del historial).
+      for (const c of contributionOf(ex.exerciseId, muscleMapFor(s)).items) {
         if (c.weight === 1) {
           if (n) bucket.direct[c.region] = (bucket.direct[c.region] ?? 0) + n
           if (doneBlocks.length) {
@@ -215,7 +216,7 @@ export function lastTrainedByRegion(sessions: Session[], regions: Region[] = PAN
     if (s.status !== 'completed' && s.status !== 'partial') continue
     for (const ex of s.exercises) {
       if (!ex.sets.some((x) => x.kind === 'work' && x.completed)) continue
-      for (const c of contributionOf(ex.exerciseId).items) {
+      for (const c of contributionOf(ex.exerciseId, muscleMapFor(s)).items) {
         if (c.weight !== 1 || !(c.region in out)) continue
         if (out[c.region] === null || (out[c.region] as string) < s.date) out[c.region] = s.date
       }

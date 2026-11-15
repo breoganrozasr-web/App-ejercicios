@@ -817,9 +817,138 @@ export const EXERCISES: Exercise[] = [
       sources: ['T4'],
     },
   }),
+  // ───── Fichas añadidas el 15/11/2026 (anexo C del encargo 3). Sin demostración local: no hay ilustración con licencia
+  // verificada de estas variantes. Los recursos externos localizados por la investigación no se pudieron abrir desde el
+  // entorno de desarrollo, así que no se presentan como demostración (docs/CONTENIDOS_Y_LICENCIAS.md).
+  ex({
+    id: 'peso_muerto_convencional', name: 'Peso muerto convencional con barra', syn: ['deadlift', 'peso muerto desde el suelo', 'convencional'],
+    p: ['glutes', 'hamstrings', 'quads'], s: ['lower_back', 'forearms', 'traps'], eq: ['barbell'], pattern: 'hinge', cat: 'compound',
+    load: 'barbell_total', reps: 'heavy', lvl: 'returning', demo: 'pendiente',
+    note: 'No es el peso muerto rumano, el sumo ni la barra hexagonal: cada variante tiene su propio historial.',
+    ins: [
+      'Coloca la barra cerca de las piernas, aproximadamente sobre el mediopié, con los pies a una anchura cómoda y las manos por fuera de las piernas.',
+      'Ajusta cadera y rodillas a tu cuerpo, toma tensión antes de despegar y empuja el suelo manteniendo la barra cerca.',
+      'Termina de pie, sin echar el tronco hacia atrás; devuelve la barra con control y vuelve a colocarte antes de repetir.',
+    ],
+    err: ['La barra se aleja progresivamente de las piernas.', 'Iniciar con una sacudida.', 'Terminar hiperextendiendo la zona lumbar.', 'Añadir kg cuando ya no se sostiene la ejecución prevista.'],
+    keys: ['Barra sobre el mediopié', 'Tensión antes de despegar', 'Termina de pie, sin echarte atrás'],
+    learn: {
+      detail: 'No hay una altura de cadera idéntica para todas las personas. Prepara el tronco antes de iniciar y sube sin un tirón brusco que cambie la posición de salida. La carga y el recorrido se adaptan a tu capacidad de mantener el control. No hace falta rebotar entre repeticiones: una repetición detenida en el suelo es la ejecución normal del ejercicio, no un rest-pause. Si con discos pequeños la barra queda muy baja, puedes elevar el punto de salida; anota esa altura en las notas, porque esa variante se compara aparte.',
+      alternatives: 'Otra bisagra (como el rumano) puede entrenar la extensión de cadera, pero deja de ser práctica específica del convencional. Si no tienes el material, cambia de plantilla o edita la referencia: Forja no simula un convencional con otro ejercicio.',
+      notes: [
+        'Registro: kg TOTALES de barra y discos, repeticiones y RIR opcional. No hereda los kg del rumano; cada incremento depende de los discos que tengas.',
+        'Erectores, agarre y tronco trabajan para estabilizar; eso no lo convierte en un remo ni en todas las series de espalda que necesita una rutina.',
+        'Esta ficha es una guía inicial, no una certificación profesional de técnica. La app no diagnostica la causa de una sensación.',
+      ],
+      sources: ['F10'],
+    },
+  }),
+  ex({
+    id: 'hip_thrust_barra', name: 'Hip thrust con barra', syn: ['empuje de cadera con barra', 'hip thrust'],
+    p: ['glutes'], s: ['hamstrings'], eq: ['barbell', 'bench'], pattern: 'glute', cat: 'compound',
+    load: 'barbell_total', reps: 'moderate', demo: 'pendiente',
+    note: 'Distinto del puente de glúteo en el suelo: otra variante, otro historial.',
+    ins: [
+      'Apoya la parte alta de la espalda en un banco estable y coloca la barra protegida sobre la pelvis.',
+      'Apoya los pies y eleva la cadera con un recorrido que controles, manteniendo el tronco estable.',
+      'Termina extendiendo la cadera sin buscar más altura arqueando la espalda; baja de forma controlada.',
+    ],
+    err: ['El banco se desplaza o no aguanta el apoyo.', 'Buscar más altura arqueando la zona lumbar.', 'Barra sin protección sobre la pelvis.'],
+    keys: ['Espalda alta en banco estable', 'Barra protegida sobre la pelvis', 'Extiende la cadera sin arquear'],
+    learn: {
+      detail: 'La altura del banco y la distancia de los pies se ajustan a ti. La tibia aproximadamente vertical arriba es una referencia inicial, no un ángulo obligatorio. Empezar sin barra ayuda a familiarizarte, pero un puente en el suelo sigue siendo una variante distinta. Anota en las notas el banco o el montaje si cambian de forma relevante.',
+      alternatives: 'Puente de glúteo, otras extensiones de cadera o un compuesto pueden servir a un objetivo general, revisando dosis y comparabilidad: no equivalen automáticamente en material, recorrido o carga. No sustituye al curl femoral.',
+      notes: ['Registro: carga total de barra y discos, repeticiones y RIR opcional. No se estima la sentadilla a partir del hip thrust ni se trasladan kg entre ambos.', 'Puede desarrollar el glúteo mayor; eso no lo convierte en el mejor ejercicio para todo el mundo ni en obligatorio.'],
+      sources: ['F17', 'F18'],
+    },
+  }),
+  ex({
+    id: 'remo_pecho_apoyado', name: 'Remo con mancuernas y pecho apoyado', syn: ['chest-supported row', 'remo en banco inclinado'],
+    p: ['back'], s: ['biceps', 'shoulders'], eq: ['dumbbell', 'bench'], pattern: 'pull_h', cat: 'compound',
+    load: 'dumbbell_each', reps: 'moderate', demo: 'pendiente',
+    note: 'No es el remo a una mano sin apoyo de pecho: historial propio.',
+    ins: [
+      'Apoya el pecho en el banco inclinado, con los pies estables y espacio para mover las mancuernas.',
+      'Lleva los codos hacia atrás con control, sin despegar el pecho para terminar la repetición.',
+      'Baja permitiendo el movimiento de las escápulas y manteniendo el control, sin balancear las cargas.',
+    ],
+    err: ['Despegar el pecho del banco para terminar.', 'Balancear las mancuernas.', 'Inclinación que no deja respirar ni mover los brazos.'],
+    keys: ['Pecho apoyado y pies estables', 'Codos atrás sin despegar el pecho', 'Baja con control, sin balanceo'],
+    learn: {
+      detail: 'Elige una inclinación que deje moverse a los brazos y respirar con comodidad. No hace falta forzar los hombros hacia atrás y abajo durante todo el recorrido, ni tocar el banco con la mancuerna. El apoyo reduce la necesidad de sostener el tronco inclinado, pero no elimina toda estabilización. La dirección del codo, el agarre y el banco cambian la ejecución; no prometemos porcentajes exactos de dorsal o trapecio.',
+      alternatives: 'Remo en polea, en máquina o a una mano son tirones horizontales: cambian soporte y material y no heredan kg ni récords. Un jalón cambia la dirección del tirón (vertical).',
+      notes: ['Registro: kg POR MANCUERNA. Una serie con dos mancuernas es una serie, no dos series por músculo.'],
+      sources: [],
+    },
+  }),
+  ex({
+    id: 'remo_banda_anclaje', name: 'Remo de pie con banda y anclaje', syn: ['standing band row', 'remo con banda'],
+    p: ['back'], s: ['biceps', 'shoulders'], eq: ['bands', 'band_anchor'], pattern: 'pull_h', cat: 'compound',
+    load: 'band', reps: 'moderate', demo: 'pendiente',
+    note: 'Necesita un punto de anclaje diseñado para ese uso, a la altura del torso. Nunca pomos, mesas ni muebles improvisados.',
+    ins: [
+      'Comprueba la banda y el anclaje, y sitúate con apoyo estable y una tensión inicial moderada.',
+      'Tira llevando los codos atrás, sin usar un balanceo del tronco para completar la repetición.',
+      'Vuelve de forma controlada manteniendo el agarre y la orientación del cuerpo.',
+    ],
+    err: ['Anclar la banda en una puerta, pomo o mueble no preparado.', 'Balancear el tronco para terminar.', 'Banda dañada o cuarteada.'],
+    keys: ['Revisa banda y anclaje', 'Codos atrás sin balanceo', 'Vuelve controlando'],
+    learn: {
+      detail: 'Es un tirón horizontal con resistencia variable: la tensión cambia con la distancia al anclaje. Anota qué banda usas y a qué distancia te colocas para poder comparar. El color de una marca no equivale a kg ni se compara automáticamente con otra.',
+      alternatives: 'Remo con mancuerna o polea si hay material: cambian la resistencia y el contexto. La apertura posterior con banda no sustituye por completo al remo.',
+      notes: ['Registro: nombre o color de la banda, repeticiones, RIR opcional y nota de distancia al anclaje. Sin 1RM ni tonelaje en kg.'],
+      sources: [],
+    },
+  }),
 ]
 
 /** Para ejercicios con demostración pendiente: ejercicio con demo que sirve de referencia APROXIMADA (otra variante). */
+/**
+ * Tres claves de los ejercicios usados por las 26 plantillas (encargo del 15/11/2026, anexo D). Guías iniciales de Forja,
+ * no una certificación profesional de técnica. Solo se aplican si la ficha no tenía ya sus claves.
+ */
+const TEMPLATE_KEYS: Record<string, string[]> = {
+  sentadilla_barra: ['Barra estable en la espalda alta', 'Baja con control hasta donde mantengas la postura', 'Sube empujando el suelo, rodillas en la línea de los pies'],
+  press_banca_barra: ['Pies apoyados y escápulas estables', 'Baja la barra con control al pecho', 'Empuja sin rebotar; usa topes o ayudante'],
+  remo_polea_baja: ['Tronco estable, sin balanceo', 'Codos hacia atrás', 'Vuelve estirando los brazos con control'],
+  elevaciones_laterales: ['Codos algo flexionados', 'Sube hacia los lados hasta la altura del hombro', 'Baja despacio, sin impulso'],
+  gemelos_maquina_pie: ['Rodillas casi extendidas', 'Sube de puntillas todo lo que controles', 'Baja hasta notar estiramiento, sin rebote'],
+  peso_muerto_rumano: ['Cadera hacia atrás, rodillas algo flexionadas', 'Barra cerca de las piernas', 'Baja hasta donde controles la postura'],
+  press_inclinado_mancuernas: ['Banco inclinado y pies firmes', 'Baja las mancuernas con control', 'Empuja hacia arriba sin chocarlas'],
+  jalon_pecho: ['Muslos sujetos bajo el rodillo', 'Lleva la barra hacia el pecho con los codos abajo', 'Sube con control, sin tirones'],
+  prensa: ['Espalda y cadera apoyadas', 'Baja hasta donde la pelvis no se despegue', 'Empuja sin bloquear de golpe las rodillas'],
+  curl_mancuernas: ['Codos cerca del cuerpo', 'Sube sin balancear el tronco', 'Baja controlando hasta extender'],
+  extension_triceps_cuerda: ['Codos fijos junto al cuerpo', 'Extiende hasta abajo separando la cuerda', 'Vuelve sin que suban los codos'],
+  press_banca_mancuernas: ['Pies firmes y espalda apoyada', 'Baja las mancuernas a los lados del pecho', 'Empuja con control'],
+  crunch_polea: ['Rodillas en el suelo, cuerda junto a la cabeza', 'Flexiona el tronco, no la cadera', 'Vuelve despacio'],
+  sentadilla_mancuernas: ['Mancuernas a los lados y tronco estable', 'Baja con control', 'Sube empujando el suelo'],
+  jalon_estrecho: ['Agarre neutro y muslos sujetos', 'Codos hacia abajo y atrás', 'Sube controlando'],
+  extension_cuadriceps: ['Eje de la máquina junto a la rodilla', 'Extiende las rodillas sin despegar la cadera', 'Baja despacio'],
+  contractor_pecho: ['Asiento a la altura del pecho', 'Junta los brazos delante con codos algo flexionados', 'Abre con control, sin forzar el hombro'],
+  curl_femoral_tumbado: ['Rodilla alineada con el eje', 'Cadera pegada al banco', 'Flexiona y vuelve sin rebote'],
+  press_hombro_maquina: ['Espalda apoyada', 'Empuja hacia arriba sin arquear la zona lumbar', 'Baja con control'],
+  pajaros_tumbado: ['Pecho apoyado en el banco', 'Abre los brazos hacia los lados', 'Baja controlando, sin balanceo'],
+  zancadas_mancuernas: ['Paso suficientemente largo', 'Rodilla delantera en la línea del pie', 'Empuja con la pierna de delante'],
+  gemelos_sentado_maquina: ['Rodillas flexionadas bajo el apoyo', 'Sube los talones todo lo que controles', 'Baja hasta notar estiramiento'],
+  plancha_lateral: ['Codo bajo el hombro', 'Cuerpo en línea, cadera arriba', 'Para antes de perder la postura'],
+  press_hombro_mancuernas: ['Espalda apoyada y tronco estable', 'Empuja hacia arriba sin arquear', 'Baja hasta la altura de las orejas o donde controles'],
+  extension_triceps_sobre_cabeza: ['Codos apuntando arriba', 'Baja la mancuerna detrás de la cabeza con control', 'Extiende sin abrir los codos'],
+  curl_martillo: ['Agarre neutro (palmas enfrentadas)', 'Codos cerca del cuerpo', 'Sube y baja sin balanceo'],
+  abductores_maquina: ['Espalda apoyada', 'Separa las piernas con control', 'Vuelve despacio, sin golpe'],
+  remo_mancuerna: ['Apoyo estable en el banco', 'Lleva el codo hacia atrás', 'Baja estirando el brazo con control'],
+  gemelos_peso_corporal: ['Apóyate en algo estable', 'Sube de puntillas', 'Baja despacio hasta el talón'],
+  elevacion_cadera_rodillas: ['Rodillas flexionadas', 'Lleva la pelvis hacia el pecho', 'Baja sin dejar caer las piernas'],
+  flexiones: ['Manos bajo los hombros, cuerpo en línea', 'Baja el pecho con control', 'Empuja sin hundir la cadera'],
+  curl_banda: ['Banda pisada con firmeza', 'Codos cerca del cuerpo', 'Baja controlando la tensión'],
+  dominadas: ['Agarre firme y hombros activos', 'Sube llevando el pecho hacia la barra', 'Baja completo con control'],
+  press_hombro_unilateral: ['De pie y tronco firme', 'Empuja la mancuerna hacia arriba sin inclinarte', 'Baja con control'],
+  aperturas_posteriores_banda: ['Brazos al frente con la banda tensa', 'Abre hacia los lados', 'Vuelve sin perder la tensión'],
+  sentadilla_peso_corporal: ['Pies a la anchura de los hombros', 'Baja con la espalda controlada', 'Sube empujando el suelo'],
+  remo_invertido: ['Cuerpo en línea bajo la barra', 'Lleva el pecho hacia la barra', 'Baja con control'],
+  subida_escalon: ['Escalón estable', 'Pie entero sobre el escalón', 'Sube empujando con la pierna de arriba'],
+}
+for (const e of EXERCISES) if (!e.keys && TEMPLATE_KEYS[e.id]) e.keys = TEMPLATE_KEYS[e.id]
+
 export const APPROX_REFERENCE: Record<string, string> = {
   // La zancada atrás NO usa una zancada al frente como sustituto (especificación 14/11/2026): tiene referencia externa.
   flexiones_inclinadas: 'flexiones_pared',
@@ -866,6 +995,7 @@ export const EQUIPMENT_LABEL: Record<EquipmentId, string> = {
   chair: 'Silla o banco estable',
   step: 'Escalón o escalera',
   wall: 'Pared despejada (flexiones en pared)',
+  band_anchor: 'Anclaje para bandas (diseñado para ello)',
 }
 
 export const PATTERN_LABEL: Record<Exercise['pattern'], string> = {

@@ -329,11 +329,12 @@ describe('Caso 13 · rutinas incluidas con medios de la variante y atribuciones'
     // La zancada atrás no usa una zancada al frente como sustituto
     expect(APPROX_REFERENCE.zancada_atras_peso_corporal).toBeUndefined()
   })
-  it('A20 · el catálogo mantiene sus IDs (93 observados + 2 nuevos), sin perder ninguno', () => {
+  it('A20 · el catálogo mantiene sus IDs (93 observados + 2 nuevos + 4 fichas del anexo C), sin perder ninguno', () => {
     const ids = new Set(EXERCISES.map((e) => e.id))
     for (const id of ['press_banca_barra', 'prensa', 'plancha_frontal', 'zancada_atras_peso_corporal', 'flexiones_inclinadas', 'sentadilla_peso_corporal', 'gemelos_peso_corporal']) expect(ids.has(id)).toBe(true)
     expect(ids.size).toBe(EXERCISES.length)
-    expect(EXERCISES.length).toBe(95)
+    expect(EXERCISES.length).toBe(99)
+    for (const id of ['peso_muerto_convencional', 'hip_thrust_barra', 'remo_pecho_apoyado', 'remo_banda_anclaje']) expect(ids.has(id)).toBe(true)
   })
   it('el manifiesto de docs coincide con el de la app', () => {
     const docs = JSON.parse(readFileSync(resolve(root, 'docs/media-manifest.json'), 'utf8'))

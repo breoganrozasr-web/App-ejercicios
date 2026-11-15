@@ -23,8 +23,8 @@ export function demoKindLabel(m: MediaItem): string {
   const n = m.frames?.length ?? 0
   if (n <= 1) return 'Imagen'
   if (m.frameDurationsMs && n >= 5) return 'Animación continua'
-  if (n === 2) return 'Dos posiciones ilustradas'
-  return `${n} posiciones ilustradas`
+  if (n === 2) return 'Animación de posiciones: dos posturas'
+  return `Animación de posiciones: ${n} posturas`
 }
 
 export function DemoPlayer({ exerciseId, onOpenReference }: { exerciseId: string; onOpenReference?: (id: string) => void }) {
@@ -222,13 +222,13 @@ export function ExternalDemoPanel({ demo, open = false }: { demo: ExternalDemo; 
   if (!show) {
     return (
       <button className="btn soft small" style={{ alignSelf: 'flex-start' }} onClick={() => setShow(true)}>
-        <Video size={16} /> Ver demostración · requiere internet
+        <Video size={16} /> {demo.videoUrl ? 'Vídeo externo · requiere conexión' : 'Página externa · requiere conexión'}
       </button>
     )
   }
   return (
     <div className="card flat stack-sm" style={{ background: 'var(--surface-2)' }}>
-      <strong className="small">Demostración externa · requiere internet</strong>
+      <strong className="small">{demo.videoUrl ? 'Vídeo externo' : 'Página externa'} · requiere conexión</strong>
       <span className="small">{demo.author} — «{demo.pageTitle}» (fuente {demo.code}).</span>
       {!online && <span className="small"><WifiOff size={14} aria-hidden /> Sin conexión: este contenido no se guarda para uso sin conexión.</span>}
       {demo.videoUrl && online && !isBroken && <ExternalVideo url={demo.videoUrl} name={demo.pageTitle} />}
@@ -238,7 +238,13 @@ export function ExternalDemoPanel({ demo, open = false }: { demo: ExternalDemo; 
       ) : (
         <button className="linklike tiny" style={{ alignSelf: 'flex-start' }} onClick={() => void setMeta('brokenLinks', [...broken, demo.videoUrl ?? demo.pageUrl])}>¿No abre? Anotar enlace caído</button>
       )}
-      <span className="tiny muted">Contenido de terceros: no se descarga ni se reexporta. La fuente oficial lo vincula a este ejercicio; no se ha revisado fotograma a fotograma.</span>
+      <ul className="tiny muted" style={{ margin: 0, paddingLeft: 18 }} aria-label="Estado de la comprobación">
+        <li>Enlace: no comprobado desde el entorno de Forja (la red de desarrollo no lo abría).</li>
+        <li>Variante: la página oficial lo vincula a este ejercicio.</li>
+        <li>Licencia: solo se enlaza; no se ha revisado permiso para descargar ni redistribuir.</li>
+        <li>Técnica: no revisada visualmente fotograma a fotograma.</li>
+      </ul>
+      <span className="tiny muted">Si no abre, sigue con el texto: un fallo del vídeo no impide registrar tu entrenamiento.</span>
     </div>
   )
 }

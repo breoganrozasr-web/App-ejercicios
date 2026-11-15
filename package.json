@@ -1,7 +1,7 @@
 {
   "name": "forja-entreno",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "description": "PWA local de entrenamiento de fuerza: rutinas, demostraciones, registro y progreso. Sin cuentas ni servidores.",
   "scripts": {

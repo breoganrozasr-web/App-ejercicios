@@ -16,11 +16,11 @@ test('Caso 14 · pantallas principales en tamaños de iPhone, tema claro y oscur
   await acceptProposal(page)
   for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme })
-    for (const route of ['hoy', 'rutinas', 'ejercicios', 'progreso', 'ajustes', 'ejercicios/sentadilla_barra']) {
+    for (const route of ['hoy', 'rutinas', 'ejercicios', 'progreso', 'ajustes', 'ejercicios/sentadilla_barra', 'rutinas/plantillas', 'rutinas/plantillas/sh4', 'rutinas/plantillas/comparar?ids=ul4_gym,sh4,antpost4', 'ejercicios/peso_muerto_convencional']) {
       await page.goto(`/#/${route}`)
       await page.waitForTimeout(150)
       await noHorizontalOverflow(page)
-      await shot(page, `${scheme}-${route.replace('/', '_')}`)
+      await shot(page, `${scheme}-${route.replace(/[/?=,]/g, '_')}`)
     }
   }
   await page.emulateMedia({ colorScheme: 'light' })

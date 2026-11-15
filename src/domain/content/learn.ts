@@ -10,6 +10,8 @@ export interface Article {
   title: string
   body: string
   sources: string[]
+  /** Nivel de certeza declarado (1.4): qué tipo de evidencia lo respalda y qué no permite afirmar. */
+  certainty?: string
 }
 
 export const ARTICLES: Article[] = [
@@ -79,6 +81,71 @@ export const ARTICLES: Article[] = [
     body: 'Empieza ligero y haz una aproximación. Elige una carga con la que puedas completar la parte baja del rango dejando margen y manteniendo el control. Si no llegas, reduce. Si resulta muy fácil, ajusta poco a poco. No necesitas probar tu máximo para empezar.',
     sources: ['FORJA'],
   },
+
+  // ───── Textos del encargo del 15/11/2026 (apartado 5), con fuentes F y nivel de certeza ─────
+  {
+    id: 'dos-o-tres-series',
+    title: '¿Dos o tres series?',
+    body: 'Dos series pueden ser suficientes para progresar. Tres pueden aportar más trabajo y también requieren más tiempo y recuperación. Importa el conjunto: dos series de un ejercicio de pecho en tres días suman seis; tres series en un solo día suman tres. Si hay otros ejercicios de pecho, también cuentan. Durante una adaptación puedes ver menos series que en tu plan base. Forja te explica qué caso tienes, no elige dos para todo.',
+    sources: ['F01', 'F02', 'F08'],
+    certainty: 'Revisiones y metaanálisis: más volumen se asocia a más adaptación con rendimientos decrecientes. No fijan un número óptimo por ejercicio ni un mínimo obligatorio.',
+  },
+  {
+    id: 'rangos-repeticiones',
+    title: '¿Seis a ocho, ocho a diez u ocho a doce?',
+    body: 'No existe una frontera en la que deje de crecer el músculo y empiece la fuerza. Los efectos se solapan. Las cargas altas ayudan a practicar levantar mucho peso; rangos moderados facilitan acumular trabajo. Por eso una rutina mixta puede empezar con banca a 4–6 y seguir con accesorios a 8–12 o 10–15. La carga debe ajustarse a tu control y al margen previsto.',
+    sources: ['F04', 'F05'],
+    certainty: 'Metaanálisis en red y metarregresión: rangos que se solapan; el RIR de los estudios se estimó a partir de descripciones. Los rangos de Forja son valores iniciales prácticos.',
+  },
+  {
+    id: 'fuerza-y-musculo-misma-rutina',
+    title: 'Fuerza y músculo en la misma rutina',
+    body: 'Sentadilla, press banca y peso muerto son los tres levantamientos del powerlifting. Para una rutina mixta podemos practicar uno o dos primero y completar después otros grupos y funciones. Esos básicos ya forman parte del entrenamiento: no añadimos una rutina completa encima sin contar su trabajo. Un remo o jalón complementa la espalda. No necesitas competir ni probar máximos para ganar fuerza.',
+    sources: ['F04', 'F10'],
+    certainty: 'Síntesis amplia y revisión de alcance del powerlifting (con lagunas reconocidas). No validan las plantillas de Forja como conjunto.',
+  },
+  {
+    id: 'como-crece',
+    title: 'Cómo crece un músculo',
+    body: 'La tensión durante el entrenamiento activa procesos de adaptación; con repetición y recuperación puede aumentar el tejido muscular. No hace falta perseguir agujetas o una gran congestión para comprobarlo. El proceso incluye síntesis y degradación de proteínas y no se mide con un temporizador de 48 horas. La evolución se valora con semanas de práctica, rendimiento y medidas interpretadas con cautela.',
+    sources: ['F11', 'F12'],
+    certainty: 'Revisiones mecanísticas: explican procesos, no establecen una rutina óptima ni una frecuencia exacta.',
+  },
+  {
+    id: 'elegir-reparto',
+    title: 'Elegir el reparto',
+    body: 'Cuerpo completo, torso/pierna y PPL organizan los ejercicios. Su nombre no garantiza mejores resultados. Elige un reparto que puedas cumplir y comprueba el trabajo real que recibe cada grupo. PPL tres días suele dar una sesión directa por grupo; repetirlo seis días suele dar dos. Se puede repartir una dosis parecida en más o menos sesiones.',
+    sources: ['F02', 'F03'],
+    certainty: 'Metaanálisis con volumen equiparado: sin diferencias relevantes entre repartos. No demuestra que cualquier reparto mal organizado sea equivalente.',
+  },
+  {
+    id: 'pierna-anterior-posterior',
+    title: 'Pierna anterior y posterior',
+    body: 'El día anterior da prioridad a cuádriceps y movimientos de rodilla; el posterior, a bisagras, glúteos y flexión de rodilla. Es un énfasis, no una división perfecta. Sentadillas y zancadas también implican glúteos. La extensión de rodilla complementa a sentadilla o prensa; curl y bisagra cubren funciones distintas de isquios. No necesitamos acumular cinco ejercicios casi iguales para cubrir la pierna.',
+    sources: ['F13', 'F14', 'F17'],
+    certainty: 'Ensayos pequeños con diferencias regionales; no se extrapolan porcentajes a cada persona.',
+  },
+  {
+    id: 'recorrido-velocidad',
+    title: 'Recorrido, estiramiento y velocidad',
+    body: 'Usa un recorrido que puedas controlar y que encaje con el ejercicio. El trabajo en posiciones alargadas puede ser útil, pero las ventajas dependen del músculo y la comparación. Una parcial intencionada no es lo mismo que acortar sin querer porque la carga te supera. Tampoco bajar cada repetición exageradamente lento garantiza más crecimiento.',
+    sources: ['F15', 'F16', 'F21'],
+    certainty: 'Revisiones y ensayos con diferencias medias pequeñas; no justifican parciales ni tempos lentos como mejora automática.',
+  },
+  {
+    id: 'que-cuenta-mejora',
+    title: 'Qué cuenta como mejora',
+    body: 'Mejorar puede ser completar más repeticiones con la misma carga y margen, mover un incremento real manteniendo control o cumplir el plan con regularidad. Un día peor no demuestra estancamiento. Compara el mismo ejercicio, material, método y rango de trabajo. Forja propone; no decide que te has recuperado ni certifica tu técnica. Las reglas de subida de carga y de fase son decisiones de la app, no tests clínicos.',
+    sources: ['FORJA'],
+    certainty: 'Reglas de producto de Forja (doble progresión, fases), no validadas clínicamente.',
+  },
+  {
+    id: 'tecnicas-nivel',
+    title: 'Más técnicas no significa más nivel',
+    body: 'Superseries, descendentes y rest-pause son herramientas opcionales. Pueden ayudar a organizar el tiempo; no son necesarias para crecer. Tu progreso no depende de desbloquearlas. Mantener series normales es una elección válida incluso con experiencia.',
+    sources: ['F20', 'R1', 'R2', 'R3'],
+    certainty: 'Revisiones con efectos agudos y crónicos limitados: posible ahorro de tiempo, sin ventaja global demostrada.',
+  },
 ]
 
 export interface SourceEntry {
@@ -89,11 +156,15 @@ export interface SourceEntry {
   scope: string
   synthesis?: string
   decision?: string
-  kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada'
+  kind: 'cientifica' | 'tecnica' | 'forja' | 'avanzada' | 'f2026'
+  /** Misma publicación que otra entrada de la biblioteca (tabla de equivalencias; no es una fuente nueva). */
+  sameAs?: string
 }
 
 /** Fecha de consulta declarada en la especificación. */
 export const SOURCES_CHECKED = '14/11/2026'
+/** Fecha de consulta declarada por la investigación del encargo del 15/11/2026 (F01–F21). */
+export const SOURCES_CHECKED_F = '15/11/2026'
 
 export const SOURCES: SourceEntry[] = [
   {
@@ -251,6 +322,30 @@ export const SOURCES: SourceEntry[] = [
     synthesis: 'Señales favorables en determinados métodos o subgrupos, incluido rest-pause, sin ventaja global de hipertrofia.',
     decision: 'La diferencia con R3 aconseja no prometer superioridad de ninguna técnica.',
   },
+
+  // ───── Investigación entregada con el encargo del 15/11/2026 (F01–F21). La consulta la hizo esa investigación
+  // externa; el entorno de desarrollo de Forja no pudo abrir estos enlaces (red restringida). Alcance tal como se declaró.
+  { code: 'F01', kind: 'f2026', sameAs: 'E1', title: 'ACSM / Currier et al., 2026. Resistance Training Prescription… An Overview of Reviews.', urls: ['https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823/', 'https://doi.org/10.1249/MSS.0000000000003897'], scope: 'Revisión de revisiones (137 revisiones; búsqueda hasta octubre de 2024). Consulta declarada: texto completo; resumen, resultados y discusión.', synthesis: 'Múltiples prescripciones funcionan; las cargas altas favorecen la fuerza máxima y el volumen influye en la hipertrofia. No hay un número óptimo universal por ejercicio; ≥10 series semanales no es un umbral por debajo del cual no haya crecimiento.', decision: 'Dosis propia por receta, sin mínimo obligatorio de diez series.' },
+  { code: 'F02', kind: 'f2026', sameAs: 'E3', title: 'Pelland et al., 2025/2026. The Resistance Training Dose Response.', urls: ['https://pubmed.ncbi.nlm.nih.gov/41343037/'], scope: '67 estudios, 2058 participantes, principalmente hombres jóvenes. Consulta declarada: resumen completo.', synthesis: 'Más volumen, más adaptación con rendimientos decrecientes; efecto independiente de la frecuencia sobre hipertrofia pequeño/incierto; la fuerza puede beneficiarse de más práctica. El cómputo fraccional de indirectas encajó mejor en el modelo.', decision: 'Directas e indirectas por separado; el 0,5 es una convención, no una equivalencia individual.' },
+  { code: 'F03', kind: 'f2026', sameAs: 'E7', title: 'Ramos-Campo et al., 2024. Split versus full-body.', urls: ['https://pubmed.ncbi.nlm.nih.gov/38595233/'], scope: '14 estudios, 392 participantes. Consulta declarada: resumen.', synthesis: 'Con volumen equiparado, sin diferencias relevantes entre repartos.', decision: 'Elegir reparto por calendario, adherencia y dosis real.' },
+  { code: 'F04', kind: 'f2026', sameAs: 'E2', title: 'Currier et al., 2023. Metaanálisis bayesiano en red.', urls: ['https://pubmed.ncbi.nlm.nih.gov/37414459/'], scope: '178 estudios (fuerza) y 119 (hipertrofia). Consulta declarada: resumen.', synthesis: 'Distintas combinaciones producen hipertrofia; las cargas mayores favorecen la fuerza máxima; los rangos se solapan.', decision: 'Rangos concretos por receta sin etiquetar «más de ocho = hipertrofia».' },
+  { code: 'F05', kind: 'f2026', sameAs: 'E4', title: 'Robinson et al., 2024. Proximity to Failure.', urls: ['https://link.springer.com/article/10.1007/s40279-024-02069-2'], scope: 'Metarregresiones exploratorias. Consulta declarada: resumen editorial.', synthesis: 'Más proximidad al fallo se relacionó con hipertrofia, con RIR estimado y ajuste modesto; no hay un RIR óptimo exacto.', decision: 'RIR 1–3 o 2–3 como margen inicial; sin fallo por defecto.' },
+  { code: 'F06', kind: 'f2026', sameAs: 'E5', title: 'Refalo et al., 2024. Similar muscle hypertrophy… failure or RIR.', urls: ['https://pubmed.ncbi.nlm.nih.gov/38393985/'], scope: '18 personas entrenadas, 8 semanas. Consulta declarada: resumen recuperado por índice.', synthesis: 'Crecimiento de cuádriceps similar a 1–2 RIR y al fallo; el fallo dio más fatiga aguda.', decision: 'Ninguna receta exige fallo.' },
+  { code: 'F07', kind: 'f2026', sameAs: 'E6', title: 'Singer et al., 2024. Give it a rest.', urls: ['https://www.frontiersin.org/journals/sports-and-active-living/articles/10.3389/fspor.2024.1429789/full'], scope: 'Nueve estudios. Consulta declarada: texto completo.', synthesis: 'Ligera señal a favor de descansos superiores a 60 s; por encima de 90 s, incierto.', decision: 'Descansos iniciales 90/150/180 s editables (+30/+60 s), no un techo universal.' },
+  { code: 'F08', kind: 'f2026', title: 'Without Fail: single-set training to failure or with RIR, 2025.', urls: ['https://pubmed.ncbi.nlm.nih.gov/40249908/'], scope: '42 adultos entrenados, una serie de nueve ejercicios dos veces por semana, 8 semanas. Consulta declarada: resumen.', synthesis: 'Poca dosis puede funcionar; no compara una frente a tres series ni demuestra que la dosis baja maximice ganancias.', decision: 'Las variantes breves existen y se explican como dosis reducida, no como equivalentes.' },
+  { code: 'F09', kind: 'f2026', title: 'Moesgaard et al., 2022. Periodization in volume-equated programs.', urls: ['https://pubmed.ncbi.nlm.nih.gov/35044672/'], scope: 'Metaanálisis. Consulta declarada: resumen (excepción de 2022 por pertinencia).', synthesis: 'Beneficio medio de periodizar para 1RM; sin ventaja clara para hipertrofia. Contrasta con F01.', decision: 'Días con distinto énfasis como organización útil, sin venderlos como superiores.' },
+  { code: 'F10', kind: 'f2026', title: 'Silverthorne et al., 2025. Applied Sport Science and Medicine of Powerlifting.', urls: ['https://link.springer.com/article/10.1007/s40279-025-02305-3'], scope: 'Revisión de alcance, 218 estudios (hasta junio de 2025). Consulta declarada: introducción y sección de entrenamiento.', synthesis: 'El deporte comprende sentadilla, banca y peso muerto; persisten lagunas, también en la representación de mujeres.', decision: 'No obliga a probar máximos; no valida las plantillas de Forja.' },
+  { code: 'F11', kind: 'f2026', title: 'Van Every et al., 2025. Load-induced hypertrophy: mechanisms, myths, misconceptions.', urls: ['https://pubmed.ncbi.nlm.nih.gov/41276164/'], scope: 'Revisión mecanística. Consulta declarada: resumen y fragmentos indexados.', synthesis: 'Tensión mecánica y señalización son centrales; congestión y picos hormonales agudos no prueban crecimiento.', decision: 'No usar agujetas ni congestión como medida de progreso.' },
+  { code: 'F12', kind: 'f2026', title: 'Greyvenstein et al., 2026. Tension to Translation.', urls: ['https://pubmed.ncbi.nlm.nih.gov/41324917/'], scope: 'Revisión. Consulta declarada: resumen.', synthesis: 'La acumulación de proteína depende del balance sostenido entre síntesis y degradación.', decision: 'Sin calculadoras de frecuencia por picos de síntesis ni pautas de dieta.' },
+  { code: 'F13', kind: 'f2026', title: 'Kassiano et al., 2026. Back Squat and Leg Extension.', urls: ['https://pubmed.ncbi.nlm.nih.gov/41379528/'], scope: '63 mujeres jóvenes no entrenadas, 8 semanas (sentadilla en Smith frente a extensión). Consulta declarada: resumen.', synthesis: 'Diferencias regionales: más recto femoral con extensión; ventaja de sentadilla en una región del vasto lateral.', decision: 'La extensión complementa a sentadilla o prensa, sin ser obligatoria.' },
+  { code: 'F14', kind: 'f2026', title: 'Kinoshita et al., 2026. Single- vs multi-joint: knee extension and leg press.', urls: ['https://pubmed.ncbi.nlm.nih.gov/41630124/'], scope: '17 adultos no entrenados, 12 semanas, resonancia. Consulta declarada: resumen indexado.', synthesis: 'Prensa y extensión no son idénticas en respuesta regional.', decision: 'No contar prensa como sustituto completo de la extensión ni del curl.' },
+  { code: 'F15', kind: 'f2026', title: 'Varovic et al., 2025. Muscle length and regional hypertrophy.', urls: ['https://pubmed.ncbi.nlm.nih.gov/40570881/'], scope: 'Doce estudios. Consulta declarada: resumen completo.', synthesis: 'Diferencias medias pequeñas, con limitaciones.', decision: 'Evitar «más estiramiento siempre gana».' },
+  { code: 'F16', kind: 'f2026', title: 'Wolf et al., 2025. Lengthened partials vs full range of motion.', urls: ['https://pubmed.ncbi.nlm.nih.gov/39959841/', 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11829627/'], scope: 'Ensayo. Consulta declarada: resumen y fragmentos indexados.', synthesis: 'Adaptaciones similares en el contexto estudiado.', decision: 'No implantar parciales como mejora automática.' },
+  { code: 'F17', kind: 'f2026', title: 'Plotkin et al., 2023. Hip thrust and back squat… gluteus hypertrophy.', urls: ['https://pmc.ncbi.nlm.nih.gov/articles/PMC10593473/'], scope: 'Ensayo en principiantes. Consulta declarada: resumen, resultados y discusión.', synthesis: 'Crecimiento glúteo parecido; la mayor señal EMG del hip thrust no predijo más crecimiento. Ninguno cubre por sí solo el trabajo específico de isquios.', decision: 'Hip thrust opcional; curl femoral aparte.' },
+  { code: 'F18', kind: 'f2026', title: 'Krause Neto et al., 2025. Resistance training and gluteus maximus hypertrophy.', urls: ['https://pmc.ncbi.nlm.nih.gov/articles/PMC12018462/'], scope: 'Revisión. Consulta declarada: resumen y fragmentos.', synthesis: 'Varias extensiones de cadera pueden desarrollar el glúteo mayor.', decision: 'Sin ejercicio obligatorio ni dosis redundantes.' },
+  { code: 'F19', kind: 'f2026', title: 'Triceps surae hypertrophy: standing vs seated calf raise, 2023.', urls: ['https://pubmed.ncbi.nlm.nih.gov/38156065/'], scope: '14 adultos no entrenados, 12 semanas. Consulta declarada: resumen.', synthesis: 'Más crecimiento del gastrocnemio con rodilla extendida; sóleo parecido.', decision: 'Mantener elevación de talones de pie y sentado.' },
+  { code: 'F20', kind: 'f2026', title: 'Superset Versus Traditional Resistance Training Prescriptions, 2025.', urls: ['https://pubmed.ncbi.nlm.nih.gov/39903375/'], scope: '19 estudios, muchos de efectos agudos. Consulta declarada: resumen. No se ha comprobado si coincide con R2.', synthesis: 'Posible ahorro de tiempo con más esfuerzo percibido; evidencia longitudinal limitada.', decision: 'Superseries opcionales con los controles de la 1.3.' },
+  { code: 'F21', kind: 'f2026', title: 'Enes et al., 2025. How Slow Should You Go? Repetition tempo.', urls: ['https://pubmed.ncbi.nlm.nih.gov/42709703/'], scope: '14 estudios. Consulta declarada: resumen.', synthesis: 'Diferencias globales pequeñas entre tempos.', decision: 'No imponer excéntricas lentas; el tiempo por repetición solo se usa para estimar la duración.' },
   { code: 'FORJA', kind: 'forja', title: 'Decisión práctica de Forja.', urls: [], scope: 'No es una fuente externa: valor inicial de la app, revisable.' },
 ]
 

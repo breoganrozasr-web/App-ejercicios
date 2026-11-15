@@ -157,7 +157,7 @@ function performance(ex: SessionExercise, lt: LoadType, time: boolean): [number,
 }
 const better = (a: [number, number], b: [number, number]) => a[0] > b[0] + 1e-9 || (Math.abs(a[0] - b[0]) < 1e-9 && a[1] > b[1])
 
-function sameScheme(a: Prescription | null, b: Prescription, time: boolean): boolean {
+export function sameScheme(a: Prescription | null, b: Prescription, time: boolean): boolean {
   if (!a) return true
   if (time) return (a.timeMinSec ?? 0) === (b.timeMinSec ?? 0) && (a.timeMaxSec ?? 0) === (b.timeMaxSec ?? 0)
   return a.repMin === b.repMin && a.repMax === b.repMax
@@ -195,17 +195,20 @@ export function suggestNext(input: SuggestInput): Suggestion {
     return { kind: 'paused_scope', title: 'Sugerencias de progresión en pausa', detail: 'Tu perfil indica una circunstancia (dolor, lesión, condición médica o embarazo) que queda fuera de lo que puede valorar un generador general. Registra con normalidad y consulta con un profesional antes de subir cargas.' }
   }
   const time = isTimePrescription(p, ex)
-  const last = input.history[0]
-  if (!last || !ex) return firstTime(ex, p, time)
+  const anyLast = input.history[0]
+  if (!anyLast || !ex) return firstTime(ex, p, time)
+  // Contexto de prescripción (2.2): con dos rangos del mismo ejercicio en la semana (banca 4–6 y banca 8–10), cada uno se
+  // compara con su última exposición del MISMO rango. Sin exposiciones de ese rango, se usa la última (cambio de rango).
+  const last = input.history.find((h) => h.ex.prescription && sameScheme(h.ex.prescription, p, time)) ?? anyLast
   const lt = last.ex.loadTypeSnapshot
   const basedOnDate = last.date
-  if (last.ex.painFlag) {
+  if (anyLast.ex.painFlag) {
     return { kind: 'paused_pain', title: 'Sin subida: marcaste molestia', detail: 'La última vez marcaste molestia o dolor en este ejercicio. No sugerimos subir carga. Prueba una carga menor, un rango cómodo o una alternativa; si el dolor persiste o empeora, consulta a un profesional sanitario.', basedOnDate }
   }
   const done = workDone(last.ex)
   const planned = workPlanned(last.ex)
   const step = input.incrementOverride ?? defaultIncrement(lt, input.increments)
-  const gap = daysBetween(last.date, input.today)
+  const gap = daysBetween(anyLast.date, input.today)
   const loads = done.map((s) => loadOf(s, lt)).filter((x): x is number => x !== null)
   const refLoad = loads.length ? Math.min(...loads) : null
   const keepWeight = lt === 'assisted' || lt === 'bodyweight' || lt === 'band' || time ? undefined : refLoad ?? undefined

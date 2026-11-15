@@ -104,7 +104,7 @@ export async function createBlankRoutine(name = 'Mi rutina'): Promise<Routine> {
 /** Guarda una NUEVA versión (las anteriores se conservan; las sesiones ya hechas guardan su propia copia). */
 export async function saveRoutineVersion(
   routineId: string,
-  patch: Partial<Pick<RoutineVersion, 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings'>>,
+  patch: Partial<Pick<RoutineVersion, 'days' | 'schedule' | 'rampWeeks' | 'rationale' | 'warnings' | 'engineVersion' | 'plan' | 'familiarization'>>,
   changeNote: string,
   rename?: string,
 ): Promise<RoutineVersion> {
@@ -223,7 +223,9 @@ export { completionRatio, sessionWorkSummary }
 export function familiarizationStatus(version: Pick<RoutineVersion, 'familiarization'>, sessions: Session[], routineId: string, excludeSessionId?: string): { index: number; total: number; completed: number } | null {
   const fam = version.familiarization
   if (!fam) return null
-  const completed = validDates(sessions, (s) => s.routineId === routineId && s.id !== excludeSessionId).length
+  // 2.2: los días válidos cuentan aunque se haya cambiado de rutina o de plantilla (cambiar no reinicia el aprendizaje).
+  void routineId
+  const completed = validDates(sessions, (s) => s.id !== excludeSessionId).length
   if (completed >= fam.sessions) return null
   return { index: completed + 1, total: fam.sessions, completed }
 }
@@ -319,7 +321,7 @@ export async function startSessionFromDay(routineId: string, dayId: string, date
     const inProgression = !!state.progressionSince
     // Motor 2: familiarización por días válidos. Versiones antiguas: semanas (se conserva su regla).
     let fam: Session['familiarization'] = null
-    const famStatus = version.familiarization && !inProgression ? familiarizationStatus(version, sessions, routineId) : null
+    const famStatus = version.familiarization && !inProgression ? familiarizationStatus(version, all, routineId) : null
     if (famStatus) fam = { index: famStatus.index, total: famStatus.total }
     else if (version.familiarization && !inProgression && state.extendLearning) {
       // Aprendizaje prolongado a petición: misma dosis de familiarización.

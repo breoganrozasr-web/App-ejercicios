@@ -1,7 +1,10 @@
 import { getExercise } from '../catalog'
-import type { Prescription, Region, RoutineDay, RoutineVersion } from '../types'
+import type { MuscleMapVersion, Prescription, Region, RoutineDay, RoutinePlanInfo, RoutineVersion } from '../types'
 import { WEEKDAY_NAME } from '../util'
-import { DEFAULT_TARGET_REGIONS, PANEL_REGIONS, REGION_LABEL, contributionOf, type ContributionRole } from './contribution'
+import { DEFAULT_TARGET_REGIONS, OPTIONAL_PANEL_REGIONS, PANEL_REGIONS, REGION_LABEL, contributionOf, muscleMapFor, type ContributionRole } from './contribution'
+
+/** Rutina o propuesta: días, calendario y, si se conocen, versión de motor y plan (para elegir el mapa muscular). */
+export type VersionLike = Pick<RoutineVersion, 'days' | 'schedule'> & { engineVersion?: string; plan?: Partial<RoutinePlanInfo> | null }
 import { blockExecSec, plannedWorkRows } from '../techniques'
 import { DURATION } from './params'
 import { isTimePrescription } from './prescription'
@@ -62,10 +65,10 @@ export function workRowsOf(re: Pick<RoutineDay['exercises'][number], 'exerciseId
 }
 
 /** Series directas y secundarias por región en un día (un bloque cuenta como trabajo directo del día, no como series). */
-export function dayRegionSets(day: RoutineDay): Map<Region, { direct: number; secondary: number }> {
+export function dayRegionSets(day: RoutineDay, map?: MuscleMapVersion): Map<Region, { direct: number; secondary: number }> {
   const m = new Map<Region, { direct: number; secondary: number }>()
   for (const re of day.exercises) {
-    const c = contributionOf(re.exerciseId)
+    const c = contributionOf(re.exerciseId, map)
     const rows = workRowsOf(re)
     for (const it of c.items) {
       const v = m.get(it.region) ?? { direct: 0, secondary: 0 }
@@ -77,7 +80,8 @@ export function dayRegionSets(day: RoutineDay): Map<Region, { direct: number; se
   return m
 }
 
-export function weeklyRegionVolume(version: Pick<RoutineVersion, 'days' | 'schedule'>): RegionVolume[] {
+export function weeklyRegionVolume(version: VersionLike): RegionVolume[] {
+  const map = muscleMapFor(version)
   const totals = new Map<Region, RegionVolume>()
   const get = (r: Region) => {
     let t = totals.get(r)
@@ -91,7 +95,7 @@ export function weeklyRegionVolume(version: Pick<RoutineVersion, 'days' | 'sched
   for (const { weekday, day } of scheduledDays(version)) {
     const dayHas = new Map<Region, { d: boolean; s: boolean }>()
     for (const re of day.exercises) {
-      const c = contributionOf(re.exerciseId)
+      const c = contributionOf(re.exerciseId, map)
       const rows = workRowsOf(re)
       for (const it of c.items) {
         const t = get(it.region)
@@ -119,7 +123,7 @@ export function weeklyRegionVolume(version: Pick<RoutineVersion, 'days' | 'sched
     }
   }
   for (const t of totals.values()) t.estimated = t.direct + INDIRECT_WEIGHT * t.secondary
-  const order = [...PANEL_REGIONS, 'delt_unspecified' as Region]
+  const order = [...PANEL_REGIONS, ...OPTIONAL_PANEL_REGIONS, 'delt_unspecified' as Region]
   return [...totals.values()].filter((t) => PANEL_REGIONS.includes(t.region) || t.sources.length).sort((a, b) => order.indexOf(a.region) - order.indexOf(b.region))
 }
 
@@ -149,26 +153,40 @@ function execSecPerSet(exerciseId: string, p: Prescription): number {
   return perSide * sides + (sides === 2 ? DURATION.sideChangeSec : 0)
 }
 
+/** Aproximaciones de un ejercicio dentro del día (modelo 2.2): primer básico pesado ≈8 min, otro básico pesado ≈4, resto 2–3. */
+function warmupMinutes(day: RoutineDay): number[] {
+  let heavySeen = 0
+  return day.exercises.map((re) => {
+    if (!re.prescription.warmupSets) return 0
+    const ex = getExercise(re.exerciseId)
+    const heavy = ex?.loadType === 'barbell_total' && ex.category === 'compound'
+    if (heavy) return heavySeen++ === 0 ? DURATION.firstHeavyWarmupMin : DURATION.otherHeavyWarmupMin
+    return re.prescription.warmupSets >= 2 ? DURATION.otherWarmupMin[1] : DURATION.otherWarmupMin[0]
+  })
+}
+
 /**
- * Duración estimada de un día (valores de cálculo, no tempos prescritos): calentamiento general, aproximaciones,
- * ejecución (3 s/rep; segundos indicados en isométricos; +15 s al cambiar de lado), descansos entre series y,
- * entre ejercicios, max(descanso previo, 60 s de transición) sin contar dos veces el mismo descanso.
- * En superseries, el descanso se hace tras la pareja.
+ * Duración estimada de un día (reglas de estimación del 15/11/2026, no tempos prescritos): preparación general (≈4 min),
+ * aproximaciones por básico (primer básico pesado ≈8 min, otro ≈4, resto 2–3), ejecución (3 s por repetición del punto
+ * medio del rango; segundos indicados en isométricos; ambos lados en unilaterales, +15 s al cambiar de lado), (n−1)
+ * descansos entre series de cada ejercicio y, entre ejercicios, max(descanso previo, 60 s de cambio de material) sin
+ * contar dos veces el mismo descanso. Superseries y bloques usan su estructura real. Se muestra un intervalo.
  */
 export function dayDuration(day: RoutineDay): { minutes: number; rounded: number; low: number; high: number; breakdown: DurationBreakdown } {
   const b: DurationBreakdown = { generalWarmupMin: day.exercises.length ? DURATION.generalWarmupMin : 0, warmupSetsMin: 0, workMin: 0, restMin: 0, transitionsMin: 0 }
   const ex = day.exercises
+  const wu = warmupMinutes(day)
   let i = 0
   while (i < ex.length) {
     const cur = ex[i]
     const pair = cur.superset && ex[i + 1]?.superset === cur.superset ? [cur, ex[i + 1]] : [cur]
-    for (const re of pair) {
-      b.warmupSetsMin += re.prescription.warmupSets * DURATION.warmupSetMin
+    pair.forEach((re, k) => {
+      b.warmupSetsMin += wu[i + k]
       const rows = plannedWorkRows(re.prescription, re.technique, getExercise(re.exerciseId)?.loadType ?? 'machine')
       b.workMin += (rows.conventional * execSecPerSet(re.exerciseId, re.prescription)) / 60
       // Bloque: tramos + cambios de carga o pausas breves (el descanso normal va después del bloque).
       if (rows.block) b.workMin += blockExecSec(rows.block.method, rows.block.extra, DURATION.secPerRep, getExercise(re.exerciseId)?.unilateral ? 2 : 1) / 60
-    }
+    })
     const sets = Math.max(...pair.map((re) => { const r = workRowsOf(re); return r.conventional + r.blocks }))
     const rest = Math.max(...pair.map((re) => re.prescription.restSec))
     b.restMin += (Math.max(0, sets - 1) * rest) / 60
@@ -191,7 +209,7 @@ export function durationText(day: RoutineDay): string {
 // ───────────────────────── Avisos ─────────────────────────
 
 /** Regiones objetivo con trabajo directo en días naturales consecutivos (incluye domingo → lunes). */
-export function recoveryOverlaps(version: Pick<RoutineVersion, 'days' | 'schedule'>, regions: Region[] = DEFAULT_TARGET_REGIONS): { a: number; b: number; regions: Region[] }[] {
+export function recoveryOverlaps(version: VersionLike, regions: Region[] = DEFAULT_TARGET_REGIONS): { a: number; b: number; regions: Region[] }[] {
   const sched = scheduledDays(version).filter((x) => x.weekday !== null) as { weekday: number; day: RoutineDay }[]
   const byWeekday = new Map(sched.map((s) => [s.weekday, s.day]))
   const out: { a: number; b: number; regions: Region[] }[] = []
@@ -199,8 +217,9 @@ export function recoveryOverlaps(version: Pick<RoutineVersion, 'days' | 'schedul
     const next = (s.weekday + 1) % 7
     const nd = byWeekday.get(next)
     if (!nd || next === s.weekday) continue
-    const m1 = dayRegionSets(s.day)
-    const m2 = dayRegionSets(nd)
+    const map = muscleMapFor(version)
+    const m1 = dayRegionSets(s.day, map)
+    const m2 = dayRegionSets(nd, map)
     const shared = regions.filter((r) => (m1.get(r)?.direct ?? 0) > 0 && (m2.get(r)?.direct ?? 0) > 0)
     if (shared.length) out.push({ a: s.weekday, b: next, regions: shared })
   }
@@ -214,7 +233,7 @@ export interface RoutineAnalysis {
   coverageGaps: string[]
 }
 
-export function analyzeRoutine(version: Pick<RoutineVersion, 'days' | 'schedule'>, targetRegions: Region[] = DEFAULT_TARGET_REGIONS): RoutineAnalysis {
+export function analyzeRoutine(version: VersionLike, targetRegions: Region[] = DEFAULT_TARGET_REGIONS): RoutineAnalysis {
   const volume = weeklyRegionVolume(version)
   const dayMinutes = version.days.map((d) => ({ dayId: d.id, minutes: dayDuration(d).minutes, text: durationText(d) }))
   const recoveryWarnings = recoveryOverlaps(version, targetRegions).map(
