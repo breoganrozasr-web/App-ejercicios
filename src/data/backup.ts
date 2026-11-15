@@ -2,7 +2,8 @@ import { getExercise } from '../domain/catalog'
 import { LOAD_LABEL } from '../domain/catalog/exercises'
 import { supersetPartner } from '../domain/sessions'
 import { isBlock } from '../domain/techniques'
-import type { Session } from '../domain/types'
+import { migrateProfile } from '../domain/profile'
+import type { Profile, Session } from '../domain/types'
 import { formatNumber, toLocalDate } from '../domain/util'
 import { SCHEMA_VERSION, TABLES, db, type TableName } from './db'
 import { loadCustomExercises, log, setMeta } from './repo'
@@ -194,8 +195,11 @@ export async function restoreBackup(file: BackupFile, mode: 'replace' | 'merge')
     // Reemplazo: se borra todo salvo las fotos cuando la copia no las incluye (se exportan solo si se pide).
     if (mode === 'replace') for (const t of TABLES) if (!(t === 'photos' && file.tables.photos === undefined)) await db().table(t).clear()
     for (const t of TABLES) {
-      const rows = (file.tables[t] ?? []) as Record<string, unknown>[]
+      let rows = (file.tables[t] ?? []) as Record<string, unknown>[]
       if (!rows.length) continue
+      // Copias de formato ≤ 3 (app ≤ 1.4): el perfil se migra igual que en la actualización del esquema 3
+      // (experiencia y continuidad derivadas del nivel; nada más cambia).
+      if (t === 'profile') rows = rows.map((r) => (r.experience && r.continuity ? r : (migrateProfile(r as unknown as Profile) as unknown as Record<string, unknown>)))
       if (mode === 'replace') {
         await db().table(t).bulkPut(rows)
         added += rows.length

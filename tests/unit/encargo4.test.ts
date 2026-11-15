@@ -240,4 +240,13 @@ describe('D19 · copia formato 4', () => {
     expect(() => parseBackupText(text.replace(`"formatVersion":${BACKUP_FORMAT_VERSION}`, '"formatVersion":3'))).not.toThrow()
     expect(() => parseBackupText(text.replace(`"formatVersion":${BACKUP_FORMAT_VERSION}`, `"formatVersion":${BACKUP_FORMAT_VERSION + 1}`))).toThrow(/versión más nueva/)
   })
+  it('D02 · al restaurar una copia de la 1.4 (perfil sin experiencia) el perfil se migra como en la actualización', async () => {
+    const file = await exportBackup()
+    const old = JSON.parse(JSON.stringify(file))
+    old.formatVersion = 3
+    old.tables.profile = [{ ...prof({ level: 'returning' }), experience: undefined, continuity: undefined }].map((p) => { const q = { ...p } as Record<string, unknown>; delete q.experience; delete q.continuity; return q })
+    useDatabase(`e4-restore14-${Date.now()}`)
+    await restoreBackup(parseBackupText(JSON.stringify(old)), 'replace')
+    expect(await db().profile.get('me')).toMatchObject({ experience: 'unconfirmed', continuity: 'returning', level: 'returning' })
+  })
 })
