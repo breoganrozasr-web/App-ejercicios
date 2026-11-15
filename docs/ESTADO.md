@@ -15,6 +15,8 @@ Encargo: [ENCARGO_4.md](ENCARGO_4.md); avance por bloques: [ESTADO_ENCARGO_4.md]
 - **Demostraciones V01–V04** como enlaces externos con alcance; fuentes S01–S04 y T01–T02 en la biblioteca (S01 ≡ F01).
 - **Copia formato 4** (una 1.4 la rechaza; restaurar copias 1–3 migra el perfil) y CSV con grupo, objetivo por serie y material.
 
+**Publicada y verificada en la web real** el 15-11-2026 (build 8bc77fd) en Chromium y WebKit; actualización real desde la 1.4 con datos probada en ambos motores. Detalle en docs/PRUEBAS.md.
+
 **Pendientes reales:** prueba en iPhone físico (una mano, teclado de iOS, VoiceOver, Safari como app, sonido y pantalla encendida reales); 8 demostraciones locales (solo enlace externo); abrir V01–V04, S01–S04, T01–T02, F01–F21, R1–R5 y T1–T9 desde un entorno con acceso; revisión profesional de fichas y del esquema muscular; la vuelta gradual de 4 días y los umbrales son decisiones de producto sin validación clínica; no hay importación de CSV.
 
 ## Versión 1.4 (15/11/2026): 26 plantillas, dosis explicable y fuerza + hipertrofia

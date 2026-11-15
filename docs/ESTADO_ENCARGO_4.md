@@ -19,7 +19,7 @@ Objetivo de versión: **app 1.5.0, motor 2.3.0, copia formato 4, esquema Dexie 3
 | 3. Entrenamiento con una mano (filas compactas, anterior, idempotencia, «Hacer después», sustituir hoy, notas, contextos de material, favoritos) | hecho (a89abd2): toque en dos pasos, «Anterior: … · fecha», «Usar valores anteriores (sin completar)», aviso de guardado fallido, `sessions.doLater` (superserie en grupo, orden planificado), «Sustituir hoy (solo esta sesión)», ContextSheet de material (`exerciseSettings.contexts`, clave `|mat:` solo con contexto), notas para próximas veces / de hoy, hoja con «Qué trabaja», barra de descanso plegable, `ui/favorites.ts` |
 | 4. Editor por series (grupos de prescripción) y progresión por grupo | hecho (a89abd2): `domain/setGroups.ts`, «Personalizar series» en el editor, `historyForGroup`, sugerencias por grupo en la sesión, duración por grupo |
 | 5. Catálogo compacto, Progreso en tres vistas, Ajustes agrupados, preparar sin conexión, demostraciones V01–V04 | hecho (a89abd2): conflictos en `<details>`, `?vista=`, Ajustes por secciones, `routineOfflineStatus` (caché + service worker), V01–V04 con alcance; fuentes S01–S04, T01–T02 en la biblioteca |
-| 6. Copia formato 4, CSV, pruebas D01–D25, actualización real 1.4→1.5, docs, publicación | hecho: formato 4 + restauración que migra el perfil; CSV con 3 columnas; `encargo4.test.ts` (14) y `encargo4.spec.ts` (7); `scripts/upgrade-real-14-15.cjs` 30/30 en Chromium y WebKit; docs (PRUEBAS, EVIDENCIA, CONTENIDOS_Y_LICENCIAS, FORMATO_COPIA, ESTADO, README, CAMBIOS); publicación: ver ESTADO.md |
+| 6. Copia formato 4, CSV, pruebas D01–D25, actualización real 1.4→1.5, docs, publicación | hecho: formato 4 + restauración que migra el perfil; CSV con 3 columnas; `encargo4.test.ts` (14) y `encargo4.spec.ts` (7); `scripts/upgrade-real-14-15.cjs` 30/30 en Chromium y WebKit; docs (PRUEBAS, EVIDENCIA, CONTENIDOS_Y_LICENCIAS, FORMATO_COPIA, ESTADO, README, CAMBIOS); publicado en `main` (build 8bc77fd) y verificado en la URL real (Chromium 17/17, WebKit 16/16) |
 
 ## Pruebas ejecutadas
 
@@ -27,4 +27,4 @@ Ver la tabla D01–D25 en [PRUEBAS.md](PRUEBAS.md): typecheck, 168 unitarias, bu
 
 ## Siguiente paso
 
-Publicar (rama → `main`), verificar la URL real en Chromium y WebKit y anotar el build en ESTADO.md.
+Encargo cerrado. Queda la comprobación en un iPhone físico (lista de cinco pasos en el informe final) y los pendientes reales de ESTADO.md.
