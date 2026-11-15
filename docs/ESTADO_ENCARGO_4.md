@@ -14,7 +14,7 @@ Objetivo de versión: **app 1.5.0, motor 2.3.0, copia formato 4, esquema Dexie 3
 
 | Bloque | Estado |
 |---|---|
-| 1. Modelo y migración (experiencia, continuidad, avanzado, «Preparar mi vuelta», entreno fuera de Forja) | pendiente |
+| 1. Modelo y migración (experiencia, continuidad, avanzado, «Preparar mi vuelta», entreno fuera de Forja) | hecho (commit b80205a): `domain/profile.ts` (experienceOf, continuityOf, effectiveLevel, wantsReturnAdaptation, migrateProfile), Dexie v3, `ExperienceFields` en alta/perfil, `PrepareReturn` (perfil, rutina, Tu programa), oferta tras 21 días como pregunta con «he entrenado fuera de Forja», fin de la vuelta con continuar/prolongar, sugerencia tras pausa sin porcentaje. Tests ajustados: esquema 3 en features.test, vuelta sin % en progression.test |
 | 2. Mapa muscular SVG, anatomía por ejercicio, ficha en capas, mapa del plan/realizado | pendiente |
 | 3. Entrenamiento con una mano (filas compactas, anterior, idempotencia, «Hacer después», sustituir hoy, notas, contextos de material, favoritos) | pendiente |
 | 4. Editor por series (grupos de prescripción) y progresión por grupo | pendiente |
@@ -27,4 +27,4 @@ Objetivo de versión: **app 1.5.0, motor 2.3.0, copia formato 4, esquema Dexie 3
 
 ## Siguiente paso
 
-Bloque 1.
+Bloque 2: `src/domain/catalog/anatomy.ts` (roles por ejercicio) + `src/ui/components/BodyMap.tsx` (SVG frontal/posterior) + ficha en capas + mapa planificado/realizado.
