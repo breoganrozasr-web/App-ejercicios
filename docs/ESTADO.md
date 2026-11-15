@@ -14,6 +14,8 @@
 - **Aprender**: 9 textos con nivel de certeza; fuentes F01–F21 con tabla de equivalencias. Fichas de las 49 usadas por plantillas con «tres claves» y «Qué aporta»; sustituciones con motivo. Etiquetas «Animación de posiciones» y «Vídeo externo · requiere conexión» con estados de comprobación separados.
 - **Copia formato 3** (aditiva; una 1.3 la rechaza) y CSV con rango prescrito, corrección y dificultad.
 
+**Publicada y verificada en la web real** el 15-11-2026 (build fe98133) en Chromium y WebKit; actualización desde la 1.3 con datos probada con las builds reales. Detalle en docs/PRUEBAS.md.
+
 **Pendientes reales:** prueba en iPhone físico (uso con una mano, VoiceOver, Safari como app); demostraciones de las 4 fichas nuevas (los recursos externos localizados no se pudieron abrir desde el entorno: no se presentan en la app) y las 4 demostraciones locales que siguen siendo externas; abrir F01–F21, R1–R5 y T1–T9 desde un entorno con acceso; revisión profesional de las fichas (no la ha habido); las recetas, umbrales y valores iniciales son decisiones editoriales sin validación clínica ni ensayos como conjunto; los bloques no cambian de método al corregir (solo valores); no hay importación de CSV.
 
 ## Versión 1.3 (15/11/2026): series descendentes, rest-pause, superseries y fases
