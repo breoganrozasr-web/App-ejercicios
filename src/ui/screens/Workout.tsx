@@ -600,12 +600,12 @@ function DemoSheetBody({ exerciseId, onReference }: { exerciseId: string; onRefe
   )
 }
 
-function placeholderFor(lt: LoadType, sug: Suggestion | null, last: SetEntry | undefined, prevInSession: SetEntry | undefined, repMin?: number): Partial<SetEntry> {
+function placeholderFor(lt: LoadType, sug: Suggestion | null, last: SetEntry | undefined, prevInSession: SetEntry | undefined, repMin?: number, timeMin?: number): Partial<SetEntry> {
   const p: Partial<SetEntry> = {}
   const w = sug?.targetWeightKg ?? prevInSession?.weightKg ?? last?.weightKg ?? undefined
   if (lt === 'assisted') p.assistKg = sug?.targetAssistKg ?? prevInSession?.assistKg ?? last?.assistKg ?? undefined
   else if (lt !== 'bodyweight' && lt !== 'band' && lt !== 'time') p.weightKg = w ?? undefined
-  if (lt === 'time') p.durationSec = sug?.targetTimeSec ?? last?.durationSec ?? undefined
+  if (lt === 'time') p.durationSec = sug?.targetTimeSec ?? last?.durationSec ?? timeMin ?? undefined
   else p.reps = sug?.targetReps?.[0] ?? repMin ?? last?.reps ?? undefined
   return p
 }
@@ -817,7 +817,7 @@ function ExerciseBlock(props: {
           const prevInSession = e.sets.slice(0, si).reverse().find((x) => x.completed && !isBlock(x))
           const rowGroup = set.groupId ? props.groupSuggestions?.find((x) => x.g.id === set.groupId) : undefined
           const rowSug = rowGroup ? rowGroup.sug : sug
-          const ph = placeholderFor(lt, rowSug && rowSug.kind !== 'paused_pain' && rowSug.kind !== 'paused_scope' ? rowSug : null, rowGroup ? undefined : lastWork[Math.max(0, workN - 1)], prevInSession && (!set.groupId || prevInSession.groupId === set.groupId) ? prevInSession : undefined, rowGroup ? rowGroup.g.repMin : p?.repMin)
+          const ph = placeholderFor(lt, rowSug && rowSug.kind !== 'paused_pain' && rowSug.kind !== 'paused_scope' ? rowSug : null, rowGroup ? undefined : lastWork[Math.max(0, workN - 1)], prevInSession && (!set.groupId || prevInSession.groupId === set.groupId) ? prevInSession : undefined, rowGroup ? rowGroup.g.repMin : p?.repMin, p?.timeMinSec)
           const tag = set.kind === 'warmup' ? 'C' : String(workN)
           const prevSet = set.kind === 'work' && lastH ? lastWork[workN - 1] : undefined
           const warmN = e.sets.slice(0, si + 1).filter((x) => x.kind === 'warmup').length

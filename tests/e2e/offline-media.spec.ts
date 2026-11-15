@@ -32,7 +32,7 @@ test('Caso 9 · tras la primera carga funciona sin conexión; las demos descarga
   // Una demo NO descargada avisa claramente (las instrucciones siguen)
   await page.goto('/#/ejercicios/curl_concentrado')
   await expect(page.getByText(/Sin conexión y esta demostración no está descargada/)).toBeVisible()
-  await expect(page.getByText('Cómo se hace')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Cómo hacerlo' })).toBeVisible()
   await context.setOffline(false)
 })
 

@@ -227,7 +227,7 @@ test('B05 · B06 · B07 · revisión de fase: tarjeta discreta, posponer, acepta
   await page.getByRole('button', { name: 'Aceptar y pasar a Progresión' }).click()
   await page.getByRole('alertdialog').getByRole('button', { name: 'Aceptar' }).click()
   await expect(page.getByRole('list', { name: 'Fases' }).getByText('Progresión')).toHaveAttribute('aria-current', 'step')
-  await expect(page.getByText(/Experiencia declarada en tu perfil: desde cero/)).toBeVisible()
+  await expect(page.getByText(/Experiencia declarada en tu perfil: principiante/)).toBeVisible()
   // Aceptar sin cambios no crea versión nueva
   expect(await page.evaluate(() => new Promise((res) => { const r = indexedDB.open('forja'); r.onsuccess = () => { const g = r.result.transaction('routineVersions', 'readonly').objectStore('routineVersions').count(); g.onsuccess = () => res(g.result) } }))).toBe(1)
   // B10: la nueva fase no activa técnicas sin consentimiento específico
@@ -244,8 +244,9 @@ test('B08 · tras 21 días o más sin entrenar se ofrece readaptación; aceptarl
   await seedHistory(page, [daysAgo(40), daysAgo(37), daysAgo(34), daysAgo(30)])
   await page.reload()
   const card = page.getByRole('region', { name: 'Vuelta tras una pausa' })
-  await expect(card.getByText('Llevas 30 días sin entrenar.')).toBeVisible()
-  await card.getByRole('button', { name: 'Sí, con readaptación' }).click()
+  // 1.5: el hueco se pregunta («¿Has entrenado fuera de Forja?»): la ausencia de registros no demuestra inactividad.
+  await expect(card.getByText(/No hay entrenamientos registrados desde .* \(30 días\)\. ¿Has entrenado fuera de Forja\?/)).toBeVisible()
+  await card.getByRole('button', { name: 'No he entrenado: vuelta gradual' }).click()
   await expect(page.getByText(/Readaptación: sesión 1 de 4/)).toBeVisible()
   await page.getByRole('button', { name: /^Empezar$/ }).click()
   await expect(page.locator('header.wk-head')).toContainText('readaptación 1/4')

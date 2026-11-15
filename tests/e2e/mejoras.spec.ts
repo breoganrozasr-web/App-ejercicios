@@ -17,7 +17,7 @@ test('Preparación del día, récord en directo, resumen con calorías y nota fi
   await acceptProposal(page)
 
   // Peso corporal para poder estimar calorías
-  await page.goto('/#/progreso')
+  await page.goto('/#/progreso?vista=cuerpo') // 1.5: Progreso en tres vistas (Entrenamiento / Ejercicios / Cuerpo)
   await page.getByRole('textbox', { name: 'Peso corporal de hoy en kg' }).fill('75')
   await page.getByRole('button', { name: 'Anotar' }).first().click()
   await expect(page.getByText(/Último: 75 kg/)).toBeVisible()
@@ -75,7 +75,7 @@ test('Registrar una sesión pasada y cambiarle la fecha', async ({ page }) => {
   const errors = collectErrors(page)
   await onboard(page)
   await acceptProposal(page)
-  await page.goto('/#/progreso')
+  await page.goto('/#/progreso?vista=cuerpo') // 1.5: Progreso en tres vistas (Entrenamiento / Ejercicios / Cuerpo)
   await page.getByRole('textbox', { name: 'Peso corporal de hoy en kg' }).fill('75')
   await page.getByRole('button', { name: 'Anotar' }).first().click()
   await expect(page.getByText(/Último: 75 kg/)).toBeVisible()
@@ -129,7 +129,7 @@ test('Discos, calentamiento, medidas y ajustes de sonido', async ({ page }) => {
   await page.keyboard.press('Escape')
 
   // Medidas
-  await page.goto('/#/progreso')
+  await page.goto('/#/progreso?vista=cuerpo') // 1.5: Progreso en tres vistas (Entrenamiento / Ejercicios / Cuerpo)
   await page.getByRole('textbox', { name: 'Cintura en centímetros' }).fill('82,5')
   await page.getByRole('button', { name: 'Anotar' }).nth(1).click()
   await expect(page.getByText('82,5 cm').first()).toBeVisible()
